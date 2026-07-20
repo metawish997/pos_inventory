@@ -1,0 +1,138 @@
+.container {
+  display: flex;
+  gap: 1.5rem;
+}
+.sidebar {
+  width: 250px;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  padding: 1rem 0;
+  flex-shrink: 0;
+}
+.sidebarItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1.5rem;
+  color: #4B5563;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+.sidebarItem:hover {
+  background-color: #F9FAFB;
+}
+.subList {
+  padding: 0.5rem 0;
+}
+.subItem {
+  padding: 0.5rem 1.5rem 0.5rem 3rem;
+  color: #6B7280;
+  font-size: 0.9rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+.subItem:hover {
+  color: #FF9F43;
+}
+.subItem.active {
+  color: #FF9F43;
+  background-color: #FFF5EC;
+  border-right: 3px solid #FF9F43;
+}
+.main {
+  flex: 1;
+}
+.card {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  overflow: hidden;
+}
+.cardHeader {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid #E5E7EB;
+  font-weight: 600;
+  color: #111827;
+}
+.cardBody {
+  padding: 1.5rem;
+}
+.formGroup {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+.formLabel {
+  width: 200px;
+  color: #374151;
+  font-weight: 500;
+}
+.formControl {
+  flex: 1;
+}
+.select {
+  width: 100%;
+  padding: 0.5rem 1rem;
+  border: 1px solid #D1D5DB;
+  border-radius: 4px;
+  outline: none;
+  background-color: #F9FAFB;
+  appearance: none;
+}
+.checkboxGroup {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #4B5563;
+  cursor: pointer;
+}
+.toggleSwitch {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  background-color: #10B981;
+  border-radius: 12px;
+  cursor: pointer;
+}
+.toggleKnob {
+  position: absolute;
+  top: 2px;
+  left: 22px;
+  width: 20px;
+  height: 20px;
+  background-color: white;
+  border-radius: 50%;
+  transition: all 0.3s;
+}
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+.cancelBtn {
+  background-color: #6B7280;
+  color: white;
+  border: none;
+  padding: 0.6rem 1.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+}
+.saveBtn {
+  background-color: #FF9F43;
+  color: white;
+  border: none;
+  padding: 0.6rem 1.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+}

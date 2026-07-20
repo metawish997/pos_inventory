@@ -1,0 +1,421 @@
+.pageHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+}
+
+.subtitle {
+    color: var(--text-muted);
+    font-size: 0.875rem;
+}
+
+.headerActions {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.iconBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+    background-color: var(--bg-white);
+    color: var(--text-muted);
+}
+
+.iconBtn:hover {
+    background-color: var(--bg-main);
+    color: var(--text-dark);
+}
+
+.btnPrimary {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-md);
+    background-color: var(--color-primary);
+    color: var(--bg-white);
+    font-weight: 600;
+}
+
+.btnDark {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-md);
+    background-color: var(--color-navy);
+    color: var(--bg-white);
+    font-weight: 600;
+}
+
+.tableCard {
+    padding: 0;
+}
+
+.filterBar {
+    padding: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color);
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.searchBox {
+    display: flex;
+    align-items: center;
+    background-color: var(--bg-main);
+    border-radius: var(--radius-md);
+    padding: 0.5rem 1rem;
+    width: 300px;
+}
+
+.searchIcon {
+    color: var(--text-light);
+}
+
+.searchBox input {
+    border: none;
+    background: transparent;
+    padding-left: 0.5rem;
+    outline: none;
+    width: 100%;
+}
+
+.filters {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.select {
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+    background-color: var(--bg-white);
+    color: var(--text-dark);
+    font-size: 0.875rem;
+    outline: none;
+}
+
+.tableResponsive {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.productTable {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+}
+
+.productTable th {
+    text-align: left;
+    padding: 1rem 1.5rem;
+    color: var(--text-muted);
+    font-weight: 600;
+    border-bottom: 1px solid var(--border-color);
+    background-color: var(--bg-main);
+    white-space: nowrap;
+}
+
+.productTable td {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+    vertical-align: middle;
+}
+
+.actionCell {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.actionBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.25rem;
+    color: var(--text-muted);
+    border-radius: var(--radius-sm);
+    transition: all 0.2s;
+}
+
+.actionBtn:hover {
+    background-color: var(--bg-main);
+    color: var(--text-dark);
+}
+
+.actionBtn.danger:hover {
+    background-color: rgba(234, 84, 85, 0.1);
+    color: var(--color-danger);
+}
+
+.pagination {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    border-top: 1px solid var(--border-color);
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.pageInfo {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+}
+
+.pageControls {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.pageBtn {
+    padding: 0.25rem 0.75rem;
+    border: 1px solid var(--border-color);
+    background-color: var(--bg-white);
+    border-radius: var(--radius-sm);
+    font-size: 0.875rem;
+    color: var(--text-dark);
+}
+
+.pageBtn:hover {
+    background-color: var(--bg-main);
+}
+
+.activePage {
+    background-color: var(--color-primary);
+    color: var(--bg-white);
+    border-color: var(--color-primary);
+}
+
+/* Form layout */
+.formRow {
+    display: flex;
+    gap: 1.5rem;
+    margin-bottom: 1.25rem;
+    flex-wrap: wrap;
+}
+
+.formCol {
+    flex: 1;
+    min-width: 200px;
+    display: flex;
+    flex-direction: column;
+}
+
+.formCol label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 0.5rem;
+}
+
+.input,
+.select,
+.textarea {
+    width: 100%;
+    padding: 0.625rem 0.75rem;
+    border: 1px solid #D1D5DB;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    background-color: white;
+    box-sizing: border-box;
+}
+
+.input:focus,
+.select:focus,
+.textarea:focus {
+    outline: none;
+    border-color: var(--color-primary);
+}
+
+.textarea {
+    resize: vertical;
+}
+
+.required {
+    color: var(--color-danger);
+}
+
+.itemsTableWrap {
+    background-color: #F9FAFB;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    overflow-x: auto;
+}
+
+.itemsTable {
+    width: 100%;
+    min-width: 900px;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+    text-align: left;
+}
+
+.itemsTable th {
+    padding: 0.75rem;
+    font-weight: 600;
+    color: #374151;
+    border-bottom: 1px solid #E5E7EB;
+    white-space: nowrap;
+}
+
+.itemsTable td {
+    padding: 0.5rem;
+    vertical-align: middle;
+}
+
+.itemsTable input,
+.itemsTable select {
+    width: 100%;
+    padding: 0.4rem 0.5rem;
+    border: 1px solid #D1D5DB;
+    border-radius: 4px;
+    font-size: 0.8rem;
+}
+
+.totalsBox {
+    margin-left: auto;
+    width: 320px;
+    margin-top: 1rem;
+}
+
+.totalsRow {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.4rem 0;
+    font-size: 0.9rem;
+    color: #374151;
+}
+
+.totalsRow.grand {
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: var(--color-navy);
+    border-top: 1px solid #E5E7EB;
+    margin-top: 0.5rem;
+    padding-top: 0.75rem;
+}
+
+.footerActions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.btnCancel {
+    padding: 0.625rem 1.25rem;
+    background-color: var(--color-navy);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.btnSubmit {
+    padding: 0.625rem 1.25rem;
+    background-color: var(--color-primary);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.btnOutline {
+    padding: 0.5rem 1rem;
+    background-color: white;
+    color: var(--color-navy);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.statGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.25rem;
+    margin-bottom: 1.5rem;
+}
+
+.detailCard {
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.detailRow {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 0.9rem;
+}
+
+.detailRow span:first-child {
+    color: var(--text-muted);
+}
+
+.emptyState {
+    padding: 2rem;
+    text-align: center;
+    color: var(--text-muted);
+}
+
+.searchResults {
+    position: absolute;
+    z-index: 50;
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    width: 100%;
+    max-height: 280px;
+    overflow-y: auto;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.searchResultItem {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.6rem 0.75rem;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.searchResultItem:hover {
+    background-color: var(--bg-main);
+}
+
+.searchResultItem img {
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    object-fit: cover;
+    background: var(--bg-main);
+}
+
+.searchResultMeta {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}

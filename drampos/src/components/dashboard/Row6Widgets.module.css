@@ -1,0 +1,115 @@
+.widgetCard {
+  height: 100%;
+}
+
+.widgetHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.widgetHeader h3 {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.viewAll {
+  font-size: 0.75rem;
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.select {
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+  font-size: 0.75rem;
+}
+
+/* Customers */
+.customerList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.customerItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.customerInfo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  background-color: var(--bg-main);
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+}
+
+.name {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.meta {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.spent {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+/* Categories */
+.chartContainer {
+  margin: 1rem 0;
+}
+
+.categoryStats {
+  margin-top: auto;
+  border-top: 1px solid var(--border-color);
+  padding-top: 1rem;
+  font-size: 0.875rem;
+}
+
+.statLine {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+/* Heatmap */
+.heatmapPlaceholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  background-color: var(--bg-main);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  width: 100%;
+  height: 100%;
+}
+
+.gridCell {
+  background-color: var(--color-primary);
+  border-radius: 2px;
+}

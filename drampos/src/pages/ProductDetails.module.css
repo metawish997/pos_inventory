@@ -1,0 +1,144 @@
+.pageHeader {
+  margin-bottom: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+  color: #1B2850;
+}
+
+.subtitle {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.mainContainer {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1.5rem;
+  align-items: flex-start;
+}
+
+.card {
+  background-color: var(--bg-white);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  padding: 1.5rem;
+  border: 1px solid #E5E7EB;
+}
+
+.barcodeBox {
+  border: 1px solid #E5E7EB;
+  border-radius: 4px;
+  padding: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  max-width: 300px;
+}
+
+.printBtn {
+  background: none;
+  border: none;
+  color: #1B2850;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.detailsTable {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid #E5E7EB;
+}
+
+.detailsTable td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #E5E7EB;
+  border-right: 1px solid #E5E7EB;
+  font-size: 0.875rem;
+}
+
+.detailsTable tr:last-child td {
+  border-bottom: none;
+}
+
+.propName {
+  color: #1B2850;
+  font-weight: 500;
+  width: 35%;
+}
+
+.propValue {
+  color: #111827;
+  font-weight: 500;
+}
+
+.imageCard {
+  background-color: var(--bg-white);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  padding: 1.5rem;
+  border: 1px solid #E5E7EB;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.imageContainer {
+  background-color: #F8F9FA;
+  border-radius: 8px;
+  padding: 2rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.imageInfo {
+  text-align: center;
+}
+
+.fileName {
+  color: #1B2850;
+  font-weight: 600;
+  font-size: 0.875rem;
+  margin-bottom: 0.25rem;
+}
+
+.fileSize {
+  color: #6B7280;
+  font-size: 0.75rem;
+}
+
+.navBtn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: white;
+  border: 1px solid #E5E7EB;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #6B7280;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.navBtnLeft {
+  left: 1rem;
+}
+
+.navBtnRight {
+  right: 1rem;
+}
