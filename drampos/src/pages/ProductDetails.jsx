@@ -51,7 +51,7 @@ const ProductDetails = () => {
 
   const images = Array.isArray(product.images) && product.images.length > 0
     ? product.images
-    : ['https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3'];
+    : ['https://placehold.co/500x400?text=No+Product+Image'];
 
   const currentImage = images[imageIndex] || images[0];
 

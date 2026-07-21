@@ -1,29 +1,95 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import styles from './Header.module.css';
-import { Search, Globe, Maximize, Minimize, Mail, Bell, Settings, User, Box, Package, ShoppingBag, ShoppingCart, FileSpreadsheet, FileCheck, Copy, Users, Shield, UserCheck, Truck, LogOut, FileText, ChevronsLeft, ChevronsRight, Menu, MoreVertical } from 'lucide-react';
+import { Search, Globe, Maximize, Minimize, Mail, Bell, Settings, User, Box, Package, ShoppingBag, ShoppingCart, FileSpreadsheet, FileCheck, Copy, Users, Shield, UserCheck, Truck, LogOut, FileText, ChevronsLeft, ChevronsRight, Menu } from 'lucide-react';
 import { getStores } from '../../services/inventoryService';
 
 const Header = ({ isCollapsed, toggleCollapse, toggleMobile }) => {
   const navigate = useNavigate();
+  
+  // States for Popovers
   const [isAddNewOpen, setIsAddNewOpen] = useState(false);
-  const addNewRef = useRef(null);
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
-  const userDropdownRef = useRef(null);
+  const [isMailOpen, setIsMailOpen] = useState(false);
+  const [isBellOpen, setIsBellOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [stores, setStores] = useState([]);
+  
+  // DB Notifications State
+  const [lowStockAlerts, setLowStockAlerts] = useState([]);
+  const [systemMessages, setSystemMessages] = useState([]);
+
+  // Refs for Click Outside
+  const addNewRef = useRef(null);
+  const userDropdownRef = useRef(null);
+  const mailRef = useRef(null);
+  const bellRef = useRef(null);
+
+  // Fetch Notifications from DB
+  const fetchNotifications = async () => {
+    try {
+      const res = await fetch('/api/notifications');
+      const data = await res.json();
+      if (data.success) {
+        const allNotifications = data.data || [];
+        
+        // Filter Low stock alerts (not read)
+        const lowStocks = allNotifications
+          .filter(n => n.type === 'LOW_STOCK' && !n.isRead)
+          .map(n => ({
+            id: n._id,
+            msg: n.message
+          }));
+        setLowStockAlerts(lowStocks);
+
+        // Filter messages/sales completed
+        const messages = allNotifications
+          .filter(n => n.type === 'SALE_COMPLETED' && !n.isRead)
+          .map(n => ({
+            id: n._id,
+            title: n.title,
+            desc: n.message,
+            time: new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          }));
+        setSystemMessages(messages);
+      }
+    } catch (err) {
+      console.error('Failed to load notifications from DB:', err);
+    }
+  };
 
   useEffect(() => {
     getStores().then(res => {
       if (res.success || Array.isArray(res)) setStores(res.data || res);
     }).catch(console.error);
 
+    fetchNotifications();
+
     const handleFullscreenChange = () => {
       setIsFullscreen(!!document.fullscreenElement);
     };
     
     document.addEventListener('fullscreenchange', handleFullscreenChange);
-    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+
+    // Setup EventSource for SSE Real-time Updates
+    const eventSource = new EventSource('/api/events');
+    
+    eventSource.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === 'SALE_COMPLETED') {
+          // Re-fetch notifications from DB when events are received
+          fetchNotifications();
+        }
+      } catch (err) {
+        console.error('Failed to parse SSE event data:', err);
+      }
+    };
+
+    return () => {
+      eventSource.close();
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    };
   }, []);
 
   const toggleFullscreen = () => {
@@ -46,11 +112,50 @@ const Header = ({ isCollapsed, toggleCollapse, toggleMobile }) => {
       if (userDropdownRef.current && !userDropdownRef.current.contains(event.target)) {
         setIsUserDropdownOpen(false);
       }
+      if (mailRef.current && !mailRef.current.contains(event.target)) {
+        setIsMailOpen(false);
+      }
+      if (bellRef.current && !bellRef.current.contains(event.target)) {
+        setIsBellOpen(false);
+      }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // API handler to mark all as read
+  const handleClearAll = async () => {
+    try {
+      const res = await fetch('/api/notifications/read-all', { method: 'PUT' });
+      const data = await res.json();
+      if (data.success) {
+        setLowStockAlerts([]);
+        setSystemMessages([]);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // API handler to mark individual alert as read
+  const handleMarkAsRead = async (id, isStockAlert) => {
+    try {
+      const res = await fetch(`/api/notifications/${id}/read`, { method: 'PUT' });
+      const data = await res.json();
+      if (data.success) {
+        if (isStockAlert) {
+          setLowStockAlerts(prev => prev.filter(n => n.id !== id));
+          setIsBellOpen(false);
+          navigate('/low-stocks');
+        } else {
+          setSystemMessages(prev => prev.filter(n => n.id !== id));
+        }
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const addNewItems = [
     { icon: Box, label: 'Category', path: '/category-list' },
@@ -87,16 +192,17 @@ const Header = ({ isCollapsed, toggleCollapse, toggleMobile }) => {
             {isCollapsed ? <ChevronsRight size={16} /> : <ChevronsLeft size={16} />}
           </button>
         </div>
+        
         <div className={`${styles.searchBox} ${styles.hideOnMobile}`}>
           <Search size={18} className={styles.searchIcon} />
           <input type="text" placeholder="Search" />
-          <span className={styles.shortcut}>⌘ K</span>
+          <div className={styles.shortcut}>
+            <span>⌘</span><span>K</span>
+          </div>
         </div>
       </div>
+
       <div className={styles.right}>
-        <button className={styles.mobileMoreBtn}>
-          <MoreVertical size={24} />
-        </button>
         <div className={`${styles.rightControls} ${styles.hideOnMobile}`}>
           <select className={styles.storeSelect}>
             <option>Store: Freshmart</option>
@@ -138,18 +244,66 @@ const Header = ({ isCollapsed, toggleCollapse, toggleMobile }) => {
           <button className={styles.btnDark} onClick={() => navigate('/pos')}>POS</button>
           
           <div className={styles.actions}>
-            <button className={styles.iconBtn}><Globe size={20} /></button>
             <button className={styles.iconBtn} onClick={toggleFullscreen}>
               {isFullscreen ? <Minimize size={20} /> : <Maximize size={20} />}
             </button>
-            <button className={styles.iconBtn}>
-              <Mail size={20} />
-              <span className={styles.badge}>5</span>
-            </button>
-            <button className={styles.iconBtn}>
-              <Bell size={20} />
-              <span className={styles.badge}>3</span>
-            </button>
+
+            {/* Dynamic Mail Popover */}
+            <div className={styles.dropdownWrapper} ref={mailRef}>
+              <button className={styles.iconBtn} onClick={() => { setIsMailOpen(!isMailOpen); setIsBellOpen(false); }}>
+                <Mail size={20} />
+                <span className={styles.badge}>{systemMessages.length}</span>
+              </button>
+              {isMailOpen && (
+                <div className={styles.dropdownPopover}>
+                  <div className={styles.dropdownHeader}>
+                    <span>Recent Messages</span>
+                    <span style={{ fontSize: '0.75rem', color: '#FF9F43', cursor: 'pointer' }} onClick={handleClearAll}>Clear all</span>
+                  </div>
+                  {systemMessages.length === 0 ? (
+                    <div style={{ padding: '1rem 0.5rem', textAlign: 'center', fontSize: '0.85rem', color: '#9CA3AF' }}>No new messages</div>
+                  ) : (
+                    systemMessages.map(msg => (
+                      <div key={msg.id} className={styles.dropdownItem} onClick={() => handleMarkAsRead(msg.id, false)}>
+                        <div style={{ fontWeight: 600, color: '#1B2850', marginBottom: '0.15rem' }}>{msg.title}</div>
+                        <div>{msg.desc}</div>
+                        <div style={{ fontSize: '0.7rem', color: '#9CA3AF', marginTop: '0.25rem' }}>{msg.time}</div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Dynamic Bell Popover */}
+            <div className={styles.dropdownWrapper} ref={bellRef}>
+              <button className={styles.iconBtn} onClick={() => { setIsBellOpen(!isBellOpen); setIsMailOpen(false); }}>
+                <Bell size={20} />
+                <span className={styles.badge}>{lowStockAlerts.length}</span>
+              </button>
+              {isBellOpen && (
+                <div className={styles.dropdownPopover}>
+                  <div className={styles.dropdownHeader}>
+                    <span>Dynamic Alerts</span>
+                    <span style={{ fontSize: '0.75rem', color: '#EA5455', cursor: 'pointer' }} onClick={handleClearAll}>Clear all</span>
+                  </div>
+                  {lowStockAlerts.length === 0 ? (
+                    <div style={{ padding: '1rem 0.5rem', textAlign: 'center', fontSize: '0.85rem', color: '#9CA3AF' }}>All inventory levels healthy</div>
+                  ) : (
+                    lowStockAlerts.slice(0, 5).map((alert) => (
+                      <div 
+                        key={alert.id} 
+                        className={styles.dropdownItem} 
+                        onClick={() => handleMarkAsRead(alert.id, true)}
+                      >
+                        <div style={{ color: '#EA5455', fontWeight: 500 }}>⚠️ {alert.msg}</div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+            
             <button className={styles.iconBtn} onClick={() => navigate('/profile')}><Settings size={20} /></button>
           </div>
           

@@ -36,6 +36,12 @@ app.use('/api/promo', promoRoutes);
 app.use('/api/finance', financeRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/customers', require('./routes/customerRoutes'));
+app.use('/api/notifications', require('./routes/notificationRoutes'));
+
+const eventService = require('./services/eventService');
+app.get('/api/events', (req, res) => {
+  eventService.addClient(req, res);
+});
 
 // Serve uploads folder statically
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));

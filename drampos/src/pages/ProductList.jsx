@@ -135,13 +135,11 @@ const ProductList = () => {
                     <td>
                       <div className={styles.productCell}>
                         <div className={styles.productImg}>
-                          {item.images && item.images.length > 0 ? (
-                            <img
-                              src={item.images[0]}
-                              alt={item.name}
-                              style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 'var(--radius-md)' }}
-                            />
-                          ) : null}
+                          <img
+                            src={item.images && item.images.length > 0 ? item.images[0] : "https://placehold.co/100x100?text=No+Image"}
+                            alt={item.name}
+                            style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 'var(--radius-md)' }}
+                          />
                         </div>
                         <Link
                           to={`/product-details/${item._id}`}

@@ -117,6 +117,23 @@ exports.createSale = async (req, res) => {
         });
         await invoice.save();
 
+        const Notification = require('../models/Notification');
+        const dbNotification = new Notification({
+          type: 'SALE_COMPLETED',
+          title: 'New POS Sale Completed',
+          message: `Sale #${sale.saleNumber || 'Order'} created for ${sale.customerName || 'Walk-in'} (₹${sale.grandTotal})`
+        });
+        await dbNotification.save();
+
+        const eventService = require('../services/eventService');
+        eventService.broadcast({
+          type: 'SALE_COMPLETED',
+          id: dbNotification._id,
+          title: dbNotification.title,
+          desc: dbNotification.message,
+          time: 'Just now'
+        });
+
         res.status(201).json({ success: true, data: sale, invoice });
     } catch (error) {
         res.status(400).json({ success: false, message: error.message });
