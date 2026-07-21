@@ -162,6 +162,12 @@ const Sidebar = ({ isCollapsed, isMobileOpen, closeMobile }) => {
               <span>Print Barcode</span>
             </NavLink>
           </li>
+          <li>
+            <NavLink to="/print-qrcode" className={({ isActive }) => isActive ? `${styles.menuItem} ${styles.active}` : styles.menuItem}>
+              <QrCode size={18} />
+              <span>Print QR Code</span>
+            </NavLink>
+          </li>
         </ul>
       </div>
 

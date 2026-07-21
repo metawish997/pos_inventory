@@ -215,6 +215,8 @@ const Header = ({ isCollapsed, toggleCollapse, toggleMobile }) => {
     { label: 'Customers Directory', path: '/customers' },
     { label: 'Suppliers Directory', path: '/suppliers' },
     { label: 'Low Stock Replenishment', path: '/low-stocks' },
+    { label: 'Print Barcodes', path: '/print-barcode' },
+    { label: 'Print QR Codes', path: '/print-qrcode' },
     { label: 'POS Terminal Settings', path: '/pos-settings' }
   ];
 

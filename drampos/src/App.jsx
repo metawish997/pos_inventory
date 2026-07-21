@@ -14,6 +14,7 @@ import BrandList from './pages/BrandList';
 import VariantList from './pages/VariantList';
 import WarrantyList from './pages/WarrantyList';
 import PrintBarcode from './pages/PrintBarcode';
+import PrintQRCode from './pages/PrintQRCode';
 
 import ManageStock from './pages/ManageStock';
 import StockAdjustment from './pages/StockAdjustment';
@@ -118,6 +119,7 @@ function App() {
           <Route path="/taxes" element={<TaxList />} />
           <Route path="/warranties" element={<WarrantyList />} />
           <Route path="/print-barcode" element={<PrintBarcode />} />
+          <Route path="/print-qrcode" element={<PrintQRCode />} />
 
           <Route path="/manage-stock" element={<ManageStock />} />
           <Route path="/stock-adjustment" element={<StockAdjustment />} />
