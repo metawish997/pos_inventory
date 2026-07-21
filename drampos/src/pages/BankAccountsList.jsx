@@ -1,51 +1,75 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import Card from '../components/ui/Card';
 import styles from './ProductList.module.css';
-import { Search, FileText, FileSpreadsheet, RefreshCw, ChevronUp, Edit, Trash2 } from 'lucide-react';
+import { Search, RefreshCw, PlusCircle, Trash2 } from 'lucide-react';
 import AddAccountModal from '../components/modals/AddAccountModal';
-import { useNavigate } from 'react-router-dom';
+import { getBankAccounts, deleteBankAccount } from '../services/financeService';
 
 const BankAccountsList = () => {
+  const [accounts, setAccounts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
   const [isAddOpen, setIsAddOpen] = useState(false);
-  const navigate = useNavigate();
+
+  const fetchAccounts = async () => {
+    try {
+      setLoading(true);
+      const res = await getBankAccounts();
+      if (res.success) setAccounts(res.data);
+    } catch (err) {
+      console.error('Failed to fetch bank accounts:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAccounts();
+  }, []);
+
+  const handleDelete = async (id) => {
+    if (window.confirm('Are you sure you want to delete this bank account?')) {
+      try {
+        await deleteBankAccount(id);
+        fetchAccounts();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+  };
+
+  const filteredAccounts = accounts.filter(a =>
+    (a.accountName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (a.accountNumber || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (a.bankName || '').toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <DashboardLayout>
       <div className={styles.pageHeader}>
         <div>
           <h1 className={styles.title}>Bank Accounts</h1>
-          <p className={styles.subtitle}>Manage your Accounts List</p>
+          <p className={styles.subtitle}>Manage Bank Accounts & Balances</p>
         </div>
         <div className={styles.headerActions}>
-          <button className={styles.iconBtn}><FileText size={18} color="#EA5455" /></button>
-          <button className={styles.iconBtn}><FileSpreadsheet size={18} color="#28C76F" /></button>
-          <button className={styles.iconBtn}><RefreshCw size={18} /></button>
-          <button className={styles.iconBtn}><ChevronUp size={18} /></button>
+          <button className={styles.iconBtn} onClick={fetchAccounts}><RefreshCw size={18} /></button>
           <button className={styles.btnPrimary} onClick={() => setIsAddOpen(true)}>
-            + Add Account
+            <PlusCircle size={18} /> Add Account
           </button>
         </div>
-      </div>
-
-      <div style={{display: 'flex', gap: '0.5rem', marginBottom: '1.5rem'}}>
-        <button style={{backgroundColor: '#FF9F43', color: 'white', border: 'none', borderRadius: '4px', padding: '0.5rem 1rem', fontSize: '0.875rem', fontWeight: 500, cursor: 'pointer'}}>Bank Accounts</button>
-        <button onClick={() => navigate('/account-type')} style={{backgroundColor: '#E5E7EB', color: '#4B5563', border: 'none', borderRadius: '4px', padding: '0.5rem 1rem', fontSize: '0.875rem', fontWeight: 500, cursor: 'pointer'}}>Account Type</button>
       </div>
 
       <Card className={styles.tableCard}>
         <div className={styles.filterBar}>
           <div className={styles.searchBox}>
             <Search size={18} className={styles.searchIcon} />
-            <input type="text" placeholder="Search" />
-          </div>
-          <div className={styles.filters}>
-            <select className={styles.select}>
-              <option>Status</option>
-            </select>
-            <select className={styles.select}>
-              <option>Sort By : Latest</option>
-            </select>
+            <input 
+              type="text" 
+              placeholder="Search Account Name, Number or Bank" 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
           </div>
         </div>
 
@@ -56,64 +80,49 @@ const BankAccountsList = () => {
                 <th><input type="checkbox" /></th>
                 <th>Account Holder Name</th>
                 <th>Account No</th>
-                <th>Type</th>
-                <th>Opening Balance</th>
-                <th>Notes</th>
+                <th>Bank Name</th>
+                <th>Balance</th>
                 <th>Status</th>
                 <th>Action</th>
               </tr>
             </thead>
             <tbody>
-              {[
-                { name: 'Zephyr Indira', no: '3298784309485', type: 'Savings Account', bal: '$200', notes: 'Account for Business', status: 'Active' },
-                { name: 'Quillon Elysia', no: '5475878970090', type: 'Current Account', bal: '$50', notes: 'Account for Business', status: 'Closed' },
-                { name: 'Thaddeus Juniper', no: '3255465758698', type: 'Salary Account', bal: '$800', notes: 'Current Account', status: 'Active' },
-                { name: 'Orion Astrid', no: '4353689870544', type: 'Current Account', bal: '$100', notes: 'Account for Business', status: 'Active' },
-                { name: 'Caspian Marigold', no: '4324356677889', type: 'Current Account', bal: '$700', notes: 'Account for Business', status: 'Active' },
-                { name: 'Emma James', no: '2343547586900', type: 'Salary Account', bal: '$1000', notes: 'Account for Business', status: 'Active' },
-                { name: 'Olivia Ethan', no: '3453647664889', type: 'Current Account', bal: '$1200', notes: 'A type of bank account.', status: 'Active' },
-                { name: 'Sophia Liam', no: '3354456565687', type: 'Current Account', bal: '$750', notes: 'Account for Business', status: 'Closed' },
-                { name: 'Ava Mason', no: '3456565767787', type: 'Salary Account', bal: '$450', notes: 'A type of bank account.', status: 'Active' },
-                { name: 'Isabella Jackson', no: '3434565776768', type: 'Salary Account', bal: '$300', notes: 'A type of bank account.', status: 'Active' },
-              ].map((item, i) => (
-                <tr key={i}>
-                  <td><input type="checkbox" /></td>
-                  <td style={{color: '#1B2850', fontWeight: 500}}>{item.name}</td>
-                  <td>{item.no}</td>
-                  <td>{item.type}</td>
-                  <td>{item.bal}</td>
-                  <td style={{color: '#6B7280'}}>{item.notes}</td>
-                  <td>
-                    <span style={{
-                      backgroundColor: item.status === 'Active' ? '#28C76F' : '#EA5455', 
-                      color: 'white', padding: '4px 8px', borderRadius: '4px', fontSize: '12px'
-                    }}>{item.status}</span>
-                  </td>
-                  <td>
-                    <div className={styles.actionCell}>
-                      <button className={styles.actionBtn}><Edit size={16} /></button>
-                      <button className={`${styles.actionBtn} ${styles.danger}`}><Trash2 size={16} /></button>
-                    </div>
-                  </td>
+              {loading ? (
+                <tr>
+                  <td colSpan="7" style={{textAlign: 'center', padding: '2rem'}}>Loading Bank Accounts...</td>
                 </tr>
-              ))}
+              ) : filteredAccounts.length === 0 ? (
+                <tr>
+                  <td colSpan="7" style={{textAlign: 'center', padding: '2rem'}}>No bank accounts found</td>
+                </tr>
+              ) : (
+                filteredAccounts.map((item) => (
+                  <tr key={item._id}>
+                    <td><input type="checkbox" /></td>
+                    <td style={{color: '#1B2850', fontWeight: 600}}>{item.accountName}</td>
+                    <td>{item.accountNumber}</td>
+                    <td>{item.bankName}</td>
+                    <td style={{color: '#28C76F', fontWeight: 600}}>₹{item.balance}</td>
+                    <td>
+                      <span style={{backgroundColor: '#28C76F', color: 'white', padding: '4px 8px', borderRadius: '4px', fontSize: '12px'}}>{item.status || 'Active'}</span>
+                    </td>
+                    <td>
+                      <button 
+                        style={{border: 'none', background: 'none', cursor: 'pointer', color: '#EA5455'}}
+                        onClick={() => handleDelete(item._id)}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
-
-        <div className={styles.pagination}>
-           <div className={styles.pageInfo}>
-              Row Per Page <select style={{margin: '0 0.5rem', padding: '0.25rem', border: '1px solid #e5e7eb', borderRadius: '4px'}}><option>10</option></select> Entries
-           </div>
-           <div className={styles.pageControls}>
-              <button className={styles.pageBtn}>&lt;</button>
-              <button className={`${styles.pageBtn} ${styles.activePage}`} style={{backgroundColor: '#FF9F43', color: 'white', border: 'none'}}>1</button>
-              <button className={styles.pageBtn}>&gt;</button>
-           </div>
-        </div>
       </Card>
-      
-      <AddAccountModal isOpen={isAddOpen} onClose={() => setIsAddOpen(false)} />
+
+      <AddAccountModal isOpen={isAddOpen} onClose={() => { setIsAddOpen(false); fetchAccounts(); }} />
     </DashboardLayout>
   );
 };

@@ -104,3 +104,61 @@ ul {
 .rounded-full { border-radius: var(--radius-full); }
 
 .bg-white { background-color: var(--bg-white); }
+
+/* Premium Input & Select Form Field Styles (scoped to forms and modals) */
+form input[type="text"],
+form input[type="email"],
+form input[type="password"],
+form input[type="number"],
+form input[type="tel"],
+form select,
+form textarea,
+[class*="formGroup"] input,
+[class*="formGroup"] select,
+[class*="formGroup"] textarea,
+[class*="modal"] input[type="text"],
+[class*="modal"] input[type="email"],
+[class*="modal"] input[type="password"],
+[class*="modal"] input[type="number"],
+[class*="modal"] input[type="tel"],
+[class*="modal"] select,
+[class*="modal"] textarea {
+  width: 100%;
+  padding: 0.75rem 1rem !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--radius-md) !important;
+  outline: none !important;
+  font-family: var(--font-family) !important;
+  font-size: 0.875rem !important;
+  background-color: var(--bg-white) !important;
+  color: var(--text-dark) !important;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+  box-sizing: border-box;
+  height: auto;
+}
+
+form input[type="text"]:focus,
+form input[type="email"]:focus,
+form input[type="password"]:focus,
+form input[type="number"]:focus,
+form input[type="tel"]:focus,
+form select:focus,
+form textarea:focus,
+[class*="formGroup"] input:focus,
+[class*="formGroup"] select:focus,
+[class*="formGroup"] textarea:focus,
+[class*="modal"] input:focus,
+[class*="modal"] select:focus,
+[class*="modal"] textarea:focus {
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 0 0 3px var(--color-primary-light) !important;
+}
+
+form input[type="checkbox"], form input[type="radio"],
+[class*="modal"] input[type="checkbox"], [class*="modal"] input[type="radio"] {
+  width: auto !important;
+  height: auto !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+}
+

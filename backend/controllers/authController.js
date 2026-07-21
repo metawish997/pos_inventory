@@ -95,4 +95,34 @@ const getMe = async (req, res) => {
     res.status(200).json({ user: req.user });
 };
 
-module.exports = { register, login, getMe };
+const updateProfile = async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id);
+        if (!user) return res.status(404).json({ message: 'User not found' });
+
+        const { firstName, lastName, name, phone, email, password } = req.body;
+        if (firstName) user.firstName = firstName;
+        if (lastName) user.lastName = lastName;
+        if (name && !firstName) user.name = name;
+        if (phone) user.phone = phone;
+        if (email) user.email = email;
+        if (password) user.password = password;
+
+        await user.save();
+        res.status(200).json({
+            message: 'Profile updated successfully',
+            user: {
+                id: user._id,
+                name: user.name,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                email: user.email,
+                phone: user.phone
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+module.exports = { register, login, getMe, updateProfile };

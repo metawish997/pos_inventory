@@ -22,6 +22,7 @@ const vendorSchema = new mongoose.Schema({
     creditLimit: { type: Number, default: 0 },
     openingBalance: { type: Number, default: 0 },
     status: { type: String, enum: ['Active', 'Inactive'], default: 'Active' },
+    type: { type: String, enum: ['supplier', 'biller', 'vendor'], default: 'supplier' },
     notes: { type: String, default: '' }
 }, { timestamps: true });
 

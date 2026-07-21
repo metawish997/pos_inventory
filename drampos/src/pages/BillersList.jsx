@@ -1,23 +1,77 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import Card from '../components/ui/Card';
 import styles from './ProductList.module.css';
-import { Search, FileText, FileSpreadsheet, RefreshCw, ChevronUp, Eye, Edit, Trash2 } from 'lucide-react';
+import { Search, FileText, FileSpreadsheet, RefreshCw, ChevronUp, Edit, Trash2 } from 'lucide-react';
+import { API_BASE_URL } from '../api/endpoints';
+import AddBillerModal from '../components/modals/AddBillerModal';
 
 const BillersList = () => {
+  const [billers, setBillers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('Status');
+  const [isAddOpen, setIsAddOpen] = useState(false);
+  const [editingBiller, setEditingBiller] = useState(null);
+
+  const fetchBillers = async () => {
+    try {
+      setLoading(true);
+      const params = new URLSearchParams();
+      params.append('type', 'biller');
+      if (searchTerm) params.append('search', searchTerm);
+      if (statusFilter && statusFilter !== 'Status') params.append('status', statusFilter);
+
+      const res = await fetch(`${API_BASE_URL}/vendors?${params.toString()}`);
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        setBillers(data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch billers:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchBillers();
+  }, [searchTerm, statusFilter]);
+
+  const handleDelete = async (id) => {
+    if (window.confirm('Are you sure you want to delete this biller?')) {
+      try {
+        await fetch(`${API_BASE_URL}/vendors/${id}`, { method: 'DELETE' });
+        fetchBillers();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+  };
+
+  const openAddModal = () => {
+    setEditingBiller(null);
+    setIsAddOpen(true);
+  };
+
+  const openEditModal = (biller) => {
+    setEditingBiller(biller);
+    setIsAddOpen(true);
+  };
+
   return (
     <DashboardLayout>
       <div className={styles.pageHeader}>
         <div>
           <h1 className={styles.title}>Billers</h1>
-          <p className={styles.subtitle}>Manage your billers</p>
+          <p className={styles.subtitle}>Manage your billers directory</p>
         </div>
         <div className={styles.headerActions}>
           <button className={styles.iconBtn}><FileText size={18} color="#EA5455" /></button>
           <button className={styles.iconBtn}><FileSpreadsheet size={18} color="#28C76F" /></button>
-          <button className={styles.iconBtn}><RefreshCw size={18} /></button>
+          <button className={styles.iconBtn} onClick={fetchBillers}><RefreshCw size={18} /></button>
           <button className={styles.iconBtn}><ChevronUp size={18} /></button>
-          <button className={styles.btnPrimary} style={{backgroundColor: '#FF9F43', color: 'white', border: 'none'}}>
+          <button className={styles.btnPrimary} onClick={openAddModal} style={{backgroundColor: '#FF9F43', color: 'white', border: 'none'}}>
             + Add Biller
           </button>
         </div>
@@ -27,11 +81,22 @@ const BillersList = () => {
         <div className={styles.filterBar}>
           <div className={styles.searchBox}>
             <Search size={18} className={styles.searchIcon} />
-            <input type="text" placeholder="Search" />
+            <input 
+              type="text" 
+              placeholder="Search by biller name, company or code" 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
           </div>
           <div className={styles.filters}>
-            <select className={styles.select}>
-              <option>Status</option>
+            <select 
+              className={styles.select}
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              <option value="Status">All Status</option>
+              <option value="Active">Active</option>
+              <option value="Inactive">Inactive</option>
             </select>
           </div>
         </div>
@@ -52,53 +117,52 @@ const BillersList = () => {
               </tr>
             </thead>
             <tbody>
-              {[
-                { code: 'BI001', name: 'Shaun Farley', company: 'GreenTech Industries', email: 'shaun@example.com', phone: '+18647961254', country: 'USA', status: 'Active', avatar: 'https://i.pravatar.cc/150?img=21' },
-                { code: 'BI002', name: 'Jenny Ellis', company: 'BlueSky Logistics', email: 'jenny@example.com', phone: '+13197521863', country: 'Germany', status: 'Active', avatar: 'https://i.pravatar.cc/150?img=22' },
-                { code: 'BI003', name: 'Leon Baxter', company: 'EcoFarm Organics', email: 'leon@example.com', phone: '+18496275831', country: 'Japan', status: 'Active', avatar: 'https://i.pravatar.cc/150?img=23' },
-                { code: 'BI004', name: 'Karen Flores', company: 'SmartTech Solutions', email: 'karen@example.com', phone: '+18731498524', country: 'Austria', status: 'Active', avatar: 'https://i.pravatar.cc/150?img=24' },
-                { code: 'BI005', name: 'Michael Dawson', company: 'Fresh Supplies', email: 'michael@example.com', phone: '+12876928738', country: 'Turkey', status: 'Active', avatar: 'https://i.pravatar.cc/150?img=25' },
-                { code: 'BI006', name: 'Karen Galvan', company: 'BrightSource Lighting', email: 'karen@example.com', phone: '+17534896148', country: 'Mexico', status: 'Active', avatar: 'https://i.pravatar.cc/150?img=26' },
-                { code: 'BI007', name: 'Thomas Ward', company: 'GlobalTech Industries', email: 'thomas@example.com', phone: '+16482479624', country: 'France', status: 'Active', avatar: 'https://i.pravatar.cc/150?img=27' },
-                { code: 'BI008', name: 'Aliza Duncan', company: 'HealthWell Pharma', email: 'aliza@example.com', phone: '+13175964827', country: 'Greece', status: 'Active', avatar: 'https://i.pravatar.cc/150?img=28' },
-                { code: 'BI009', name: 'James Higham', company: 'HomeStyle Furnishings', email: 'james@example.com', phone: '+13875196482', country: 'Italy', status: 'Active', avatar: 'https://i.pravatar.cc/150?img=29' },
-                { code: 'BI010', name: 'Jada Robinson', company: 'EcoLogistics Partners', email: 'robinson@example.com', phone: '+17586143284', country: 'China', status: 'Active', avatar: 'https://i.pravatar.cc/150?img=30' },
-              ].map((item, i) => (
-                <tr key={i}>
-                  <td><input type="checkbox" /></td>
-                  <td style={{color: '#6B7280'}}>{item.code}</td>
-                  <td>
-                    <div style={{display: 'flex', alignItems: 'center', gap: '0.75rem'}}>
-                      <img src={item.avatar} alt={item.name} style={{width: '32px', height: '32px', borderRadius: '4px', objectFit: 'cover'}} />
-                      <span style={{color: '#1B2850', fontWeight: 500}}>{item.name}</span>
-                    </div>
-                  </td>
-                  <td style={{color: '#6B7280'}}>{item.company}</td>
-                  <td style={{color: '#6B7280'}}>{item.email}</td>
-                  <td style={{color: '#6B7280'}}>{item.phone}</td>
-                  <td style={{color: '#6B7280'}}>{item.country}</td>
-                  <td>
-                    <span style={{
-                      backgroundColor: item.status === 'Active' ? '#28C76F' : '#EA5455', 
-                      color: 'white', padding: '4px 8px', borderRadius: '4px', fontSize: '12px'
-                    }}>&bull; {item.status}</span>
-                  </td>
-                  <td>
-                    <div className={styles.actionCell}>
-                      <button className={styles.actionBtn}><Eye size={16} /></button>
-                      <button className={styles.actionBtn}><Edit size={16} /></button>
-                      <button className={`${styles.actionBtn} ${styles.danger}`}><Trash2 size={16} /></button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {loading ? (
+                <tr><td colSpan="9" style={{textAlign: 'center', padding: '2rem'}}>Loading billers...</td></tr>
+              ) : billers.length === 0 ? (
+                <tr><td colSpan="9" style={{textAlign: 'center', padding: '2rem'}}>No billers found. Click "+ Add Biller" to create one!</td></tr>
+              ) : (
+                billers.map((item) => (
+                  <tr key={item._id}>
+                    <td><input type="checkbox" /></td>
+                    <td style={{color: '#6B7280', fontWeight: 500}}>{item.vendorCode || 'BIL-001'}</td>
+                    <td>
+                      <div style={{display: 'flex', alignItems: 'center', gap: '0.75rem'}}>
+                        <div style={{
+                          width: '32px', height: '32px', borderRadius: '4px', backgroundColor: '#7367F0', 
+                          color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold'
+                        }}>
+                          {(item.vendorName || 'B')[0]}
+                        </div>
+                        <span style={{color: '#1B2850', fontWeight: 500}}>{item.vendorName}</span>
+                      </div>
+                    </td>
+                    <td style={{color: '#6B7280'}}>{item.companyName || 'N/A'}</td>
+                    <td style={{color: '#6B7280'}}>{item.email || 'N/A'}</td>
+                    <td style={{color: '#6B7280'}}>{item.mobile || item.phone || 'N/A'}</td>
+                    <td style={{color: '#6B7280'}}>{item.country || 'N/A'}</td>
+                    <td>
+                      <span style={{
+                        backgroundColor: item.status === 'Active' ? '#28C76F' : '#EA5455', 
+                        color: 'white', padding: '4px 8px', borderRadius: '4px', fontSize: '12px'
+                      }}>&bull; {item.status}</span>
+                    </td>
+                    <td>
+                      <div className={styles.actionCell}>
+                        <button className={styles.actionBtn} onClick={() => openEditModal(item)}><Edit size={16} /></button>
+                        <button className={`${styles.actionBtn} ${styles.danger}`} onClick={() => handleDelete(item._id)}><Trash2 size={16} /></button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
 
         <div className={styles.pagination}>
            <div className={styles.pageInfo}>
-              Row Per Page <select style={{margin: '0 0.5rem', padding: '0.25rem', border: '1px solid #e5e7eb', borderRadius: '4px'}}><option>10</option></select> Entries
+              Showing <strong>{billers.length}</strong> Entries
            </div>
            <div className={styles.pageControls}>
               <button className={styles.pageBtn}>&lt;</button>
@@ -107,7 +171,13 @@ const BillersList = () => {
            </div>
         </div>
       </Card>
-      
+
+      <AddBillerModal 
+        isOpen={isAddOpen} 
+        onClose={() => setIsAddOpen(false)} 
+        billerToEdit={editingBiller}
+        onSuccess={fetchBillers}
+      />
     </DashboardLayout>
   );
 };

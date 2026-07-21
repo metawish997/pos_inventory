@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Modal from '../ui/Modal';
 import { Delete } from 'lucide-react';
 
@@ -6,22 +6,25 @@ const POSCalculatorModal = ({ isOpen, onClose }) => {
   const [display, setDisplay] = useState('0');
 
   const handlePress = (val) => {
-    if (display === '0' && val !== '.') {
-      setDisplay(val);
-    } else {
-      setDisplay(display + val);
-    }
+    setDisplay(prev => {
+      if (prev === '0' && val !== '.') {
+        return val;
+      } else {
+        return prev + val;
+      }
+    });
   };
 
   const calculate = () => {
-    try {
-      // Replace x and ÷ with * and / for evaluation
-      const expression = display.replace(/x/g, '*').replace(/÷/g, '/');
-      const result = eval(expression);
-      setDisplay(String(result));
-    } catch (e) {
-      setDisplay('Error');
-    }
+    setDisplay(prev => {
+      try {
+        const expression = prev.replace(/x/g, '*').replace(/÷/g, '/');
+        const result = eval(expression);
+        return String(result);
+      } catch (e) {
+        return 'Error';
+      }
+    });
   };
 
   const clear = () => {
@@ -29,12 +32,47 @@ const POSCalculatorModal = ({ isOpen, onClose }) => {
   };
 
   const backspace = () => {
-    if (display.length > 1) {
-      setDisplay(display.slice(0, -1));
-    } else {
-      setDisplay('0');
-    }
+    setDisplay(prev => {
+      if (prev.length > 1) {
+        return prev.slice(0, -1);
+      } else {
+        return '0';
+      }
+    });
   };
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e) => {
+      const { key } = e;
+      if (key >= '0' && key <= '9') {
+        handlePress(key);
+      } else if (key === '.' || key === ',') {
+        handlePress('.');
+      } else if (key === '+' || key === '-') {
+        handlePress(key);
+      } else if (key === '*' || key === 'x' || key === 'X') {
+        handlePress('x');
+      } else if (key === '/') {
+        handlePress('÷');
+      } else if (key === '%') {
+        handlePress('%');
+      } else if (key === 'Enter' || key === '=') {
+        e.preventDefault();
+        calculate();
+      } else if (key === 'Backspace') {
+        backspace();
+      } else if (key === 'Escape' || key === 'c' || key === 'C') {
+        clear();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen]);
 
   const buttons = [
     { label: 'C', type: 'action', onClick: clear },
@@ -83,7 +121,8 @@ const POSCalculatorModal = ({ isOpen, onClose }) => {
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(4, 1fr)',
-          gap: '1rem'
+          gap: '1rem',
+          justifyItems: 'center'
         }}>
           {buttons.map((btn, index) => (
             <button
@@ -102,8 +141,7 @@ const POSCalculatorModal = ({ isOpen, onClose }) => {
                 fontSize: '1.25rem',
                 fontWeight: '600',
                 cursor: 'pointer',
-                margin: '0 auto',
-                boxShadow: btn.type === 'number' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none'
+                boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)'
               }}
             >
               {btn.label}

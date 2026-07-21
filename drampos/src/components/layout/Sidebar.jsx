@@ -15,26 +15,49 @@ const Sidebar = ({ isCollapsed, isMobileOpen, closeMobile }) => {
 
   const [isScrolling, setIsScrolling] = React.useState(false);
   const scrollTimeout = React.useRef(null);
+  const asideRef = React.useRef(null);
 
   const handleScroll = () => {
     setIsScrolling(true);
+    if (asideRef.current) {
+      sessionStorage.setItem('sidebarScrollPos', asideRef.current.scrollTop);
+    }
     if (scrollTimeout.current) {
       clearTimeout(scrollTimeout.current);
     }
     scrollTimeout.current = setTimeout(() => {
       setIsScrolling(false);
-    }, 1000); // Hide after 1 second of inactivity
+    }, 1000);
   };
+
+  React.useEffect(() => {
+    if (asideRef.current) {
+      const savedPos = sessionStorage.getItem('sidebarScrollPos');
+      if (savedPos !== null) {
+        asideRef.current.scrollTop = parseInt(savedPos, 10);
+      }
+      
+      setTimeout(() => {
+        if (asideRef.current) {
+          const activeEl = asideRef.current.querySelector(`.${styles.active}`);
+          if (activeEl) {
+            activeEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+          }
+        }
+      }, 50);
+    }
+  }, [location.pathname]);
 
   return (
     <aside
+      ref={asideRef}
       className={`${styles.sidebar} ${isScrolling ? styles.isScrolling : ''} ${isCollapsed ? styles.collapsed : ''} ${isMobileOpen ? styles.mobileOpen : ''}`}
       onScroll={handleScroll}
     >
       <div className={styles.mobileHeader}>
         <div className={styles.mobileLogo}>
           <div className={styles.logoIcon}></div>
-          <h2>Dreams POS</h2>
+          <h2>Eronix POS</h2>
         </div>
         <button className={styles.closeBtn} onClick={closeMobile}>
           <X size={24} />
@@ -476,19 +499,11 @@ const Sidebar = ({ isCollapsed, isMobileOpen, closeMobile }) => {
               <span>Profile</span>
             </NavLink>
           </li>
-          <li>
-            <NavLink to="/signin" className={({ isActive }) => isActive ? `${styles.menuItem} ${styles.active}` : styles.menuItem}>
-              <UserPlus size={18} />
-              <span>Authentication</span>
-            </NavLink>
-          </li>
-          <li>
-            <NavLink to="/error-404" className={({ isActive }) => isActive ? `${styles.menuItem} ${styles.active}` : styles.menuItem}>
-              <UserPlus size={18} />
-              <span>Error Pages</span>
-            </NavLink>
-          </li>
         </ul>
+      </div>
+
+      <div style={{ padding: '1.25rem 1.5rem', fontSize: '0.75rem', color: '#9CA3AF', borderTop: '1px solid #F3F4F6', marginTop: 'auto' }}>
+        Developed & Maintained by <a href="https://www.metawish.ai" target="_blank" rel="noopener noreferrer" style={{ color: '#FF9F43', fontWeight: 600, textDecoration: 'none' }}>Metawish</a>
       </div>
     </aside>
   );

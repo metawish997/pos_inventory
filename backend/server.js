@@ -13,6 +13,10 @@ const vendorRoutes = require('./routes/vendorRoutes');
 const purchaseRoutes = require('./routes/purchaseRoutes');
 const purchaseReturnRoutes = require('./routes/purchaseReturnRoutes');
 const purchaseReportRoutes = require('./routes/purchaseReportRoutes');
+const saleRoutes = require('./routes/saleRoutes');
+const promoRoutes = require('./routes/promoRoutes');
+const financeRoutes = require('./routes/financeRoutes');
+const userRoutes = require('./routes/userRoutes');
 const path = require('path');
 
 const app = express();
@@ -27,6 +31,11 @@ app.use('/api/vendors', vendorRoutes);
 app.use('/api/purchases', purchaseRoutes);
 app.use('/api/purchase-returns', purchaseReturnRoutes);
 app.use('/api/purchase-reports', purchaseReportRoutes);
+app.use('/api/sales', saleRoutes);
+app.use('/api/promo', promoRoutes);
+app.use('/api/finance', financeRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/customers', require('./routes/customerRoutes'));
 
 // Serve uploads folder statically
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));

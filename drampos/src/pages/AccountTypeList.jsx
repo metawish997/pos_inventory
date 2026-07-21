@@ -1,12 +1,39 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import Card from '../components/ui/Card';
 import styles from './ProductList.module.css';
-import { Search, RefreshCw, ChevronUp, Edit, Trash2 } from 'lucide-react';
+import { Search, RefreshCw, ChevronUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { getBankAccounts } from '../services/financeService';
 
 const AccountTypeList = () => {
   const navigate = useNavigate();
+  const [accounts, setAccounts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const fetchTypes = async () => {
+    try {
+      setLoading(true);
+      const res = await getBankAccounts();
+      if (res.success) {
+        setAccounts(res.data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch account types:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchTypes();
+  }, []);
+
+  const filtered = accounts.filter(acc =>
+    (acc.accountName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (acc.accountNo || '').toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <DashboardLayout>
@@ -16,11 +43,8 @@ const AccountTypeList = () => {
           <p className={styles.subtitle}>Manage your Accounts Type</p>
         </div>
         <div className={styles.headerActions}>
-          <button className={styles.iconBtn}><RefreshCw size={18} /></button>
+          <button className={styles.iconBtn} onClick={fetchTypes}><RefreshCw size={18} /></button>
           <button className={styles.iconBtn}><ChevronUp size={18} /></button>
-          <button className={styles.btnPrimary}>
-            + Add Account Type
-          </button>
         </div>
       </div>
 
@@ -33,12 +57,12 @@ const AccountTypeList = () => {
         <div className={styles.filterBar}>
           <div className={styles.searchBox}>
             <Search size={18} className={styles.searchIcon} />
-            <input type="text" placeholder="Search" />
-          </div>
-          <div className={styles.filters}>
-            <select className={styles.select}>
-              <option>Status</option>
-            </select>
+            <input 
+              type="text" 
+              placeholder="Search Account Type" 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
           </div>
         </div>
 
@@ -46,40 +70,36 @@ const AccountTypeList = () => {
           <table className={styles.productTable}>
             <thead>
               <tr>
-                <th>Type</th>
+                <th>Account Name</th>
+                <th>Account Number</th>
                 <th>Created Date</th>
                 <th>Status</th>
-                <th>Action</th>
               </tr>
             </thead>
             <tbody>
-              {[
-                { type: 'Savings account', date: '24 Dec 2024', status: 'Active' },
-                { type: 'Current Account', date: '10 Dec 2024', status: 'Inactive' },
-                { type: 'Salary Account', date: '27 Nov 2024', status: 'Active' },
-              ].map((item, i) => (
-                <tr key={i}>
-                  <td style={{color: '#6B7280'}}>{item.type}</td>
-                  <td>{item.date}</td>
-                  <td>
-                    <span style={{
-                      backgroundColor: item.status === 'Active' ? '#28C76F' : '#EA5455', 
-                      color: 'white', padding: '4px 8px', borderRadius: '4px', fontSize: '12px'
-                    }}>{item.status}</span>
-                  </td>
-                  <td>
-                    <div className={styles.actionCell}>
-                      <button className={styles.actionBtn}><Edit size={16} /></button>
-                      <button className={`${styles.actionBtn} ${styles.danger}`}><Trash2 size={16} /></button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {loading ? (
+                <tr><td colSpan="4" style={{textAlign: 'center', padding: '2rem'}}>Loading Account Types...</td></tr>
+              ) : filtered.length === 0 ? (
+                <tr><td colSpan="4" style={{textAlign: 'center', padding: '2rem'}}>No Accounts Found</td></tr>
+              ) : (
+                filtered.map((item) => (
+                  <tr key={item._id}>
+                    <td style={{color: '#1B2850', fontWeight: 500}}>{item.accountName}</td>
+                    <td style={{color: '#6B7280'}}>{item.accountNo}</td>
+                    <td>{new Date(item.createdAt).toLocaleDateString()}</td>
+                    <td>
+                      <span style={{
+                        backgroundColor: '#28C76F', 
+                        color: 'white', padding: '4px 8px', borderRadius: '4px', fontSize: '12px'
+                      }}>&bull; Active</span>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
       </Card>
-      
     </DashboardLayout>
   );
 };

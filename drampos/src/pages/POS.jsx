@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import styles from './POS.module.css';
 import { 
@@ -12,10 +12,22 @@ import POSCashRegisterModal from '../components/modals/POSCashRegisterModal';
 import POSCalculatorModal from '../components/modals/POSCalculatorModal';
 import POSTodaysSaleModal from '../components/modals/POSTodaysSaleModal';
 import POSTodaysProfitModal from '../components/modals/POSTodaysProfitModal';
+import { getAllProducts } from '../services/productService';
+import { createSale } from '../services/salesService';
+import { getCategories } from '../services/inventoryService';
 
 const POS = () => {
   const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState('All Categories');
+  const [categories, setCategories] = useState(['All Categories']);
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [cartItems, setCartItems] = useState([]);
+  const [customerName, setCustomerName] = useState('Walk-in Customer');
+  const [paymentMethod, setPaymentMethod] = useState('Cash');
+  const [availablePaymentMethods, setAvailablePaymentMethods] = useState(['Cash', 'Card', 'UPI', 'Bank Transfer']);
+
   const [isHoldOpen, setIsHoldOpen] = useState(false);
   const [isDiscountOpen, setIsDiscountOpen] = useState(false);
   const [isCustomerOpen, setIsCustomerOpen] = useState(false);
@@ -25,9 +37,57 @@ const POS = () => {
   const [isTodaysProfitOpen, setIsTodaysProfitOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
-  const userDropdownRef = React.useRef(null);
+  const userDropdownRef = useRef(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
+    const fetchProductsData = async () => {
+      try {
+        setLoading(true);
+        const res = await getAllProducts();
+        if (res.success || Array.isArray(res.products) || Array.isArray(res)) {
+          const prods = res.products || res.data || (Array.isArray(res) ? res : []);
+          setProducts(prods);
+        }
+      } catch (err) {
+        console.error('Failed to load products for POS:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const fetchCategoriesData = async () => {
+      try {
+        const res = await getCategories();
+        if (res.success || Array.isArray(res)) {
+          const cats = res.data || res || [];
+          setCategories(['All Categories', ...cats.map(c => c.name || c.categoryName)]);
+        }
+      } catch (err) {
+        console.error('Failed to load categories for POS:', err);
+      }
+    };
+
+    const loadSettings = () => {
+      const saved = localStorage.getItem('pos_settings');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (parsed.paymentMethods && parsed.paymentMethods.length > 0) {
+            setAvailablePaymentMethods(parsed.paymentMethods);
+            setPaymentMethod(parsed.paymentMethods[0]);
+          }
+        } catch (e) {
+          console.error('Failed to load POS settings', e);
+        }
+      }
+    };
+
+    fetchProductsData();
+    fetchCategoriesData();
+    loadSettings();
+  }, []);
+
+  useEffect(() => {
     const handleFullscreenChange = () => {
       setIsFullscreen(!!document.fullscreenElement);
     };
@@ -58,32 +118,78 @@ const POS = () => {
     }
   };
 
-  const categories = ['All Categories', 'Headphones', 'Shoes', 'Mobiles', 'Watches', 'Laptops', 'Home Needs'];
-  
-  const products = [
-    { name: 'Charger Cable', price: '$30', qty: '40 Pcs', img: 'charger.jpg', selected: false },
-    { name: 'Apple Airpods 2', price: '$120', qty: '25 Pcs', img: 'airpods.jpg', selected: true },
-    { name: 'Vacuum Cleaner', price: '$800', qty: '12 Pcs', img: 'vacuum.jpg', selected: false },
-    { name: 'Realme 8 Pro', price: '$700', qty: '18 Pcs', img: 'realme.jpg', selected: false },
-    { name: 'Vacuum Robot', price: '$600', qty: '35 Pcs', img: 'vacuumrobot.jpg', selected: false },
-    { name: 'Apple Watch Series 9', price: '$300', qty: '08 Pcs', img: 'watch1.jpg', selected: false },
-    { name: 'Apple Watch Series 9', price: '$300', qty: '08 Pcs', img: 'watch2.jpg', selected: false },
-    { name: 'Bracelet', price: '$1430', qty: '13 Pcs', img: 'bracelet.jpg', selected: false },
-    { name: 'YETI Flask', price: '$1560', qty: '30 Pcs', img: 'flask.jpg', selected: false },
-    { name: 'Osmo Med Kit', price: '$410', qty: '15 Pcs', img: 'kit.jpg', selected: false },
-    { name: 'Celestique Perfume', price: '$150', qty: '45 Pcs', img: 'perfume.jpg', selected: false },
-    { name: 'Dell XPS 13', price: '$1140', qty: '22 Pcs', img: 'laptop.jpg', selected: false },
-    { name: 'Cheese Snack', price: '$15', qty: '55 Pcs', img: 'cheese.jpg', selected: false },
-    { name: 'Blue Boot Shoes', price: '$320', qty: '30 Pcs', img: 'shoes.jpg', selected: false },
-    { name: 'Sonic Aura X7', price: '$230', qty: '20 Pcs', img: 'headphone.jpg', selected: false },
-  ];
+  const addToCart = (product) => {
+    setCartItems(prev => {
+      const existing = prev.find(item => item.product._id === product._id);
+      if (existing) {
+        return prev.map(item => item.product._id === product._id ? { ...item, qty: item.qty + 1 } : item);
+      } else {
+        return [...prev, { product, qty: 1, price: product.sellingPrice || product.price || 100 }];
+      }
+    });
+  };
 
-  const cartItems = [
-    { name: 'Iphone 11S', price: '$400', qty: 4 },
-    { name: 'Samsung Galaxy S21', price: '$400', qty: 1 },
-    { name: 'Red Boot Shoes', price: '$600', qty: 3 },
-    { name: 'Bracelet', price: '$1400', qty: 1 },
-  ];
+  const updateQty = (productId, delta) => {
+    setCartItems(prev => prev.map(item => {
+      if (item.product._id === productId) {
+        const newQty = item.qty + delta;
+        return newQty > 0 ? { ...item, qty: newQty } : null;
+      }
+      return item;
+    }).filter(Boolean));
+  };
+
+  const removeFromCart = (productId) => {
+    setCartItems(prev => prev.filter(item => item.product._id !== productId));
+  };
+
+  const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.qty), 0);
+  const grandTotal = subtotal;
+
+  const handleCheckout = async () => {
+    if (cartItems.length === 0) {
+      alert('Cart is empty! Please add products to complete sale.');
+      return;
+    }
+    try {
+      const payload = {
+        saleType: 'POS',
+        customerName: customerName,
+        items: cartItems.map(ci => ({
+          product: ci.product._id,
+          quantity: ci.qty,
+          unitPrice: ci.price,
+          subtotal: ci.price * ci.qty,
+          total: ci.price * ci.qty
+        })),
+        subtotal: subtotal,
+        grandTotal: grandTotal,
+        paidAmount: grandTotal,
+        paymentStatus: 'Paid',
+        orderStatus: 'Completed',
+        paymentMethod: paymentMethod
+      };
+
+      const res = await createSale(payload);
+      if (res.success) {
+        alert(`POS Order #${res.data.saleNumber} completed successfully!`);
+        setCartItems([]);
+      }
+    } catch (err) {
+      alert(`Checkout failed: ${err.message}`);
+    }
+  };
+
+  const filteredProducts = products.filter(p => {
+    const matchesSearch = (p.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (p.code || '').toLowerCase().includes(searchTerm.toLowerCase());
+    
+    if (!matchesSearch) return false;
+    if (selectedCategory === 'All Categories') return true;
+
+    const pCat = p.category?.name || p.category?.categoryName || p.category;
+    return String(pCat).toLowerCase() === selectedCategory.toLowerCase();
+  });
 
   return (
     <div className={styles.posContainer}>
@@ -92,62 +198,20 @@ const POS = () => {
       <header className={styles.header}>
         <div className={styles.headerLeft}>
           <div className={styles.logo}>
-            <span>D</span>reams POS
-          </div>
-          <div className={styles.clock}>
-            ⏱ 09:25:32
+            <span>E</span>ronix POS
           </div>
         </div>
         
         <div className={styles.headerRight}>
           <Link to="/" className={styles.dashboardBtn}>Dashboard</Link>
-          <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem', border: '1px solid #E5E7EB', padding: '0.25rem 0.5rem', borderRadius: '4px', backgroundColor: 'white'}}>
-             <img src="https://flagcdn.com/w20/in.png" alt="flag" style={{width: '20px'}} /> Freshmart
-          </div>
           <button className={styles.iconBtn} style={{backgroundColor: '#EA5455', color: 'white', border: 'none'}} onClick={() => setIsCalculatorOpen(true)}><Calculator size={16} /></button>
           <button className={styles.iconBtn} onClick={toggleFullscreen}>
             {isFullscreen ? <Minimize size={16} /> : <Maximize size={16} />}
           </button>
           <button className={styles.iconBtn} onClick={() => setIsCashRegisterOpen(true)}><Box size={16} /></button>
-          <button className={styles.iconBtn}><Printer size={16} /></button>
           <button className={styles.iconBtn} onClick={() => setIsTodaysSaleOpen(true)}><RefreshCw size={16} /></button>
           <button className={styles.iconBtn} onClick={() => setIsTodaysProfitOpen(true)}><TrendingUp size={16} /></button>
           <button className={styles.iconBtn} onClick={() => navigate('/pos-settings')}><Settings size={16} /></button>
-          <div className={styles.profile} ref={userDropdownRef}>
-            <div 
-              style={{width: '36px', height: '36px', borderRadius: '50%', backgroundColor: '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', cursor: 'pointer'}}
-              onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
-            >
-              <img src="https://i.pravatar.cc/150?u=a042581f4e29026704d" alt="User" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
-            </div>
-            {isUserDropdownOpen && (
-              <div className={styles.userDropdown}>
-                <div className={styles.userInfo}>
-                  <div className={styles.userAvatar}>
-                    <img src="https://i.pravatar.cc/150?u=a042581f4e29026704d" alt="User" />
-                  </div>
-                  <div className={styles.userDetails}>
-                    <div className={styles.userName}>John Smilga</div>
-                    <div className={styles.userRole}>Admin</div>
-                  </div>
-                </div>
-                <div className={styles.userMenu}>
-                  <div className={styles.userMenuItem}>
-                    <User size={16} /> My Profile
-                  </div>
-                  <div className={styles.userMenuItem}>
-                    <FileText size={16} /> Reports
-                  </div>
-                  <div className={styles.userMenuItem}>
-                    <Settings size={16} /> Settings
-                  </div>
-                </div>
-                <div className={styles.userLogout}>
-                  <LogOut size={16} /> Logout
-                </div>
-              </div>
-            )}
-          </div>
         </div>
       </header>
 
@@ -158,15 +222,19 @@ const POS = () => {
         <div className={styles.leftPanel}>
           <div className={styles.leftHeader}>
             <div className={styles.welcome}>
-              <h2>Welcome, Wesley Adrian</h2>
-              <p>December 24, 2024</p>
+              <h2>POS Terminal</h2>
+              <p>{new Date().toLocaleDateString()}</p>
             </div>
             <div className={styles.searchSection}>
               <div className={styles.searchBox}>
                 <Search size={16} className={styles.searchIcon} />
-                <input type="text" placeholder="Search Product" />
+                <input 
+                  type="text" 
+                  placeholder="Search Product or Code..." 
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
               </div>
-              <button className={styles.viewAllBtn}>View All Categories</button>
             </div>
           </div>
 
@@ -179,21 +247,27 @@ const POS = () => {
           </div>
 
           <div className={styles.productGrid}>
-            {products.map((p, i) => (
-              <div key={i} className={`${styles.productCard} ${p.selected ? styles.selected : ''}`}>
-                <div className={styles.productImage}></div>
-                <div className={styles.addIcon}>
-                  {p.selected ? '-' : '+'}
-                </div>
-                <div className={styles.productInfo}>
-                  <p className={styles.productName}>{p.name}</p>
-                  <div className={styles.productMeta}>
-                    <span className={styles.productPrice}>{p.price}</span>
-                    <span className={styles.productStock}>{p.qty}</span>
+            {loading ? (
+              <div style={{gridColumn: '1 / -1', textAlign: 'center', padding: '3rem'}}>Loading POS Products...</div>
+            ) : filteredProducts.length === 0 ? (
+              <div style={{gridColumn: '1 / -1', textAlign: 'center', padding: '3rem'}}>No products found</div>
+            ) : (
+              filteredProducts.map((p, i) => (
+                <div key={p._id || i} className={styles.productCard} onClick={() => addToCart(p)} style={{cursor: 'pointer'}}>
+                  <div className={styles.productImage} style={{display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', fontWeight: 600}}>
+                    {(p.name || 'P')[0]}
+                  </div>
+                  <div className={styles.addIcon}>+</div>
+                  <div className={styles.productInfo}>
+                    <p className={styles.productName}>{p.name}</p>
+                    <div className={styles.productMeta}>
+                      <span className={styles.productPrice}>₹{p.sellingPrice || p.price || 100}</span>
+                      <span className={styles.productStock}>{p.quantity || 10} In Stock</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
 
@@ -203,136 +277,86 @@ const POS = () => {
           <div className={styles.cartHeader}>
             <div className={styles.orderTitleRow}>
               <div className={styles.orderTitle}>
-                New Order <span className={styles.orderBadge}>#5655898</span>
+                POS Counter Order
               </div>
               <button className={styles.addCustomerBtn} onClick={() => setIsCustomerOpen(true)}>Add Customer</button>
             </div>
-            <select style={{width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #E5E7EB', outline: 'none', color: '#4B5563'}}>
-              <option>Walk in Customer</option>
-            </select>
+            <input 
+              type="text"
+              value={customerName}
+              onChange={(e) => setCustomerName(e.target.value)}
+              placeholder="Customer Name"
+              style={{width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #E5E7EB', outline: 'none', marginTop: '0.5rem'}}
+            />
           </div>
 
           <div style={{display: 'flex', justifyContent: 'space-between', padding: '1rem', borderBottom: '1px solid #E5E7EB', color: '#1B2850', fontWeight: 600, fontSize: '0.875rem'}}>
             <span>Order Details</span>
-            <span style={{color: '#28C76F'}}>Items : 3</span>
-          </div>
-
-          <div style={{display: 'flex', padding: '0.5rem 1rem', fontSize: '0.75rem', fontWeight: 600, color: '#4B5563'}}>
-            <span style={{flex: 1}}>Product</span>
-            <span style={{width: '100px', textAlign: 'center'}}>QTY</span>
-            <span style={{width: '60px', textAlign: 'right'}}>Price</span>
-            <span style={{width: '32px'}}></span>
+            <span style={{color: '#28C76F'}}>Items: {cartItems.length}</span>
           </div>
 
           <div className={styles.cartItems}>
-            {cartItems.map((item, i) => (
-              <div key={i} className={styles.cartItem}>
-                <div className={styles.cartItemInfo}>
-                  <div className={styles.cartItemName}>
-                    {item.name} <Edit size={12} color="#9CA3AF" />
+            {cartItems.length === 0 ? (
+              <div style={{textAlign: 'center', padding: '2rem', color: '#9CA3AF'}}>Cart is empty. Click a product to add.</div>
+            ) : (
+              cartItems.map((item, i) => (
+                <div key={item.product._id || i} className={styles.cartItem}>
+                  <div className={styles.cartItemInfo}>
+                    <div className={styles.cartItemName}>{item.product.name}</div>
+                    <div className={styles.cartItemPrice}>₹{item.price}</div>
                   </div>
-                  <div className={styles.cartItemPrice}>Price : {item.price}</div>
-                </div>
-                
-                <div className={styles.qtyControl}>
-                  <button className={styles.qtyBtn}><Minus size={14} /></button>
-                  <span className={styles.qtyValue}>{item.qty}</span>
-                  <button className={styles.qtyBtn}><Plus size={14} /></button>
-                </div>
+                  
+                  <div className={styles.qtyControl}>
+                    <button className={styles.qtyBtn} onClick={() => updateQty(item.product._id, -1)}><Minus size={14} /></button>
+                    <span className={styles.qtyValue}>{item.qty}</span>
+                    <button className={styles.qtyBtn} onClick={() => updateQty(item.product._id, 1)}><Plus size={14} /></button>
+                  </div>
 
-                <div className={styles.cartItemTotal}>
-                  {item.price}
-                </div>
+                  <div className={styles.cartItemTotal}>
+                    ₹{item.price * item.qty}
+                  </div>
 
-                <button className={styles.cartItemDelete}>
-                  <Trash2 size={16} />
-                </button>
-              </div>
-            ))}
+                  <button className={styles.cartItemDelete} onClick={() => removeFromCart(item.product._id)}>
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              ))
+            )}
           </div>
 
           <div className={styles.summary}>
             <div className={styles.summaryRow}>
               <span>Sub Total</span>
-              <span>$1250</span>
+              <span>₹{subtotal}</span>
             </div>
-            <div className={styles.summaryRow}>
-              <span>Shipping</span>
-              <span>$35</span>
-            </div>
-            <div className={styles.summaryRow}>
-              <span>Tax (15%)</span>
-              <span>$25</span>
-            </div>
-            <div className={`${styles.summaryRow} ${styles.discount}`}>
-              <span>Discount (5%)</span>
-              <span>-$24</span>
-            </div>
-            
-            <div className={styles.grandTotalRow}>
+            <div className={`${styles.summaryRow} ${styles.grandTotalRow}`}>
               <span>Grand Total</span>
-              <span>$56590</span>
+              <span>₹{grandTotal}</span>
             </div>
-          </div>
-
-          <div className={styles.actionGrid}>
-            <button className={styles.actionBtn} style={{backgroundColor: '#00897B'}} onClick={() => setIsDiscountOpen(true)}>
-              % Discount
-            </button>
-            <button className={styles.actionBtn} style={{backgroundColor: '#7367F0'}}>
-              <Box size={14} /> Tax
-            </button>
-            <button className={styles.actionBtn} style={{backgroundColor: '#E83E8C'}}>
-              <Box size={14} /> Shipping
-            </button>
-            <button className={styles.actionBtn} style={{backgroundColor: '#FD7E14'}} onClick={() => setIsHoldOpen(true)}>
-              <Box size={14} /> Hold
-            </button>
-            <button className={styles.actionBtn} style={{backgroundColor: '#0D6EFD'}}>
-              <Box size={14} /> Void
-            </button>
-            <button className={styles.actionBtn} style={{backgroundColor: '#00CFE8'}}>
-              <Box size={14} /> Payment
-            </button>
-            <button className={styles.actionBtn} style={{backgroundColor: '#1B2850'}}>
-              <Box size={14} /> View Orders
-            </button>
-            <button className={styles.actionBtn} style={{backgroundColor: '#4338CA'}}>
-              <RefreshCw size={14} /> Reset
-            </button>
-            <button className={styles.actionBtn} style={{backgroundColor: '#EA5455'}}>
-              <Box size={14} /> Transaction
-            </button>
           </div>
 
           <div className={styles.paymentTypes}>
-            <div className={styles.paymentTitle}>Select Payment</div>
+            <div className={styles.paymentTitle}>Select Payment Method</div>
             <div className={styles.paymentOptions}>
-              <div className={styles.paymentOption}>
-                <span style={{fontSize: '1.5rem'}}>💵</span>
-                <span>Cash</span>
-              </div>
-              <div className={styles.paymentOption}>
-                <span style={{fontSize: '1.5rem'}}>💳</span>
-                <span>Card</span>
-              </div>
-              <div className={styles.paymentOption}>
-                <span style={{fontSize: '1.5rem'}}>⭐</span>
-                <span>Points</span>
-              </div>
-              <div className={styles.paymentOption}>
-                <span style={{fontSize: '1.5rem'}}>📦</span>
-                <span>Deposit</span>
-              </div>
-              <div className={styles.paymentOption}>
-                <span style={{fontSize: '1.5rem'}}>🧾</span>
-                <span>Cheque</span>
-              </div>
+              {availablePaymentMethods.map((pm) => (
+                <div 
+                  key={pm} 
+                  className={styles.paymentOption} 
+                  style={{
+                    backgroundColor: paymentMethod === pm ? '#E8F9EE' : '#F9FAFB', 
+                    border: paymentMethod === pm ? '2px solid #28C76F' : '1px solid #E5E7EB',
+                    cursor: 'pointer'
+                  }}
+                  onClick={() => setPaymentMethod(pm)}
+                >
+                  <span style={{fontWeight: 500, fontSize: '0.875rem'}}>{pm}</span>
+                </div>
+              ))}
             </div>
           </div>
 
-          <button className={styles.payButton}>
-            Pay : $56590.00
+          <button className={styles.payButton} onClick={handleCheckout}>
+            Pay Now : ₹{grandTotal}
           </button>
         </div>
 
@@ -340,7 +364,7 @@ const POS = () => {
 
       <HoldOrderModal isOpen={isHoldOpen} onClose={() => setIsHoldOpen(false)} />
       <POSDiscountModal isOpen={isDiscountOpen} onClose={() => setIsDiscountOpen(false)} />
-      <POSCreateCustomerModal isOpen={isCustomerOpen} onClose={() => setIsCustomerOpen(false)} />
+      <POSCreateCustomerModal isOpen={isCustomerOpen} onClose={() => setIsCustomerOpen(false)} onSuccess={(name) => setCustomerName(name)} />
       <POSCashRegisterModal isOpen={isCashRegisterOpen} onClose={() => setIsCashRegisterOpen(false)} />
       <POSCalculatorModal isOpen={isCalculatorOpen} onClose={() => setIsCalculatorOpen(false)} />
       <POSTodaysSaleModal isOpen={isTodaysSaleOpen} onClose={() => setIsTodaysSaleOpen(false)} />

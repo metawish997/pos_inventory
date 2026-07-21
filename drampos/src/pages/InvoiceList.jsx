@@ -1,12 +1,34 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import Card from '../components/ui/Card';
-import styles from './ProductList.module.css'; // Reusing styles
-import { Search, FileText, FileSpreadsheet, RefreshCw, ChevronUp, Eye, Trash2, PlusCircle } from 'lucide-react';
+import styles from './ProductList.module.css';
+import { Search, RefreshCw, Eye } from 'lucide-react';
+import { getInvoices } from '../services/salesService';
 
 const InvoiceList = () => {
   const navigate = useNavigate();
+  const [invoices, setInvoices] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const fetchInvoices = async () => {
+    try {
+      setLoading(true);
+      const res = await getInvoices();
+      if (res.success) {
+        setInvoices(res.data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch invoices:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchInvoices();
+  }, []);
 
   const getStatusBadge = (status) => {
     switch (status) {
@@ -17,22 +39,24 @@ const InvoiceList = () => {
       case 'Overdue':
         return <span style={{backgroundColor: '#FFF1E6', color: '#FF9F43', padding: '4px 8px', borderRadius: '4px', fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px'}}><span style={{width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#FF9F43'}}></span> {status}</span>;
       default:
-        return <span>{status}</span>;
+        return <span>{status || 'Unpaid'}</span>;
     }
   };
+
+  const filteredInvoices = invoices.filter(inv =>
+    (inv.customerName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (inv.invoiceNumber || '').toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <DashboardLayout>
       <div className={styles.pageHeader}>
         <div>
-          <h1 className={styles.title}>Balance Sheet</h1>
-          <p className={styles.subtitle}>View Your Balance Sheet</p>
+          <h1 className={styles.title}>Invoices</h1>
+          <p className={styles.subtitle}>Manage Sales Invoices</p>
         </div>
         <div className={styles.headerActions}>
-          <button className={styles.iconBtn}><FileText size={18} color="#EA5455" /></button>
-          <button className={styles.iconBtn}><FileSpreadsheet size={18} color="#28C76F" /></button>
-          <button className={styles.iconBtn}><RefreshCw size={18} /></button>
-          <button className={styles.iconBtn}><ChevronUp size={18} /></button>
+          <button className={styles.iconBtn} onClick={fetchInvoices}><RefreshCw size={18} /></button>
         </div>
       </div>
 
@@ -40,18 +64,12 @@ const InvoiceList = () => {
         <div className={styles.filterBar}>
           <div className={styles.searchBox}>
             <Search size={18} className={styles.searchIcon} />
-            <input type="text" placeholder="Search" />
-          </div>
-          <div className={styles.filters}>
-            <select className={styles.select}>
-              <option>Customer</option>
-            </select>
-            <select className={styles.select}>
-              <option>Status</option>
-            </select>
-            <select className={styles.select}>
-              <option>Sort By : Last 7 Days</option>
-            </select>
+            <input 
+              type="text" 
+              placeholder="Search Invoice No or Customer" 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
           </div>
         </div>
 
@@ -71,54 +89,45 @@ const InvoiceList = () => {
               </tr>
             </thead>
             <tbody>
-              {[
-                { inv: 'INV001', name: 'Carl Evans', date: '24 Dec 2024', amount: '$1000', paid: '$1000', due: '$0.00', status: 'Paid' },
-                { inv: 'INV002', name: 'Minerva Rameriz', date: '24 Dec 2024', amount: '$1500', paid: '$0.00', due: '$1500', status: 'Unpaid' },
-                { inv: 'INV003', name: 'Robert Lamon', date: '24 Dec 2024', amount: '$1500', paid: '$0.00', due: '$1500', status: 'Unpaid' },
-                { inv: 'INV004', name: 'Patricia Lewis', date: '24 Dec 2024', amount: '$2000', paid: '$1000', due: '$1000', status: 'Overdue' },
-                { inv: 'INV005', name: 'Mark Joslyn', date: '24 Dec 2024', amount: '$800', paid: '$800', due: '$0.00', status: 'Paid' },
-                { inv: 'INV006', name: 'Marsha Betts', date: '24 Dec 2024', amount: '$750', paid: '$0.00', due: '$750', status: 'Unpaid' },
-                { inv: 'INV007', name: 'Daniel Jude', date: '24 Dec 2024', amount: '$1300', paid: '$1300', due: '$0.00', status: 'Paid' },
-                { inv: 'INV008', name: 'Emma Bates', date: '24 Dec 2024', amount: '$1100', paid: '$1100', due: '$0.00', status: 'Paid' },
-                { inv: 'INV009', name: 'Richard Fralick', date: '24 Dec 2024', amount: '$2300', paid: '$2300', due: '$0.00', status: 'Paid' },
-                { inv: 'INV010', name: 'Michelle Robison', date: '24 Dec 2024', amount: '$1700', paid: '$1700', due: '$0.00', status: 'Paid' },
-              ].map((item, i) => (
-                <tr key={i}>
-                  <td><input type="checkbox" /></td>
-                  <td>{item.inv}</td>
-                  <td>
-                    <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
-                      <div style={{width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#F3F4F6'}}></div>
-                      <span style={{fontSize: '0.875rem', color: '#1B2850', fontWeight: 500}}>{item.name}</span>
-                    </div>
-                  </td>
-                  <td>{item.date}</td>
-                  <td>{item.amount}</td>
-                  <td>{item.paid}</td>
-                  <td>{item.due}</td>
-                  <td>{getStatusBadge(item.status)}</td>
-                  <td>
-                    <div className={styles.actionCell}>
-                      <button className={styles.actionBtn} onClick={() => navigate('/invoice-details')}><Eye size={16} /></button>
-                      <button className={`${styles.actionBtn} ${styles.danger}`}><Trash2 size={16} /></button>
-                    </div>
-                  </td>
+              {loading ? (
+                <tr>
+                  <td colSpan="9" style={{textAlign: 'center', padding: '2rem'}}>Loading Invoices...</td>
                 </tr>
-              ))}
+              ) : filteredInvoices.length === 0 ? (
+                <tr>
+                  <td colSpan="9" style={{textAlign: 'center', padding: '2rem'}}>No invoice records found</td>
+                </tr>
+              ) : (
+                filteredInvoices.map((item, i) => (
+                  <tr key={item._id || i}>
+                    <td><input type="checkbox" /></td>
+                    <td>{item.invoiceNumber}</td>
+                    <td>
+                      <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
+                        <div style={{width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, fontSize: '12px'}}>
+                          {(item.customerName || 'C')[0].toUpperCase()}
+                        </div>
+                        <span style={{fontSize: '0.875rem', color: '#1B2850', fontWeight: 500}}>{item.customerName}</span>
+                      </div>
+                    </td>
+                    <td>{new Date(item.dueDate || item.createdAt).toLocaleDateString()}</td>
+                    <td>₹{item.totalAmount || 0}</td>
+                    <td>₹{item.paidAmount || 0}</td>
+                    <td>₹{item.dueAmount || 0}</td>
+                    <td>{getStatusBadge(item.status)}</td>
+                    <td>
+                      <button 
+                        style={{border: 'none', background: 'none', cursor: 'pointer', color: '#6B7280'}}
+                        onClick={() => navigate('/invoice-details')}
+                      >
+                        <Eye size={16} />
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
-        </div>
-
-        <div className={styles.pagination}>
-           <div className={styles.pageInfo}>
-              Row Per Page <select style={{margin: '0 0.5rem', padding: '0.25rem', border: '1px solid #e5e7eb', borderRadius: '4px'}}><option>10</option></select> Entries
-           </div>
-           <div className={styles.pageControls}>
-              <button className={styles.pageBtn}>&lt;</button>
-              <button className={`${styles.pageBtn} ${styles.activePage}`} style={{backgroundColor: '#FF9F43', color: 'white', border: 'none'}}>1</button>
-              <button className={styles.pageBtn} style={{backgroundColor: '#F3F4F6', border: 'none', color: '#1B2850'}}>2</button>
-              <button className={styles.pageBtn}>&gt;</button>
-           </div>
         </div>
       </Card>
     </DashboardLayout>

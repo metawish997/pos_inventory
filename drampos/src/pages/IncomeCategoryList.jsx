@@ -1,29 +1,63 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import Card from '../components/ui/Card';
-import styles from './ProductList.module.css'; // Reusing styles
-import { Search, FileText, FileSpreadsheet, RefreshCw, ChevronUp, Edit, Trash2 } from 'lucide-react';
-import AddIncomeCategoryModal from '../components/modals/AddIncomeCategoryModal';
-import EditIncomeCategoryModal from '../components/modals/EditIncomeCategoryModal';
+import styles from './ProductList.module.css';
+import { Search, RefreshCw, PlusCircle } from 'lucide-react';
+import { getIncomeCategories, createIncomeCategory } from '../services/financeService';
 
 const IncomeCategoryList = () => {
-  const [isAddOpen, setIsAddOpen] = useState(false);
-  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const fetchCategories = async () => {
+    try {
+      setLoading(true);
+      const res = await getIncomeCategories();
+      if (res.success) setCategories(res.data);
+    } catch (err) {
+      console.error('Failed to fetch income categories:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const handleAddCategory = async () => {
+    const categoryName = prompt('Enter Income Category Name:');
+    if (!categoryName) return;
+    const description = prompt('Enter Description (optional):', '') || '';
+
+    try {
+      const res = await createIncomeCategory({ categoryName, description, status: 'Active' });
+      if (res.success) {
+        alert('Income category created!');
+        fetchCategories();
+      }
+    } catch (err) {
+      alert(`Failed to create category: ${err.message}`);
+    }
+  };
+
+  const filteredCategories = categories.filter(c =>
+    (c.categoryName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (c.description || '').toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <DashboardLayout>
       <div className={styles.pageHeader}>
         <div>
           <h1 className={styles.title}>Income Category</h1>
-          <p className={styles.subtitle}>Manage your income category</p>
+          <p className={styles.subtitle}>Manage Income Categories</p>
         </div>
         <div className={styles.headerActions}>
-          <button className={styles.iconBtn}><FileText size={18} color="#EA5455" /></button>
-          <button className={styles.iconBtn}><FileSpreadsheet size={18} color="#28C76F" /></button>
-          <button className={styles.iconBtn}><RefreshCw size={18} /></button>
-          <button className={styles.iconBtn}><ChevronUp size={18} /></button>
-          <button className={styles.btnPrimary} onClick={() => setIsAddOpen(true)}>
-            + Add New
+          <button className={styles.iconBtn} onClick={fetchCategories}><RefreshCw size={18} /></button>
+          <button className={styles.btnPrimary} onClick={handleAddCategory}>
+            <PlusCircle size={18} /> Add Category
           </button>
         </div>
       </div>
@@ -32,18 +66,12 @@ const IncomeCategoryList = () => {
         <div className={styles.filterBar}>
           <div className={styles.searchBox}>
             <Search size={18} className={styles.searchIcon} />
-            <input type="text" placeholder="Search" />
-          </div>
-          <div className={styles.filters}>
-            <select className={styles.select}>
-              <option>Category</option>
-            </select>
-            <select className={styles.select}>
-              <option>Status</option>
-            </select>
-            <select className={styles.select}>
-              <option>Sort By : Last 7 Days</option>
-            </select>
+            <input 
+              type="text" 
+              placeholder="Search Category Name" 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
           </div>
         </div>
 
@@ -52,56 +80,36 @@ const IncomeCategoryList = () => {
             <thead>
               <tr>
                 <th><input type="checkbox" /></th>
-                <th>Code</th>
-                <th>Category</th>
-                <th>Added Date</th>
-                <th>Action</th>
+                <th>Category Name</th>
+                <th>Description</th>
+                <th>Status</th>
               </tr>
             </thead>
             <tbody>
-              {[
-                { code: 'INCAB49', category: 'Foreign investment', date: '24 Dec 2024' },
-                { code: 'INCAB48', category: 'Product Export', date: '10 Dec 2024' },
-                { code: 'INCAB47', category: 'Installation', date: '27 Nov 2024' },
-                { code: 'INCAB46', category: 'Product Sales', date: '18 Nov 2024' },
-                { code: 'INCAB45', category: 'Local Sale', date: '06 Nov 2024' },
-                { code: 'INCAB44', category: 'Service Fees', date: '25 Oct 2024' },
-                { code: 'INCAB43', category: 'Return/Refund Income', date: '14 Oct 2024' },
-                { code: 'INCAB42', category: 'Foreign investment', date: '03 Oct 2024' },
-                { code: 'INCAB41', category: 'Product Export', date: '20 Sep 2024' },
-                { code: 'INCAB40', category: 'Return/Refund Income', date: '10 Sep 2024' },
-              ].map((item, i) => (
-                <tr key={i}>
-                  <td><input type="checkbox" /></td>
-                  <td>{item.code}</td>
-                  <td style={{color: '#6B7280'}}>{item.category}</td>
-                  <td>{item.date}</td>
-                  <td>
-                    <div className={styles.actionCell}>
-                      <button className={styles.actionBtn} onClick={() => setIsEditOpen(true)}><Edit size={16} /></button>
-                      <button className={`${styles.actionBtn} ${styles.danger}`}><Trash2 size={16} /></button>
-                    </div>
-                  </td>
+              {loading ? (
+                <tr>
+                  <td colSpan="4" style={{textAlign: 'center', padding: '2rem'}}>Loading Income Categories...</td>
                 </tr>
-              ))}
+              ) : filteredCategories.length === 0 ? (
+                <tr>
+                  <td colSpan="4" style={{textAlign: 'center', padding: '2rem'}}>No categories found</td>
+                </tr>
+              ) : (
+                filteredCategories.map((item) => (
+                  <tr key={item._id}>
+                    <td><input type="checkbox" /></td>
+                    <td style={{color: '#1B2850', fontWeight: 600}}>{item.categoryName}</td>
+                    <td style={{color: '#6B7280'}}>{item.description || '-'}</td>
+                    <td>
+                      <span style={{backgroundColor: '#28C76F', color: 'white', padding: '4px 8px', borderRadius: '4px', fontSize: '12px'}}>{item.status || 'Active'}</span>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
-
-        <div className={styles.pagination}>
-           <div className={styles.pageInfo}>
-              Row Per Page <select style={{margin: '0 0.5rem', padding: '0.25rem', border: '1px solid #e5e7eb', borderRadius: '4px'}}><option>10</option></select> Entries
-           </div>
-           <div className={styles.pageControls}>
-              <button className={styles.pageBtn}>&lt;</button>
-              <button className={`${styles.pageBtn} ${styles.activePage}`} style={{backgroundColor: '#FF9F43', color: 'white', border: 'none'}}>1</button>
-              <button className={styles.pageBtn}>&gt;</button>
-           </div>
-        </div>
       </Card>
-      
-      <AddIncomeCategoryModal isOpen={isAddOpen} onClose={() => setIsAddOpen(false)} />
-      <EditIncomeCategoryModal isOpen={isEditOpen} onClose={() => setIsEditOpen(false)} />
     </DashboardLayout>
   );
 };

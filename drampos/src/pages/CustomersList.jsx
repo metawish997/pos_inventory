@@ -1,26 +1,71 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import Card from '../components/ui/Card';
 import styles from './ProductList.module.css';
-import { Search, FileText, FileSpreadsheet, RefreshCw, ChevronUp, Eye, Edit, Trash2 } from 'lucide-react';
+import { Search, FileText, FileSpreadsheet, RefreshCw, ChevronUp, Edit, Trash2 } from 'lucide-react';
 import AddCustomerModal from '../components/modals/AddCustomerModal';
+import { getCustomers, deleteCustomer } from '../services/customerService';
 
 const CustomersList = () => {
+  const [customers, setCustomers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('Status');
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const [editingCustomer, setEditingCustomer] = useState(null);
+
+  const fetchCustomerList = async () => {
+    try {
+      setLoading(true);
+      const res = await getCustomers(searchTerm, statusFilter);
+      if (res.success) {
+        setCustomers(res.data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch customers:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCustomerList();
+  }, [searchTerm, statusFilter]);
+
+  const handleDelete = async (id) => {
+    if (window.confirm('Are you sure you want to delete this customer?')) {
+      try {
+        await deleteCustomer(id);
+        fetchCustomerList();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+  };
+
+  const openEditModal = (customer) => {
+    setEditingCustomer(customer);
+    setIsAddOpen(true);
+  };
+
+  const openAddModal = () => {
+    setEditingCustomer(null);
+    setIsAddOpen(true);
+  };
 
   return (
     <DashboardLayout>
       <div className={styles.pageHeader}>
         <div>
           <h1 className={styles.title}>Customers</h1>
-          <p className={styles.subtitle}>Manage your customers</p>
+          <p className={styles.subtitle}>Manage your customer directory</p>
         </div>
         <div className={styles.headerActions}>
           <button className={styles.iconBtn}><FileText size={18} color="#EA5455" /></button>
           <button className={styles.iconBtn}><FileSpreadsheet size={18} color="#28C76F" /></button>
-          <button className={styles.iconBtn}><RefreshCw size={18} /></button>
+          <button className={styles.iconBtn} onClick={fetchCustomerList}><RefreshCw size={18} /></button>
           <button className={styles.iconBtn}><ChevronUp size={18} /></button>
-          <button className={styles.btnPrimary} onClick={() => setIsAddOpen(true)} style={{backgroundColor: '#FF9F43', color: 'white', border: 'none'}}>
+          <button className={styles.btnPrimary} onClick={openAddModal} style={{backgroundColor: '#FF9F43', color: 'white', border: 'none'}}>
             + Add Customer
           </button>
         </div>
@@ -30,11 +75,22 @@ const CustomersList = () => {
         <div className={styles.filterBar}>
           <div className={styles.searchBox}>
             <Search size={18} className={styles.searchIcon} />
-            <input type="text" placeholder="Search" />
+            <input 
+              type="text" 
+              placeholder="Search by name, email, code or phone" 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
           </div>
           <div className={styles.filters}>
-            <select className={styles.select}>
-              <option>Status</option>
+            <select 
+              className={styles.select}
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              <option value="Status">All Status</option>
+              <option value="Active">Active</option>
+              <option value="Inactive">Inactive</option>
             </select>
           </div>
         </div>
@@ -54,52 +110,51 @@ const CustomersList = () => {
               </tr>
             </thead>
             <tbody>
-              {[
-                { code: 'CU001', name: 'Carl Evans', email: 'carlevans@example.com', phone: '+12163547758', country: 'Germany', status: 'Active', avatar: 'https://i.pravatar.cc/150?img=11' },
-                { code: 'CU002', name: 'Minerva Rameriz', email: 'rameriz@example.com', phone: '+11367529510', country: 'Japan', status: 'Active', avatar: 'https://i.pravatar.cc/150?img=12' },
-                { code: 'CU003', name: 'Robert Lamon', email: 'robert@example.com', phone: '+15362789414', country: 'USA', status: 'Active', avatar: 'https://i.pravatar.cc/150?img=13' },
-                { code: 'CU004', name: 'Patricia Lewis', email: 'patricia@example.com', phone: '+18513094627', country: 'Austria', status: 'Active', avatar: 'https://i.pravatar.cc/150?img=14' },
-                { code: 'CU005', name: 'Mark Joslyn', email: 'markjoslyn@example.com', phone: '+14678219025', country: 'Turkey', status: 'Active', avatar: 'https://i.pravatar.cc/150?img=15' },
-                { code: 'CU006', name: 'Marsha Betts', email: 'marshabetts@example.com', phone: '+10913278319', country: 'Mexico', status: 'Active', avatar: 'https://i.pravatar.cc/150?img=16' },
-                { code: 'CU007', name: 'Daniel Jude', email: 'danieljude@example.com', phone: '+19125852947', country: 'France', status: 'Active', avatar: 'https://i.pravatar.cc/150?img=17' },
-                { code: 'CU008', name: 'Emma Bates', email: 'emmabates@example.com', phone: '+13671835209', country: 'Greece', status: 'Active', avatar: 'https://i.pravatar.cc/150?img=18' },
-                { code: 'CU009', name: 'Richard Fralick', email: 'richard@example.com', phone: '+19756194733', country: 'Italy', status: 'Active', avatar: 'https://i.pravatar.cc/150?img=19' },
-                { code: 'CU010', name: 'Michelle Robison', email: 'robinson@example.com', phone: '+19167850925', country: 'China', status: 'Active', avatar: 'https://i.pravatar.cc/150?img=20' },
-              ].map((item, i) => (
-                <tr key={i}>
-                  <td><input type="checkbox" /></td>
-                  <td style={{color: '#6B7280'}}>{item.code}</td>
-                  <td>
-                    <div style={{display: 'flex', alignItems: 'center', gap: '0.75rem'}}>
-                      <img src={item.avatar} alt={item.name} style={{width: '32px', height: '32px', borderRadius: '4px', objectFit: 'cover'}} />
-                      <span style={{color: '#1B2850', fontWeight: 500}}>{item.name}</span>
-                    </div>
-                  </td>
-                  <td style={{color: '#6B7280'}}>{item.email}</td>
-                  <td style={{color: '#6B7280'}}>{item.phone}</td>
-                  <td style={{color: '#6B7280'}}>{item.country}</td>
-                  <td>
-                    <span style={{
-                      backgroundColor: item.status === 'Active' ? '#28C76F' : '#EA5455', 
-                      color: 'white', padding: '4px 8px', borderRadius: '4px', fontSize: '12px'
-                    }}>&bull; {item.status}</span>
-                  </td>
-                  <td>
-                    <div className={styles.actionCell}>
-                      <button className={styles.actionBtn}><Eye size={16} /></button>
-                      <button className={styles.actionBtn}><Edit size={16} /></button>
-                      <button className={`${styles.actionBtn} ${styles.danger}`}><Trash2 size={16} /></button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {loading ? (
+                <tr><td colSpan="8" style={{textAlign: 'center', padding: '2rem'}}>Loading customers...</td></tr>
+              ) : customers.length === 0 ? (
+                <tr><td colSpan="8" style={{textAlign: 'center', padding: '2rem'}}>No customers found. Click "+ Add Customer" to create one!</td></tr>
+              ) : (
+                customers.map((item) => (
+                  <tr key={item._id}>
+                    <td><input type="checkbox" /></td>
+                    <td style={{color: '#6B7280', fontWeight: 500}}>{item.customerCode}</td>
+                    <td>
+                      <div style={{display: 'flex', alignItems: 'center', gap: '0.75rem'}}>
+                        <div style={{
+                          width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#FF9F43', 
+                          color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold'
+                        }}>
+                          {(item.firstName || 'C')[0]}
+                        </div>
+                        <span style={{color: '#1B2850', fontWeight: 500}}>{item.firstName} {item.lastName}</span>
+                      </div>
+                    </td>
+                    <td style={{color: '#6B7280'}}>{item.email}</td>
+                    <td style={{color: '#6B7280'}}>{item.phone}</td>
+                    <td style={{color: '#6B7280'}}>{item.country || 'N/A'}</td>
+                    <td>
+                      <span style={{
+                        backgroundColor: item.status === 'Active' ? '#28C76F' : '#EA5455', 
+                        color: 'white', padding: '4px 8px', borderRadius: '4px', fontSize: '12px'
+                      }}>&bull; {item.status}</span>
+                    </td>
+                    <td>
+                      <div className={styles.actionCell}>
+                        <button className={styles.actionBtn} onClick={() => openEditModal(item)}><Edit size={16} /></button>
+                        <button className={`${styles.actionBtn} ${styles.danger}`} onClick={() => handleDelete(item._id)}><Trash2 size={16} /></button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
 
         <div className={styles.pagination}>
            <div className={styles.pageInfo}>
-              Row Per Page <select style={{margin: '0 0.5rem', padding: '0.25rem', border: '1px solid #e5e7eb', borderRadius: '4px'}}><option>10</option></select> Entries
+              Showing <strong>{customers.length}</strong> Entries
            </div>
            <div className={styles.pageControls}>
               <button className={styles.pageBtn}>&lt;</button>
@@ -109,7 +164,12 @@ const CustomersList = () => {
         </div>
       </Card>
       
-      <AddCustomerModal isOpen={isAddOpen} onClose={() => setIsAddOpen(false)} />
+      <AddCustomerModal 
+        isOpen={isAddOpen} 
+        onClose={() => setIsAddOpen(false)} 
+        customerToEdit={editingCustomer}
+        onSuccess={fetchCustomerList}
+      />
     </DashboardLayout>
   );
 };

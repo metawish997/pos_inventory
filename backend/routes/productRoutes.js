@@ -2,6 +2,11 @@ const express = require('express');
 const router = express.Router();
 const productController = require('../controllers/productController');
 
+// Alerts & Stock Reports
+router.get('/expired', productController.getExpiredProducts);
+router.get('/low-stocks', productController.getLowStocks);
+router.post('/send-low-stock-email', productController.sendLowStockEmail);
+
 // All standard catalog system CRUD endpoints
 router.post('/', productController.createProduct);
 router.get('/', productController.getAllProducts);

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import Dashboard from './pages/Dashboard';
 import ProductList from './pages/ProductList';
 import AddProduct from './pages/AddProduct';
@@ -95,6 +95,7 @@ function App() {
       <Routes>
         {/* Public Routes */}
         <Route path="/signin" element={<SignIn />} />
+        <Route path="/login" element={<SignIn />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/lock-screen" element={<LockScreen />} />
         <Route path="/error-404" element={<Error404 />} />
@@ -188,6 +189,7 @@ function App() {
 
           <Route path="/profile" element={<Profile />} />
         </Route>
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </div>
   );

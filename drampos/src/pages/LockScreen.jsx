@@ -15,7 +15,7 @@ const LockScreen = () => {
           <div style={{width: '32px', height: '32px', backgroundColor: '#1B2850', borderRadius: '8px', position: 'relative'}}>
              <div style={{position: 'absolute', top: '-6px', left: '6px', width: '20px', height: '10px', borderTopLeftRadius: '10px', borderTopRightRadius: '10px', border: '3px solid #FF9F43', borderBottom: 'none'}}></div>
           </div>
-          <span style={{fontSize: '1.5rem', fontWeight: 700, color: '#1B2850'}}>dreams<span style={{color: '#FF9F43'}}>POS</span></span>
+          <span style={{fontSize: '1.5rem', fontWeight: 700, color: '#1B2850'}}>Eronix<span style={{color: '#FF9F43'}}>POS</span></span>
         </div>
 
         <div style={{backgroundColor: 'white', padding: '3rem', borderRadius: '12px', boxShadow: '0 10px 25px rgba(0,0,0,0.05)', width: '100%', maxWidth: '400px', display: 'flex', flexDirection: 'column', alignItems: 'center', boxSizing: 'border-box'}}>
@@ -44,8 +44,8 @@ const LockScreen = () => {
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
            </div>
         </div>
-        <div style={{marginTop: '1rem', fontSize: '0.75rem', color: '#9CA3AF'}}>
-           Copyright © 2024 DreamsPOS. All rights reserved
+        <div style={{marginTop: '1rem', fontSize: '0.75rem', color: '#9CA3AF', textAlign: 'center'}}>
+           Copyright © 2026 EronixPOS. Developed & Maintained by <a href="https://www.metawish.ai" target="_blank" rel="noopener noreferrer" style={{ color: '#FF9F43', fontWeight: 600, textDecoration: 'none' }}>Metawish</a>
         </div>
       </div>
     </div>

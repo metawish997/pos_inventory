@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { API_BASE_URL } from '../api/endpoints';
 
 const SignIn = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -19,8 +20,8 @@ const SignIn = () => {
     setLoading(true);
 
     const url = isLogin 
-      ? 'http://localhost:5005/api/auth/login' 
-      : 'http://localhost:5005/api/auth/register';
+      ? `${API_BASE_URL}/auth/login` 
+      : `${API_BASE_URL}/auth/register`;
     
     const body = isLogin 
       ? { email, password } 
@@ -63,7 +64,7 @@ const SignIn = () => {
                 <div style={{width: '32px', height: '32px', backgroundColor: '#1B2850', borderRadius: '8px', position: 'relative'}}>
                    <div style={{position: 'absolute', top: '-6px', left: '6px', width: '20px', height: '10px', borderTopLeftRadius: '10px', borderTopRightRadius: '10px', border: '3px solid #FF9F43', borderBottom: 'none'}}></div>
                 </div>
-                <span style={{fontSize: '1.5rem', fontWeight: 700, color: '#1B2850'}}>dreams<span style={{color: '#FF9F43'}}>POS</span></span>
+                <span style={{fontSize: '1.5rem', fontWeight: 700, color: '#1B2850'}}>Eronix<span style={{color: '#FF9F43'}}>POS</span></span>
               </div>
             </div>
             
@@ -71,7 +72,7 @@ const SignIn = () => {
               {isLogin ? 'Sign In' : 'Register'}
             </h1>
             <p style={{color: '#6B7280', fontSize: '0.875rem', marginBottom: '1.5rem'}}>
-              {isLogin ? 'Access the Dreamspos panel using your email and passcode.' : 'Create a new account to access the panel.'}
+              {isLogin ? 'Access the Eronixpos panel using your email and passcode.' : 'Create a new account to access the panel.'}
             </p>
 
             {error && (
@@ -145,6 +146,9 @@ const SignIn = () => {
                  </button>
               </div>
 
+              <div style={{textAlign: 'center', fontSize: '0.75rem', color: '#9CA3AF', marginTop: '2rem'}}>
+                 Copyright © 2026 EronixPOS. Developed & Maintained by <a href="https://www.metawish.ai" target="_blank" rel="noopener noreferrer" style={{ color: '#FF9F43', fontWeight: 600, textDecoration: 'none' }}>Metawish</a>
+              </div>
             </form>
          </div>
       </div>

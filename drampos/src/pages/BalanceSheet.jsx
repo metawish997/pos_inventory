@@ -1,88 +1,106 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import Card from '../components/ui/Card';
 import styles from './ProductList.module.css';
-import { FileText, FileSpreadsheet, RefreshCw, ChevronUp } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
+import { getFinancialSummary } from '../services/financeService';
 
 const BalanceSheet = () => {
+  const [summary, setSummary] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  const fetchSummary = async () => {
+    try {
+      setLoading(true);
+      const res = await getFinancialSummary();
+      if (res.success) setSummary(res.data);
+    } catch (err) {
+      console.error('Failed to fetch financial summary:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSummary();
+  }, []);
+
   return (
     <DashboardLayout>
       <div className={styles.pageHeader}>
         <div>
           <h1 className={styles.title}>Balance Sheet</h1>
-          <p className={styles.subtitle}>View Your Balance Sheet</p>
+          <p className={styles.subtitle}>Financial Overview & Profit / Loss Statement</p>
         </div>
         <div className={styles.headerActions}>
-          <button className={styles.iconBtn}><FileText size={18} color="#EA5455" /></button>
-          <button className={styles.iconBtn}><FileSpreadsheet size={18} color="#28C76F" /></button>
-          <button className={styles.iconBtn}><RefreshCw size={18} /></button>
-          <button className={styles.iconBtn}><ChevronUp size={18} /></button>
+          <button className={styles.iconBtn} onClick={fetchSummary}><RefreshCw size={18} /></button>
         </div>
       </div>
 
-      <Card className={styles.tableCard}>
-        <div className={styles.filterBar}>
-          <div className={styles.searchBox}>
-            <input type="text" placeholder="Search" />
-          </div>
-        </div>
+      <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.5rem', marginBottom: '1.5rem'}}>
+        <Card style={{padding: '1.5rem', backgroundColor: '#E8F9EE'}}>
+          <span style={{fontSize: '0.875rem', color: '#28C76F', fontWeight: 600}}>Total Revenue (Sales)</span>
+          <h2 style={{fontSize: '1.75rem', color: '#1B2850', marginTop: '0.5rem'}}>₹{summary?.totalSales || 0}</h2>
+        </Card>
 
-        <div className={styles.tableResponsive}>
-          <table className={styles.productTable}>
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Bank & Account Number</th>
-                <th>Credit</th>
-                <th>Debit</th>
-                <th>Balance</th>
-              </tr>
-            </thead>
-            <tbody>
-              {[
-                { name: 'Ava Mason', no: 'SWIZ - 3456565767787', credit: '$614848', debit: '-$450', bal: '$614389' },
-                { name: 'Caspian Marigold', no: 'NBC - 4324356677889', credit: '$1686', debit: '-$700', bal: '$986' },
-                { name: 'Emma James', no: 'NBC - 2343547586900', credit: '$16547', debit: '-$1000', bal: '$15547' },
-                { name: 'Isabella Jackson', no: 'IBO - 3434565776768', credit: '$77818', debit: '-$300', bal: '$77518' },
-                { name: 'Olivia Ethan', no: 'IBO - 3453647664889', credit: '$141845', debit: '-$1200', bal: '$141645' },
-                { name: 'Orion Astrid', no: 'IBO - 4353689870544', credit: '$1948', debit: '-$100', bal: '$1848' },
-                { name: 'Quillon Elysia', no: 'SWIZ - 5475878970090', credit: '$4494', debit: '-$50', bal: '$4444' },
-                { name: 'Sophia Liam', no: 'SWIZ - 3354456565687', credit: '$44188', debit: '-$750', bal: '$4356' },
-                { name: 'Thaddeus Juniper', no: 'SWIZ - 3255465758698', credit: '$65945', debit: '-$800', bal: '$65145' },
-                { name: 'Zephyr Indira', no: 'HBSC - 3298784309485', credit: '$4565', debit: '-$200', bal: '$4365' },
-              ].map((item, i) => (
-                <tr key={i}>
-                  <td style={{color: '#6B7280'}}>{item.name}</td>
-                  <td style={{color: '#6B7280'}}>{item.no}</td>
-                  <td style={{color: '#6B7280'}}>{item.credit}</td>
-                  <td style={{color: '#6B7280'}}>{item.debit}</td>
-                  <td style={{color: '#6B7280'}}>{item.bal}</td>
-                </tr>
-              ))}
-            </tbody>
-            <tfoot>
-              <tr>
-                <td colSpan="2" style={{fontWeight: 'bold', padding: '1rem'}}>Total</td>
-                <td style={{fontWeight: 'bold', color: '#1B2850', padding: '1rem'}}>$332642.53</td>
-                <td style={{fontWeight: 'bold', color: '#1B2850', padding: '1rem'}}>- $16590.96</td>
-                <td style={{fontWeight: 'bold', color: '#1B2850', padding: '1rem'}}>$332687442.53</td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
+        <Card style={{padding: '1.5rem', backgroundColor: '#E5F8FA'}}>
+          <span style={{fontSize: '0.875rem', color: '#00CFE8', fontWeight: 600}}>Other Incomes</span>
+          <h2 style={{fontSize: '1.75rem', color: '#1B2850', marginTop: '0.5rem'}}>₹{summary?.totalIncomes || 0}</h2>
+        </Card>
 
-        <div className={styles.pagination}>
-           <div className={styles.pageInfo}>
-              Row Per Page <select style={{margin: '0 0.5rem', padding: '0.25rem', border: '1px solid #e5e7eb', borderRadius: '4px'}}><option>10</option></select> Entries
-           </div>
-           <div className={styles.pageControls}>
-              <button className={styles.pageBtn}>&lt;</button>
-              <button className={`${styles.pageBtn} ${styles.activePage}`} style={{backgroundColor: '#FF9F43', color: 'white', border: 'none'}}>1</button>
-              <button className={styles.pageBtn}>&gt;</button>
-           </div>
-        </div>
+        <Card style={{padding: '1.5rem', backgroundColor: '#FFF1E6'}}>
+          <span style={{fontSize: '0.875rem', color: '#FF9F43', fontWeight: 600}}>Purchases Cost</span>
+          <h2 style={{fontSize: '1.75rem', color: '#1B2850', marginTop: '0.5rem'}}>₹{summary?.totalPurchases || 0}</h2>
+        </Card>
+
+        <Card style={{padding: '1.5rem', backgroundColor: '#FCEAEA'}}>
+          <span style={{fontSize: '0.875rem', color: '#EA5455', fontWeight: 600}}>Total Expenses</span>
+          <h2 style={{fontSize: '1.75rem', color: '#1B2850', marginTop: '0.5rem'}}>₹{summary?.totalExpenses || 0}</h2>
+        </Card>
+      </div>
+
+      <Card className={styles.tableCard} style={{padding: '1.5rem'}}>
+        <h3 style={{fontSize: '1.125rem', color: '#1B2850', marginBottom: '1rem'}}>Net Financial Statement</h3>
+        <table className={styles.productTable}>
+          <thead>
+            <tr>
+              <th>Account Line</th>
+              <th>Calculation</th>
+              <th>Amount (₹)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Gross Sales Revenue</td>
+              <td>Sales Invoices Generated</td>
+              <td style={{color: '#28C76F', fontWeight: 600}}>+ ₹{summary?.totalSales || 0}</td>
+            </tr>
+            <tr>
+              <td>Other Income Records</td>
+              <td>Incomes Logged</td>
+              <td style={{color: '#28C76F', fontWeight: 600}}>+ ₹{summary?.totalIncomes || 0}</td>
+            </tr>
+            <tr>
+              <td>Inventory Purchases</td>
+              <td>Vendor Purchase Orders</td>
+              <td style={{color: '#EA5455', fontWeight: 600}}>- ₹{summary?.totalPurchases || 0}</td>
+            </tr>
+            <tr>
+              <td>Operating Expenses</td>
+              <td>Utilities, Repairs, Supplies</td>
+              <td style={{color: '#EA5455', fontWeight: 600}}>- ₹{summary?.totalExpenses || 0}</td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr style={{backgroundColor: '#F9FAFB', fontWeight: 'bold'}}>
+              <td colSpan="2" style={{padding: '1rem'}}>Net Profit / Balance</td>
+              <td style={{padding: '1rem', fontSize: '1.125rem', color: (summary?.netProfit || 0) >= 0 ? '#28C76F' : '#EA5455'}}>
+                ₹{summary?.netProfit || 0}
+              </td>
+            </tr>
+          </tfoot>
+        </table>
       </Card>
-      
     </DashboardLayout>
   );
 };

@@ -17,6 +17,7 @@ const vendorController = {
                 ];
             }
             if (status) filter.status = status;
+            if (req.query.type) filter.type = req.query.type;
             const vendors = await Vendor.find(filter).sort({ createdAt: -1 });
             res.status(200).json(vendors);
         } catch (error) {

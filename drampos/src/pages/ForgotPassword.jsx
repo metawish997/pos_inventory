@@ -11,7 +11,7 @@ const ForgotPassword = () => {
                 <div style={{width: '32px', height: '32px', backgroundColor: '#1B2850', borderRadius: '8px', position: 'relative'}}>
                    <div style={{position: 'absolute', top: '-6px', left: '6px', width: '20px', height: '10px', borderTopLeftRadius: '10px', borderTopRightRadius: '10px', border: '3px solid #FF9F43', borderBottom: 'none'}}></div>
                 </div>
-                <span style={{fontSize: '1.5rem', fontWeight: 700, color: '#1B2850'}}>dreams<span style={{color: '#FF9F43'}}>POS</span></span>
+                <span style={{fontSize: '1.5rem', fontWeight: 700, color: '#1B2850'}}>Eronix<span style={{color: '#FF9F43'}}>POS</span></span>
               </div>
             </div>
             
@@ -42,7 +42,7 @@ const ForgotPassword = () => {
               </div>
 
               <div style={{textAlign: 'center', fontSize: '0.75rem', color: '#6B7280', marginTop: '1rem'}}>
-                 Copyright © 2026 DreamsPOS
+                 Copyright © 2026 EronixPOS. Developed & Maintained by <a href="https://www.metawish.ai" target="_blank" rel="noopener noreferrer" style={{ color: '#FF9F43', fontWeight: 600, textDecoration: 'none' }}>Metawish</a>
               </div>
             </form>
          </div>

@@ -1,22 +1,46 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import Card from '../components/ui/Card';
-import styles from './ProductList.module.css'; // Reusing styles
-import { Search, FileText, FileSpreadsheet, RefreshCw, ChevronUp, Edit, Trash2 } from 'lucide-react';
+import styles from './ProductList.module.css';
+import { Search, RefreshCw, Trash2 } from 'lucide-react';
+import { API_BASE_URL } from '../api/endpoints';
 
 const ExpiredProducts = () => {
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const fetchExpired = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch(`${API_BASE_URL}/products/expired`);
+      const data = await res.json();
+      if (data.success) setProducts(data.data);
+    } catch (err) {
+      console.error('Failed to fetch expired products:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchExpired();
+  }, []);
+
+  const filteredProducts = products.filter(p =>
+    (p.productName || p.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (p.sku || '').toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <DashboardLayout>
       <div className={styles.pageHeader}>
         <div>
           <h1 className={styles.title}>Expired Products</h1>
-          <p className={styles.subtitle}>Manage your expired products</p>
+          <p className={styles.subtitle}>View & Manage Expired Stock Items</p>
         </div>
         <div className={styles.headerActions}>
-          <button className={styles.iconBtn}><FileText size={18} color="#EA5455" /></button>
-          <button className={styles.iconBtn}><FileSpreadsheet size={18} color="#28C76F" /></button>
-          <button className={styles.iconBtn}><RefreshCw size={18} /></button>
-          <button className={styles.iconBtn}><ChevronUp size={18} /></button>
+          <button className={styles.iconBtn} onClick={fetchExpired}><RefreshCw size={18} /></button>
         </div>
       </div>
 
@@ -24,15 +48,12 @@ const ExpiredProducts = () => {
         <div className={styles.filterBar}>
           <div className={styles.searchBox}>
             <Search size={18} className={styles.searchIcon} />
-            <input type="text" placeholder="Search" />
-          </div>
-          <div className={styles.filters}>
-            <select className={styles.select}>
-              <option>Product</option>
-            </select>
-            <select className={styles.select}>
-              <option>Sort By : Last 7 Days</option>
-            </select>
+            <input 
+              type="text" 
+              placeholder="Search Product Name or SKU" 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
           </div>
         </div>
 
@@ -42,52 +63,37 @@ const ExpiredProducts = () => {
               <tr>
                 <th><input type="checkbox" /></th>
                 <th>SKU</th>
-                <th>Product</th>
+                <th>Product Name</th>
                 <th>Manufactured Date</th>
                 <th>Expired Date</th>
-                <th>Action</th>
+                <th>Status</th>
               </tr>
             </thead>
             <tbody>
-              {[
-                { sku: 'PT001', name: 'Lenovo 3rd Generation', mfg: '24 Dec 2024', exp: '20 Dec 2026' },
-                { sku: 'PT002', name: 'Beats Pro', mfg: '10 Dec 2024', exp: '07 Dec 2026' },
-                { sku: 'PT003', name: 'Nike Jordan', mfg: '27 Nov 2024', exp: '20 Nov 2026' },
-                { sku: 'PT004', name: 'Apple Series 5 Watch', mfg: '18 Nov 2024', exp: '15 Nov 2026' },
-                { sku: 'PT005', name: 'Amazon Echo Dot', mfg: '06 Nov 2024', exp: '04 Nov 2026' },
-              ].map((item, i) => (
-                <tr key={i}>
-                  <td><input type="checkbox" /></td>
-                  <td>{item.sku}</td>
-                  <td>
-                    <div className={styles.productCell}>
-                      <div className={styles.productImg} style={{width: '32px', height: '32px', minWidth: '32px'}}></div>
-                      <span>{item.name}</span>
-                    </div>
-                  </td>
-                  <td>{item.mfg}</td>
-                  <td>{item.exp}</td>
-                  <td>
-                    <div className={styles.actionCell}>
-                      <button className={styles.actionBtn}><Edit size={16} /></button>
-                      <button className={`${styles.actionBtn} ${styles.danger}`}><Trash2 size={16} /></button>
-                    </div>
-                  </td>
+              {loading ? (
+                <tr>
+                  <td colSpan="6" style={{textAlign: 'center', padding: '2rem'}}>Loading Expired Products...</td>
                 </tr>
-              ))}
+              ) : filteredProducts.length === 0 ? (
+                <tr>
+                  <td colSpan="6" style={{textAlign: 'center', padding: '2rem'}}>No expired product records found</td>
+                </tr>
+              ) : (
+                filteredProducts.map((item) => (
+                  <tr key={item._id}>
+                    <td><input type="checkbox" /></td>
+                    <td>{item.sku || 'SKU001'}</td>
+                    <td style={{color: '#1B2850', fontWeight: 600}}>{item.productName || item.name}</td>
+                    <td>{item.manufacturedDate ? new Date(item.manufacturedDate).toLocaleDateString() : '-'}</td>
+                    <td style={{color: '#EA5455', fontWeight: 600}}>{item.expiryDate ? new Date(item.expiryDate).toLocaleDateString() : 'Expired'}</td>
+                    <td>
+                      <span style={{backgroundColor: '#FCEAEA', color: '#EA5455', padding: '4px 8px', borderRadius: '4px', fontSize: '12px', fontWeight: 600}}>Expired</span>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
-        </div>
-
-        <div className={styles.pagination}>
-           <div className={styles.pageInfo}>
-              Row Per Page <select style={{margin: '0 0.5rem', padding: '0.25rem', border: '1px solid #e5e7eb', borderRadius: '4px'}}><option>10</option></select> Entries
-           </div>
-           <div className={styles.pageControls}>
-              <button className={styles.pageBtn}>&lt;</button>
-              <button className={`${styles.pageBtn} ${styles.activePage}`} style={{backgroundColor: '#FF9F43', color: 'white', border: 'none'}}>1</button>
-              <button className={styles.pageBtn}>&gt;</button>
-           </div>
         </div>
       </Card>
     </DashboardLayout>

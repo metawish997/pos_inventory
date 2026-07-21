@@ -23,6 +23,11 @@
 .sidebarItem:hover {
   background-color: #F9FAFB;
 }
+.sidebarItem.active {
+  color: #FF9F43;
+  background-color: #FFF5EC;
+  border-right: 3px solid #FF9F43;
+}
 .subList {
   padding: 0.5rem 0;
 }

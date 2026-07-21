@@ -1,28 +1,48 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import Card from '../components/ui/Card';
-import styles from './ProductList.module.css'; // Reusing styles
-import { Search, FileText, FileSpreadsheet, RefreshCw, ChevronUp, Edit, Trash2, PlusCircle } from 'lucide-react';
-import AddStockModal from '../components/modals/AddStockModal';
+import styles from './ProductList.module.css';
+import { Search, RefreshCw, ChevronUp } from 'lucide-react';
+import { getAllProducts } from '../services/productService';
 
 const ManageStock = () => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const fetchStock = async () => {
+    try {
+      setLoading(true);
+      const res = await getAllProducts();
+      if (res.success) {
+        setProducts(res.data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch stocks:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchStock();
+  }, []);
+
+  const filtered = products.filter(p =>
+    (p.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (p.sku || '').toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <DashboardLayout>
       <div className={styles.pageHeader}>
         <div>
           <h1 className={styles.title}>Manage Stock</h1>
-          <p className={styles.subtitle}>Manage your stock</p>
+          <p className={styles.subtitle}>View your current inventory stock count</p>
         </div>
         <div className={styles.headerActions}>
-          <button className={styles.iconBtn}><FileText size={18} color="#EA5455" /></button>
-          <button className={styles.iconBtn}><FileSpreadsheet size={18} color="#28C76F" /></button>
-          <button className={styles.iconBtn}><RefreshCw size={18} /></button>
+          <button className={styles.iconBtn} onClick={fetchStock}><RefreshCw size={18} /></button>
           <button className={styles.iconBtn}><ChevronUp size={18} /></button>
-          <button className={styles.btnPrimary} onClick={() => setIsModalOpen(true)}>
-            <PlusCircle size={18} /> Add Stock
-          </button>
         </div>
       </div>
 
@@ -30,18 +50,12 @@ const ManageStock = () => {
         <div className={styles.filterBar}>
           <div className={styles.searchBox}>
             <Search size={18} className={styles.searchIcon} />
-            <input type="text" placeholder="Search" />
-          </div>
-          <div className={styles.filters}>
-            <select className={styles.select}>
-              <option>Warehouse</option>
-            </select>
-            <select className={styles.select}>
-              <option>Store</option>
-            </select>
-            <select className={styles.select}>
-              <option>Product</option>
-            </select>
+            <input 
+              type="text" 
+              placeholder="Search by product name or SKU" 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
           </div>
         </div>
 
@@ -49,72 +63,52 @@ const ManageStock = () => {
           <table className={styles.productTable}>
             <thead>
               <tr>
-                <th><input type="checkbox" /></th>
                 <th>Warehouse</th>
                 <th>Store</th>
                 <th>Product</th>
-                <th>Date</th>
-                <th>Person</th>
-                <th>Qty</th>
-                <th>Action</th>
+                <th>SKU</th>
+                <th>Quantity</th>
+                <th>Status</th>
               </tr>
             </thead>
             <tbody>
-              {[
-                { wh: 'Lavish Warehouse', store: 'Electro Mart', name: 'Lenovo IdeaPad 3', date: '24 Dec 2024', person: 'James Kirwin', qty: '100' },
-                { wh: 'Quaint Warehouse', store: 'Quantum Gadgets', name: 'Beats Pro', date: '10 Dec 2024', person: 'Francis Chang', qty: '140' },
-                { wh: 'Lobar Handy', store: 'Prime Bazaar', name: 'Nike Jordan', date: '25 Jul 2023', person: 'Steven', qty: '120' },
-                { wh: 'Quaint Warehouse', store: 'Gadget World', name: 'Apple Series 5 Watch', date: '28 Jul 2023', person: 'Gravely', qty: '130' },
-                { wh: 'Traditional Warehouse', store: 'Volt Vault', name: 'Amazon Echo Dot', date: '24 Jul 2023', person: 'Kevin', qty: '140' },
-                { wh: 'Cool Warehouse', store: 'Elite Retail', name: 'Lobar Handy', date: '15 Jul 2023', person: 'Grillo', qty: '150' },
-                { wh: 'Retail Supply Hub', store: 'Prime Mart', name: 'Red Premium Satchel', date: '14 Oct 2024', person: 'Gary Hennessy', qty: '700' },
-                { wh: 'EdgeWare Solutions', store: 'NeoTech Store', name: 'Iphone 14 Pro', date: '03 Oct 2024', person: 'Eleanor Panek', qty: '630' },
-                { wh: 'North Zone Warehouse', store: 'Urban Mart', name: 'Gaming Chair', date: '20 Sep 2024', person: 'William Levy', qty: '410' },
-                { wh: 'Fulfillment Hub', store: 'Travel Mart', name: 'Borealis Backpack', date: '10 Sep 2024', person: 'Charlotte Klotz', qty: '550' },
-              ].map((item, i) => (
-                <tr key={i}>
-                  <td><input type="checkbox" /></td>
-                  <td>{item.wh}</td>
-                  <td>{item.store}</td>
-                  <td>
-                    <div className={styles.productCell}>
-                      <div className={styles.productImg} style={{width: '32px', height: '32px', minWidth: '32px'}}></div>
-                      <span>{item.name}</span>
-                    </div>
-                  </td>
-                  <td>{item.date}</td>
-                  <td>
-                    <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
-                      <div style={{width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#F3F4F6'}}></div>
-                      <span style={{fontSize: '0.875rem', color: '#1B2850', fontWeight: 500}}>{item.person}</span>
-                    </div>
-                  </td>
-                  <td>{item.qty}</td>
-                  <td>
-                    <div className={styles.actionCell}>
-                      <button className={styles.actionBtn}><Edit size={16} /></button>
-                      <button className={`${styles.actionBtn} ${styles.danger}`}><Trash2 size={16} /></button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {loading ? (
+                <tr><td colSpan="6" style={{textAlign: 'center', padding: '2rem'}}>Loading stocks...</td></tr>
+              ) : filtered.length === 0 ? (
+                <tr><td colSpan="6" style={{textAlign: 'center', padding: '2rem'}}>No product stocks found</td></tr>
+              ) : (
+                filtered.map((item) => (
+                  <tr key={item._id}>
+                    <td style={{color: '#6B7280'}}>{item.warehouse?.name || 'Main Warehouse'}</td>
+                    <td style={{color: '#6B7280'}}>{item.store?.name || 'Main Store'}</td>
+                    <td>
+                      <div className={styles.productCell}>
+                        <div style={{
+                          width: '32px', height: '32px', borderRadius: '4px', backgroundColor: '#FF9F43',
+                          color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold'
+                        }}>
+                          {(item.name || 'P')[0]}
+                        </div>
+                        <span style={{fontWeight: 500, color: '#1B2850'}}>{item.name}</span>
+                      </div>
+                    </td>
+                    <td style={{color: '#6B7280'}}>{item.sku}</td>
+                    <td style={{fontWeight: 600, color: item.quantity <= item.quantityAlert ? '#EA5455' : '#28C76F'}}>
+                      {item.quantity} {item.unit || 'pc'}
+                    </td>
+                    <td>
+                      <span style={{
+                        backgroundColor: item.status === 'Active' ? '#28C76F' : '#EA5455', 
+                        color: 'white', padding: '4px 8px', borderRadius: '4px', fontSize: '12px'
+                      }}>&bull; {item.status}</span>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
-
-        <div className={styles.pagination}>
-           <div className={styles.pageInfo}>
-              Row Per Page <select style={{margin: '0 0.5rem', padding: '0.25rem', border: '1px solid #e5e7eb', borderRadius: '4px'}}><option>10</option></select> Entries
-           </div>
-           <div className={styles.pageControls}>
-              <button className={styles.pageBtn}>&lt;</button>
-              <button className={`${styles.pageBtn} ${styles.activePage}`} style={{backgroundColor: '#FF9F43', color: 'white', border: 'none'}}>1</button>
-              <button className={styles.pageBtn}>&gt;</button>
-           </div>
-        </div>
       </Card>
-
-      <AddStockModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
     </DashboardLayout>
   );
 };
