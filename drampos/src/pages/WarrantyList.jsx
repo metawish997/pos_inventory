@@ -6,6 +6,7 @@ import { Search, FileText, FileSpreadsheet, RefreshCw, ChevronUp, Edit, Trash2, 
 import AddWarrantyModal from '../components/modals/AddWarrantyModal';
 import EditWarrantyModal from '../components/modals/EditWarrantyModal';
 import { getWarranties, deleteWarranty } from '../services/inventoryService';
+import { exportToCSV, exportToPDF } from '../utils/exportUtils';
 
 const WarrantyList = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -55,8 +56,8 @@ const WarrantyList = () => {
           <p className={styles.subtitle}>Manage your warranty terms and configurations</p>
         </div>
         <div className={styles.headerActions}>
-          <button className={styles.iconBtn}><FileText size={18} color="#EA5455" /></button>
-          <button className={styles.iconBtn}><FileSpreadsheet size={18} color="#28C76F" /></button>
+          <button className={styles.iconBtn} onClick={() => exportToPDF(warranties, 'Warranty Term List')}><FileText size={18} color="#EA5455" /></button>
+          <button className={styles.iconBtn} onClick={() => exportToCSV(warranties, 'warranties.csv')}><FileSpreadsheet size={18} color="#28C76F" /></button>
           <button className={styles.iconBtn} onClick={fetchWarranties}><RefreshCw size={18} /></button>
           <button className={styles.iconBtn}><ChevronUp size={18} /></button>
           <button className={styles.btnPrimary} onClick={() => setIsAddModalOpen(true)}>

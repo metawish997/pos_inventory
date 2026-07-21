@@ -4,6 +4,7 @@ import Card from '../components/ui/Card';
 import styles from './ProductList.module.css';
 import { Search, FileText, FileSpreadsheet, RefreshCw, ChevronUp, Eye, Edit, Trash2, PlusCircle } from 'lucide-react';
 import { getWarehouses, deleteWarehouse } from '../services/inventoryService';
+import { exportToCSV, exportToPDF } from '../utils/exportUtils';
 import AddWarehouseModal from '../components/modals/AddWarehouseModal';
 import EditWarehouseModal from '../components/modals/EditWarehouseModal';
 
@@ -52,8 +53,8 @@ const WarehousesList = () => {
           <p className={styles.subtitle}>Manage your warehouses</p>
         </div>
         <div className={styles.headerActions}>
-          <button className={styles.iconBtn}><FileText size={18} color="#EA5455" /></button>
-          <button className={styles.iconBtn}><FileSpreadsheet size={18} color="#28C76F" /></button>
+          <button className={styles.iconBtn} onClick={() => exportToPDF(warehouses, 'Warehouse List')}><FileText size={18} color="#EA5455" /></button>
+          <button className={styles.iconBtn} onClick={() => exportToCSV(warehouses, 'warehouses.csv')}><FileSpreadsheet size={18} color="#28C76F" /></button>
           <button className={styles.iconBtn}><RefreshCw size={18} /></button>
           <button className={styles.iconBtn}><ChevronUp size={18} /></button>
           <button className={styles.btnPrimary} style={{ backgroundColor: '#FF9F43', color: 'white', border: 'none' }} onClick={() => setIsModalOpen(true)}>

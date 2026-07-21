@@ -5,6 +5,7 @@ import Card from '../components/ui/Card';
 import styles from './ProductList.module.css';
 import { Filter, Search, PlusCircle, Download, FileText, FileSpreadsheet, RefreshCw, ChevronUp, Edit, Trash2, Eye } from 'lucide-react';
 import { getAllProducts, deleteProduct } from '../services/productService';
+import { exportToCSV, exportToPDF } from '../utils/exportUtils';
 
 const ProductList = () => {
   const navigate = useNavigate();
@@ -69,8 +70,8 @@ const ProductList = () => {
           <p className={styles.subtitle}>Manage your products</p>
         </div>
         <div className={styles.headerActions}>
-          <button className={styles.iconBtn}><FileText size={18} color="#EA5455" /></button>
-          <button className={styles.iconBtn}><FileSpreadsheet size={18} color="#28C76F" /></button>
+          <button className={styles.iconBtn} onClick={() => exportToPDF(filtered, 'Product List')}><FileText size={18} color="#EA5455" /></button>
+          <button className={styles.iconBtn} onClick={() => exportToCSV(filtered, 'products.csv')}><FileSpreadsheet size={18} color="#28C76F" /></button>
           <button className={styles.iconBtn} onClick={loadProducts}><RefreshCw size={18} /></button>
           <button className={styles.iconBtn}><ChevronUp size={18} /></button>
           <button className={styles.btnPrimary} onClick={() => navigate('/create-product')}>

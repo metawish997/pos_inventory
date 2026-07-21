@@ -6,6 +6,7 @@ import { Search, FileText, FileSpreadsheet, RefreshCw, ChevronUp, Edit, Trash2, 
 import AddCategoryModal from '../components/modals/AddCategoryModal';
 import EditCategoryModal from '../components/modals/EditCategoryModal';
 import { getCategories, deleteCategory } from '../services/inventoryService';
+import { exportToCSV, exportToPDF } from '../utils/exportUtils';
 
 const CategoryList = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -54,8 +55,8 @@ const CategoryList = () => {
           <p className={styles.subtitle}>Manage your categories</p>
         </div>
         <div className={styles.headerActions}>
-          <button className={styles.iconBtn}><FileText size={18} color="#EA5455" /></button>
-          <button className={styles.iconBtn}><FileSpreadsheet size={18} color="#28C76F" /></button>
+          <button className={styles.iconBtn} onClick={() => exportToPDF(categories, 'Category List')}><FileText size={18} color="#EA5455" /></button>
+          <button className={styles.iconBtn} onClick={() => exportToCSV(categories, 'categories.csv')}><FileSpreadsheet size={18} color="#28C76F" /></button>
           <button className={styles.iconBtn}><RefreshCw size={18} /></button>
           <button className={styles.iconBtn}><ChevronUp size={18} /></button>
           <button className={styles.btnPrimary} onClick={() => setIsAddModalOpen(true)}>

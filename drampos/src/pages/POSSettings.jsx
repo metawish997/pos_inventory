@@ -18,6 +18,7 @@ const POSSettings = () => {
   const [storeName, setStoreName] = useState('Freshmart');
   const [storeEmail, setStoreEmail] = useState('freshmart@pos.com');
   const [storePhone, setStorePhone] = useState('9876543210');
+  const [storeAddress, setStoreAddress] = useState('3099 Kennedy Court Framingham, MA 01702');
   const [currency, setCurrency] = useState('INR (₹)');
 
   // Website Settings States
@@ -56,6 +57,7 @@ const POSSettings = () => {
         if (parsed.storeName) setStoreName(parsed.storeName);
         if (parsed.storeEmail) setStoreEmail(parsed.storeEmail);
         if (parsed.storePhone) setStorePhone(parsed.storePhone);
+        if (parsed.storeAddress) setStoreAddress(parsed.storeAddress);
         if (parsed.currency) setCurrency(parsed.currency);
         if (parsed.systemName) setSystemName(parsed.systemName);
         if (parsed.websiteTitle) setWebsiteTitle(parsed.websiteTitle);
@@ -84,7 +86,7 @@ const POSSettings = () => {
   const handleSave = (sectionName) => {
     const settings = {
       printer, paymentMethods, enableSound,
-      storeName, storeEmail, storePhone, currency,
+      storeName, storeEmail, storePhone, storeAddress, currency,
       systemName, websiteTitle,
       invoicePrefix, invoiceFooter,
       selectedTemplate, connectionType,
@@ -117,6 +119,12 @@ const POSSettings = () => {
                 <div className={styles.formLabel}>Store Phone</div>
                 <div className={styles.formControl} style={{ maxWidth: '400px' }}>
                   <input type="text" value={storePhone} onChange={(e) => setStorePhone(e.target.value)} className={styles.input} />
+                </div>
+              </div>
+              <div className={styles.formGroup}>
+                <div className={styles.formLabel}>Store Address</div>
+                <div className={styles.formControl} style={{ maxWidth: '400px' }}>
+                  <input type="text" value={storeAddress} onChange={(e) => setStoreAddress(e.target.value)} className={styles.input} />
                 </div>
               </div>
               <div className={styles.formGroup}>

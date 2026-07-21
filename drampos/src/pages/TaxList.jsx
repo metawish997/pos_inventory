@@ -6,6 +6,7 @@ import { Search, FileText, FileSpreadsheet, RefreshCw, ChevronUp, Edit, Trash2, 
 import AddTaxModal from '../components/modals/AddTaxModal';
 import EditTaxModal from '../components/modals/EditTaxModal';
 import { getTaxes, deleteTax } from '../services/inventoryService';
+import { exportToCSV, exportToPDF } from '../utils/exportUtils';
 
 const TaxList = () => {
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -55,8 +56,8 @@ const TaxList = () => {
                     <p className={styles.subtitle}>Configure tax rates and sub-components</p>
                 </div>
                 <div className={styles.headerActions}>
-                    <button className={styles.iconBtn}><FileText size={18} color="#EA5455" /></button>
-                    <button className={styles.iconBtn}><FileSpreadsheet size={18} color="#28C76F" /></button>
+                    <button className={styles.iconBtn} onClick={() => exportToPDF(taxes, 'Tax List')}><FileText size={18} color="#EA5455" /></button>
+                    <button className={styles.iconBtn} onClick={() => exportToCSV(taxes, 'taxes.csv')}><FileSpreadsheet size={18} color="#28C76F" /></button>
                     <button className={styles.iconBtn}><RefreshCw size={18} onClick={fetchTaxes} /></button>
                     <button className={styles.iconBtn}><ChevronUp size={18} /></button>
                     <button className={styles.btnPrimary} onClick={() => setIsAddModalOpen(true)}>

@@ -6,6 +6,7 @@ import { Search, FileText, FileSpreadsheet, RefreshCw, ChevronUp, Edit, Trash2, 
 import AddSubCategoryModal from '../components/modals/AddSubCategoryModal';
 import EditSubCategoryModal from '../components/modals/EditSubCategoryModal';
 import { getSubCategories, deleteSubCategory } from '../services/inventoryService';
+import { exportToCSV, exportToPDF } from '../utils/exportUtils';
 
 const SubCategoryList = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -57,8 +58,8 @@ const SubCategoryList = () => {
           <p className={styles.subtitle}>Manage your sub categories</p>
         </div>
         <div className={styles.headerActions}>
-          <button className={styles.iconBtn}><FileText size={18} color="#EA5455" /></button>
-          <button className={styles.iconBtn}><FileSpreadsheet size={18} color="#28C76F" /></button>
+          <button className={styles.iconBtn} onClick={() => exportToPDF(subCategories, 'Sub Category List')}><FileText size={18} color="#EA5455" /></button>
+          <button className={styles.iconBtn} onClick={() => exportToCSV(subCategories, 'sub-categories.csv')}><FileSpreadsheet size={18} color="#28C76F" /></button>
           <button className={styles.iconBtn}><RefreshCw size={18} /></button>
           <button className={styles.iconBtn}><ChevronUp size={18} /></button>
           <button className={styles.btnPrimary} onClick={() => setIsModalOpen(true)}>

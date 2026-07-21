@@ -126,6 +126,7 @@ function App() {
           <Route path="/pos-orders" element={<PosOrdersList />} />
           <Route path="/invoices" element={<InvoiceList />} />
           <Route path="/invoice-details" element={<InvoiceDetails />} />
+          <Route path="/invoice-details/:id" element={<InvoiceDetails />} />
           <Route path="/sales-return" element={<SalesReturnList />} />
           <Route path="/quotation" element={<QuotationList />} />
           <Route path="/quotation-details" element={<QuotationDetails />} />

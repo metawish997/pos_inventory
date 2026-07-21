@@ -19,10 +19,17 @@ const Header = ({ isCollapsed, toggleCollapse, toggleMobile }) => {
   const [lowStockAlerts, setLowStockAlerts] = useState([]);
   const [systemMessages, setSystemMessages] = useState([]);
 
+  // Global Omni Search States
+  const [searchQuery, setSearchQuery] = useState('');
+  const [products, setProducts] = useState([]);
+  const [showSearchResults, setShowSearchResults] = useState(false);
+
   // Refs for Click Outside
   const addNewRef = useRef(null);
   const userDropdownRef = useRef(null);
   const mailRef = useRef(null);
+  const searchInputRef = useRef(null);
+  const searchContainerRef = useRef(null);
   const bellRef = useRef(null);
 
   // Fetch Notifications from DB
@@ -65,11 +72,30 @@ const Header = ({ isCollapsed, toggleCollapse, toggleMobile }) => {
 
     fetchNotifications();
 
+    // Load products list for local autocomplete search
+    fetch('/api/products')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) setProducts(data);
+        else if (data && Array.isArray(data.products)) setProducts(data.products);
+      })
+      .catch(console.error);
+
     const handleFullscreenChange = () => {
       setIsFullscreen(!!document.fullscreenElement);
     };
     
     document.addEventListener('fullscreenchange', handleFullscreenChange);
+
+    // Setup keydown Cmd/Ctrl + K focus hotkey
+    const handleKeyDown = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+        setShowSearchResults(true);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
 
     // Setup EventSource for SSE Real-time Updates
     const eventSource = new EventSource('/api/events');
@@ -88,6 +114,7 @@ const Header = ({ isCollapsed, toggleCollapse, toggleMobile }) => {
 
     return () => {
       eventSource.close();
+      window.removeEventListener('keydown', handleKeyDown);
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
     };
   }, []);
@@ -117,6 +144,9 @@ const Header = ({ isCollapsed, toggleCollapse, toggleMobile }) => {
       }
       if (bellRef.current && !bellRef.current.contains(event.target)) {
         setIsBellOpen(false);
+      }
+      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target)) {
+        setShowSearchResults(false);
       }
     };
 
@@ -177,6 +207,26 @@ const Header = ({ isCollapsed, toggleCollapse, toggleMobile }) => {
     navigate(path);
   };
 
+  const navigationRoutes = [
+    { label: 'POS Terminal', path: '/pos' },
+    { label: 'Products Directory', path: '/products' },
+    { label: 'Add Product', path: '/create-product' },
+    { label: 'Invoice List', path: '/invoices' },
+    { label: 'Customers Directory', path: '/customers' },
+    { label: 'Suppliers Directory', path: '/suppliers' },
+    { label: 'Low Stock Replenishment', path: '/low-stocks' },
+    { label: 'POS Terminal Settings', path: '/pos-settings' }
+  ];
+
+  const matchingRoutes = searchQuery ? navigationRoutes.filter(r => 
+    r.label.toLowerCase().includes(searchQuery.toLowerCase())
+  ) : [];
+
+  const matchingProducts = searchQuery ? products.filter(p => 
+    (p.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (p.sku || '').toLowerCase().includes(searchQuery.toLowerCase())
+  ) : [];
+
   return (
     <header className={styles.header}>
       <div className={styles.left}>
@@ -193,12 +243,104 @@ const Header = ({ isCollapsed, toggleCollapse, toggleMobile }) => {
           </button>
         </div>
         
-        <div className={`${styles.searchBox} ${styles.hideOnMobile}`}>
+        <div className={`${styles.searchBox} ${styles.hideOnMobile}`} ref={searchContainerRef} style={{ position: 'relative' }}>
           <Search size={18} className={styles.searchIcon} />
-          <input type="text" placeholder="Search" />
+          <input 
+            type="text" 
+            placeholder="Search" 
+            value={searchQuery}
+            ref={searchInputRef}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setShowSearchResults(true);
+            }}
+            onFocus={() => setShowSearchResults(true)}
+          />
           <div className={styles.shortcut}>
             <span>⌘</span><span>K</span>
           </div>
+
+          {showSearchResults && searchQuery && (
+            <div style={{
+              position: 'absolute',
+              top: '100%',
+              left: 0,
+              right: 0,
+              backgroundColor: 'white',
+              borderRadius: '8px',
+              boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+              border: '1px solid #E5E7EB',
+              marginTop: '0.5rem',
+              maxHeight: '300px',
+              overflowY: 'auto',
+              zIndex: 1000,
+              padding: '0.5rem 0'
+            }}>
+              {matchingRoutes.length === 0 && matchingProducts.length === 0 && (
+                <div style={{ padding: '0.75rem 1rem', color: '#9CA3AF', fontSize: '0.85rem' }}>No results match "{searchQuery}"</div>
+              )}
+              
+              {matchingRoutes.length > 0 && (
+                <div>
+                  <div style={{ padding: '0.25rem 1rem', fontSize: '0.7rem', fontWeight: 600, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Pages & Navigation</div>
+                  {matchingRoutes.map(route => (
+                    <div 
+                      key={route.path}
+                      onClick={() => {
+                        navigate(route.path);
+                        setSearchQuery('');
+                        setShowSearchResults(false);
+                      }}
+                      style={{
+                        padding: '0.5rem 1rem',
+                        fontSize: '0.85rem',
+                        color: '#1B2850',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        transition: 'background-color 0.15s ease'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F3F4F6'}
+                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                    >
+                      <span>➔ {route.label}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {matchingProducts.length > 0 && (
+                <div style={{ marginTop: matchingRoutes.length > 0 ? '0.5rem' : 0 }}>
+                  <div style={{ padding: '0.25rem 1rem', fontSize: '0.7rem', fontWeight: 600, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Inventory Products</div>
+                  {matchingProducts.map(p => (
+                    <div 
+                      key={p._id}
+                      onClick={() => {
+                        navigate(`/product-details/${p._id}`);
+                        setSearchQuery('');
+                        setShowSearchResults(false);
+                      }}
+                      style={{
+                        padding: '0.5rem 1rem',
+                        fontSize: '0.85rem',
+                        color: '#1B2850',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        transition: 'background-color 0.15s ease'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F3F4F6'}
+                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                    >
+                      <span style={{ fontWeight: 500 }}>{p.name}</span>
+                      <span style={{ fontSize: '0.75rem', color: '#9CA3AF' }}>SKU: {p.sku} | Price: ₹{p.sellingPrice || p.price}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 

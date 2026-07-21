@@ -6,6 +6,7 @@ import { Search, FileText, FileSpreadsheet, RefreshCw, ChevronUp, Edit, Trash2, 
 import AddVariantModal from '../components/modals/AddVariantModal';
 import EditVariantModal from '../components/modals/EditVariantModal';
 import { getVariantAttributes, deleteVariantAttribute } from '../services/inventoryService';
+import { exportToCSV, exportToPDF } from '../utils/exportUtils';
 
 const VariantList = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -52,8 +53,8 @@ const VariantList = () => {
           <p className={styles.subtitle}>Manage your variant attributes</p>
         </div>
         <div className={styles.headerActions}>
-          <button className={styles.iconBtn}><FileText size={18} color="#EA5455" /></button>
-          <button className={styles.iconBtn}><FileSpreadsheet size={18} color="#28C76F" /></button>
+          <button className={styles.iconBtn} onClick={() => exportToPDF(variants, 'Variant Attribute List')}><FileText size={18} color="#EA5455" /></button>
+          <button className={styles.iconBtn} onClick={() => exportToCSV(variants, 'variants.csv')}><FileSpreadsheet size={18} color="#28C76F" /></button>
           <button className={styles.iconBtn}><RefreshCw size={18} /></button>
           <button className={styles.iconBtn}><ChevronUp size={18} /></button>
           <button className={styles.btnPrimary} onClick={() => setIsAddModalOpen(true)}>

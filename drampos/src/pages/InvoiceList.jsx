@@ -118,7 +118,7 @@ const InvoiceList = () => {
                     <td>
                       <button 
                         style={{border: 'none', background: 'none', cursor: 'pointer', color: '#6B7280'}}
-                        onClick={() => navigate('/invoice-details')}
+                        onClick={() => navigate(`/invoice-details/${item._id}`)}
                       >
                         <Eye size={16} />
                       </button>

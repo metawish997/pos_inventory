@@ -11,6 +11,7 @@ router.delete('/:id', saleController.deleteSale);
 
 // Invoice Routes
 router.get('/invoices/list', saleController.getInvoices);
+router.get('/invoices/:id', saleController.getInvoiceById);
 
 // Quotation Routes
 router.get('/quotations/list', saleController.getQuotations);

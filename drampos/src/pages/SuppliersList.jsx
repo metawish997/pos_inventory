@@ -5,6 +5,7 @@ import styles from './ProductList.module.css';
 import { Search, FileText, FileSpreadsheet, RefreshCw, ChevronUp, Edit, Trash2 } from 'lucide-react';
 import { API_BASE_URL } from '../api/endpoints';
 import AddSupplierModal from '../components/modals/AddSupplierModal';
+import { exportToCSV, exportToPDF } from '../utils/exportUtils';
 
 const SuppliersList = () => {
   const [suppliers, setSuppliers] = useState([]);
@@ -67,8 +68,8 @@ const SuppliersList = () => {
           <p className={styles.subtitle}>Manage your suppliers directory</p>
         </div>
         <div className={styles.headerActions}>
-          <button className={styles.iconBtn}><FileText size={18} color="#EA5455" /></button>
-          <button className={styles.iconBtn}><FileSpreadsheet size={18} color="#28C76F" /></button>
+          <button className={styles.iconBtn} onClick={() => exportToPDF(suppliers, 'Supplier List')}><FileText size={18} color="#EA5455" /></button>
+          <button className={styles.iconBtn} onClick={() => exportToCSV(suppliers, 'suppliers.csv')}><FileSpreadsheet size={18} color="#28C76F" /></button>
           <button className={styles.iconBtn} onClick={fetchSuppliers}><RefreshCw size={18} /></button>
           <button className={styles.iconBtn}><ChevronUp size={18} /></button>
           <button className={styles.btnPrimary} onClick={openAddModal} style={{backgroundColor: '#FF9F43', color: 'white', border: 'none'}}>

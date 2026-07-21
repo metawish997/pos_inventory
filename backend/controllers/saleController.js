@@ -171,6 +171,22 @@ exports.getInvoices = async (req, res) => {
     }
 };
 
+exports.getInvoiceById = async (req, res) => {
+    try {
+        const invoice = await Invoice.findById(req.params.id)
+            .populate({
+                path: 'sale',
+                populate: {
+                    path: 'items.product'
+                }
+            });
+        if (!invoice) return res.status(404).json({ success: false, message: 'Invoice not found' });
+        res.json({ success: true, data: invoice });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
 // --- QUOTATIONS CONTROLLERS ---
 
 exports.getQuotations = async (req, res) => {

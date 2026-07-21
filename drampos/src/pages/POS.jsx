@@ -143,8 +143,38 @@ const POS = () => {
     setCartItems(prev => prev.filter(item => item.product._id !== productId));
   };
 
-  const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.qty), 0);
-  const grandTotal = subtotal;
+  const calculateCartTotals = () => {
+    let sub = 0;
+    let totalTax = 0;
+    let addedTax = 0;
+    
+    cartItems.forEach(item => {
+      const price = item.price;
+      const qty = item.qty;
+      const lineSubtotal = price * qty;
+      sub += lineSubtotal;
+      
+      const taxRate = item.product.tax?.taxValue || 0;
+      const isInclusive = item.product.taxType === 'Inclusive';
+      
+      if (isInclusive) {
+        const taxAmount = lineSubtotal - (lineSubtotal / (1 + taxRate / 100));
+        totalTax += taxAmount;
+      } else {
+        const taxAmount = lineSubtotal * (taxRate / 100);
+        totalTax += taxAmount;
+        addedTax += taxAmount;
+      }
+    });
+    
+    return {
+      subtotal: sub,
+      totalTax: Math.round(totalTax * 100) / 100,
+      grandTotal: Math.round((sub + addedTax) * 100) / 100
+    };
+  };
+
+  const { subtotal, totalTax, grandTotal } = calculateCartTotals();
 
   const handleCheckout = async () => {
     if (cartItems.length === 0) {
@@ -159,10 +189,15 @@ const POS = () => {
           product: ci.product._id,
           quantity: ci.qty,
           unitPrice: ci.price,
+          taxRate: ci.product.tax?.taxValue || 0,
+          taxAmount: ci.product.taxType === 'Inclusive' 
+            ? ((ci.price * ci.qty) - ((ci.price * ci.qty) / (1 + (ci.product.tax?.taxValue || 0) / 100)))
+            : ((ci.price * ci.qty) * ((ci.product.tax?.taxValue || 0) / 100)),
           subtotal: ci.price * ci.qty,
           total: ci.price * ci.qty
         })),
         subtotal: subtotal,
+        totalTax: totalTax,
         grandTotal: grandTotal,
         paidAmount: grandTotal,
         paymentStatus: 'Paid',
@@ -329,6 +364,12 @@ const POS = () => {
               <span>Sub Total</span>
               <span>₹{subtotal}</span>
             </div>
+            {totalTax > 0 && (
+              <div className={styles.summaryRow} style={{ color: '#FF9F43' }}>
+                <span>GST Tax</span>
+                <span>₹{totalTax}</span>
+              </div>
+            )}
             <div className={`${styles.summaryRow} ${styles.grandTotalRow}`}>
               <span>Grand Total</span>
               <span>₹{grandTotal}</span>

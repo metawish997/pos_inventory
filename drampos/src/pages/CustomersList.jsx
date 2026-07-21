@@ -5,6 +5,7 @@ import styles from './ProductList.module.css';
 import { Search, FileText, FileSpreadsheet, RefreshCw, ChevronUp, Edit, Trash2 } from 'lucide-react';
 import AddCustomerModal from '../components/modals/AddCustomerModal';
 import { getCustomers, deleteCustomer } from '../services/customerService';
+import { exportToCSV, exportToPDF } from '../utils/exportUtils';
 
 const CustomersList = () => {
   const [customers, setCustomers] = useState([]);
@@ -61,8 +62,8 @@ const CustomersList = () => {
           <p className={styles.subtitle}>Manage your customer directory</p>
         </div>
         <div className={styles.headerActions}>
-          <button className={styles.iconBtn}><FileText size={18} color="#EA5455" /></button>
-          <button className={styles.iconBtn}><FileSpreadsheet size={18} color="#28C76F" /></button>
+          <button className={styles.iconBtn} onClick={() => exportToPDF(customers, 'Customer List')}><FileText size={18} color="#EA5455" /></button>
+          <button className={styles.iconBtn} onClick={() => exportToCSV(customers, 'customers.csv')}><FileSpreadsheet size={18} color="#28C76F" /></button>
           <button className={styles.iconBtn} onClick={fetchCustomerList}><RefreshCw size={18} /></button>
           <button className={styles.iconBtn}><ChevronUp size={18} /></button>
           <button className={styles.btnPrimary} onClick={openAddModal} style={{backgroundColor: '#FF9F43', color: 'white', border: 'none'}}>
