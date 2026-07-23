@@ -227,6 +227,12 @@ const Sidebar = ({ isCollapsed, isMobileOpen, closeMobile }) => {
             </NavLink>
           </li>
           <li>
+            <NavLink to="/proforma-invoices" className={({ isActive }) => isActive ? `${styles.menuItem} ${styles.active}` : styles.menuItem}>
+              <FileText size={18} />
+              <span>Proforma Invoices</span>
+            </NavLink>
+          </li>
+          <li>
             <NavLink to="/sales-return" className={({ isActive }) => isActive ? `${styles.menuItem} ${styles.active}` : styles.menuItem}>
               <ArrowRightLeft size={18} />
               <span>Sales Return</span>
@@ -236,6 +242,12 @@ const Sidebar = ({ isCollapsed, isMobileOpen, closeMobile }) => {
             <NavLink to="/quotation" className={({ isActive }) => isActive ? `${styles.menuItem} ${styles.active}` : styles.menuItem}>
               <FileCheck size={18} />
               <span>Quotation</span>
+            </NavLink>
+          </li>
+          <li>
+            <NavLink to="/delivery-challans" className={({ isActive }) => isActive ? `${styles.menuItem} ${styles.active}` : styles.menuItem}>
+              <FileCheck size={18} />
+              <span>Delivery Challans</span>
             </NavLink>
           </li>
           <li>
@@ -269,9 +281,9 @@ const Sidebar = ({ isCollapsed, isMobileOpen, closeMobile }) => {
                     Vendors
                   </NavLink>
                 </li>
-                <li style={{ marginBottom: '0.75rem' }}>
-                  <NavLink to="/purchase-orders-new" style={({ isActive }) => ({ textDecoration: 'none', fontSize: '0.875rem', color: isActive ? '#FF9F43' : '#6B7280', display: 'flex', alignItems: 'center', gap: '0.5rem' })}>
-                    <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: location.pathname === '/purchase-orders-new' ? '#FF9F43' : '#D1D5DB' }}></div>
+                 <li style={{ marginBottom: '0.75rem' }}>
+                  <NavLink to="/purchase-orders" style={({ isActive }) => ({ textDecoration: 'none', fontSize: '0.875rem', color: isActive ? '#FF9F43' : '#6B7280', display: 'flex', alignItems: 'center', gap: '0.5rem' })}>
+                    <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: location.pathname === '/purchase-orders' ? '#FF9F43' : '#D1D5DB' }}></div>
                     Purchase Orders
                   </NavLink>
                 </li>

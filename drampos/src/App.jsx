@@ -27,9 +27,10 @@ import SalesReturnList from './pages/SalesReturnList';
 import QuotationList from './pages/QuotationList';
 import QuotationDetails from './pages/QuotationDetails';
 import POS from './pages/POS';
-import PurchaseList from './pages/PurchaseList';
-import PurchaseOrderList from './pages/PurchaseOrderList';
 import PurchaseReturnsList from './pages/PurchaseReturnsList';
+import ProformaInvoiceList from './pages/ProformaInvoiceList';
+import DeliveryChallanList from './pages/DeliveryChallanList';
+import PaymentReceipt from './pages/PaymentReceipt';
 
 import PurchaseDashboard from './modules/purchase/pages/Dashboard/PurchaseDashboard';
 import VendorList from './modules/purchase/pages/Vendor/VendorList';
@@ -129,13 +130,16 @@ function App() {
           <Route path="/invoices" element={<InvoiceList />} />
           <Route path="/invoice-details" element={<InvoiceDetails />} />
           <Route path="/invoice-details/:id" element={<InvoiceDetails />} />
+          <Route path="/proforma-invoices" element={<ProformaInvoiceList />} />
+          <Route path="/delivery-challans" element={<DeliveryChallanList />} />
+          <Route path="/payment-receipt/:invoiceId/:paymentId" element={<PaymentReceipt />} />
           <Route path="/sales-return" element={<SalesReturnList />} />
           <Route path="/quotation" element={<QuotationList />} />
           <Route path="/quotation-details" element={<QuotationDetails />} />
           <Route path="/pos" element={<POS />} />
           <Route path="/pos-settings" element={<POSSettings />} />
-          <Route path="/purchases" element={<PurchaseList />} />
-          <Route path="/purchase-orders" element={<PurchaseOrderList />} />
+          <Route path="/purchases" element={<PurchaseOrders />} />
+          <Route path="/purchase-orders" element={<PurchaseOrders />} />
           <Route path="/purchase-returns" element={<PurchaseReturnsList />} />
 
           {/* Purchase Management Module */}
@@ -143,7 +147,6 @@ function App() {
           <Route path="/vendors" element={<VendorList />} />
           <Route path="/create-vendor" element={<AddVendor />} />
           <Route path="/edit-vendor/:id" element={<AddVendor />} />
-          <Route path="/purchase-orders-new" element={<PurchaseOrders />} />
           <Route path="/create-purchase" element={<AddPurchase />} />
           <Route path="/edit-purchase/:id" element={<AddPurchase />} />
           <Route path="/purchase-details/:id" element={<PurchaseDetails />} />

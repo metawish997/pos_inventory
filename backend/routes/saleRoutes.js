@@ -12,6 +12,8 @@ router.delete('/:id', saleController.deleteSale);
 // Invoice Routes
 router.get('/invoices/list', saleController.getInvoices);
 router.get('/invoices/:id', saleController.getInvoiceById);
+router.put('/invoices/:id/payment', saleController.recordInvoicePayment);
+router.put('/invoices/:id/convert', saleController.convertProformaToTaxInvoice);
 
 // Quotation Routes
 router.get('/quotations/list', saleController.getQuotations);

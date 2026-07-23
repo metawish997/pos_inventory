@@ -366,7 +366,7 @@ const AddPurchase = () => {
                 await createPurchase(payload);
             }
             setSaving(false);
-            navigate('/purchase-orders-new');
+            navigate('/purchase-orders');
         } catch (err) {
             setSaving(false);
             setError(err.message);
@@ -530,7 +530,7 @@ const AddPurchase = () => {
                                 {error && <div style={{ color: '#EA5455', margin: '1rem 0', fontSize: '0.875rem' }}>{error}</div>}
 
                                 <div className={styles.footerActions} style={{ marginTop: '2rem', justifyContent: 'flex-end', display: 'flex', gap: '1rem' }}>
-                                    <button type="button" className={styles.btnCancel} onClick={() => navigate('/purchase-orders-new')}>Cancel</button>
+                                    <button type="button" className={styles.btnCancel} onClick={() => navigate('/purchase-orders')}>Cancel</button>
                                     <button type="button" className={styles.btnSubmit} disabled={saving} onClick={() => handleSave('Approved')}>
                                         {saving ? 'Saving...' : 'Save & Approve'}
                                     </button>

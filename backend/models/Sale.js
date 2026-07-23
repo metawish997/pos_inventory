@@ -21,6 +21,7 @@ const saleSchema = new mongoose.Schema({
     customerName: { type: String, default: 'Walk-in Customer' },
     customerEmail: { type: String, default: '' },
     customerPhone: { type: String, default: '' },
+    clientPoNumber: { type: String, default: '' },
     warehouse: { type: mongoose.Schema.Types.ObjectId, ref: 'Warehouse', default: null },
     store: { type: mongoose.Schema.Types.ObjectId, ref: 'Store', default: null },
     saleDate: { type: Date, default: Date.now },

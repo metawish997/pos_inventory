@@ -45,8 +45,9 @@ export const deleteSale = async (id) => {
     return fetchSalesApi(`/sales/${id}`, { method: 'DELETE' });
 };
 
-export const getInvoices = async () => {
-    return fetchSalesApi('/sales/invoices/list', { method: 'GET' });
+export const getInvoices = async (type = '') => {
+    const query = type ? `?type=${type}` : '';
+    return fetchSalesApi(`/sales/invoices/list${query}`, { method: 'GET' });
 };
 
 export const getQuotations = async () => {

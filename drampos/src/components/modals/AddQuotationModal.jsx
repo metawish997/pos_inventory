@@ -7,6 +7,7 @@ import { createQuotation } from '../../services/salesService';
 
 const AddQuotationModal = ({ isOpen, onClose }) => {
   const [customerName, setCustomerName] = useState('');
+  const [clientPoNumber, setClientPoNumber] = useState('');
   const [products, setProducts] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState('');
   const [cartItems, setCartItems] = useState([]);
@@ -60,6 +61,7 @@ const AddQuotationModal = ({ isOpen, onClose }) => {
       setLoading(true);
       const payload = {
         customerName,
+        clientPoNumber,
         items: cartItems.map(ci => ({
           product: ci.product._id,
           quantity: ci.qty,
@@ -99,6 +101,19 @@ const AddQuotationModal = ({ isOpen, onClose }) => {
               value={customerName}
               onChange={(e) => setCustomerName(e.target.value)}
               required
+            />
+          </div>
+
+          <div style={{flex: 1}}>
+            <label style={{display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#374151', marginBottom: '0.5rem'}}>
+              Client PO Number
+            </label>
+            <input 
+              type="text" 
+              className={styles.input} 
+              placeholder="Client Purchase Order No." 
+              value={clientPoNumber}
+              onChange={(e) => setClientPoNumber(e.target.value)}
             />
           </div>
           

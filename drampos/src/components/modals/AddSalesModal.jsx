@@ -7,6 +7,7 @@ import { createSale } from '../../services/salesService';
 
 const AddSalesModal = ({ isOpen, onClose }) => {
   const [customerName, setCustomerName] = useState('');
+  const [clientPoNumber, setClientPoNumber] = useState('');
   const [products, setProducts] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState('');
   const [cartItems, setCartItems] = useState([]);
@@ -64,6 +65,7 @@ const AddSalesModal = ({ isOpen, onClose }) => {
       const payload = {
         saleType: 'Online',
         customerName: customerName,
+        clientPoNumber: clientPoNumber,
         items: cartItems.map(ci => ({
           product: ci.product._id,
           quantity: ci.qty,
@@ -94,10 +96,10 @@ const AddSalesModal = ({ isOpen, onClose }) => {
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Add Sales" maxWidth="900px">
+    <Modal isOpen={isOpen} onClose={onClose} title="Add Sales" maxWidth="950px">
       <form onSubmit={handleSubmit} className={styles.form}>
-        <div style={{display: 'flex', gap: '1.5rem', marginBottom: '1.5rem'}}>
-          <div style={{flex: 1}}>
+        <div style={{display: 'flex', gap: '1rem', marginBottom: '1.5rem'}}>
+          <div style={{flex: 1.2}}>
             <label style={{display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#374151', marginBottom: '0.5rem'}}>
               Customer Name <span className={styles.required}>*</span>
             </label>
@@ -110,8 +112,21 @@ const AddSalesModal = ({ isOpen, onClose }) => {
               required
             />
           </div>
-          
+
           <div style={{flex: 1}}>
+            <label style={{display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#374151', marginBottom: '0.5rem'}}>
+              Client PO Number
+            </label>
+            <input 
+              type="text" 
+              className={styles.input} 
+              placeholder="Client PO No." 
+              value={clientPoNumber}
+              onChange={(e) => setClientPoNumber(e.target.value)}
+            />
+          </div>
+          
+          <div style={{flex: 0.8}}>
             <label style={{display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#374151', marginBottom: '0.5rem'}}>
               Order Status
             </label>
@@ -122,7 +137,7 @@ const AddSalesModal = ({ isOpen, onClose }) => {
             </select>
           </div>
 
-          <div style={{flex: 1}}>
+          <div style={{flex: 0.8}}>
             <label style={{display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#374151', marginBottom: '0.5rem'}}>
               Payment Status
             </label>

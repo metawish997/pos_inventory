@@ -3,8 +3,9 @@ import { useNavigate, useParams } from 'react-router-dom';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import Card from '../components/ui/Card';
 import styles from './ProductList.module.css'; // Reusing styles
-import { Printer, ArrowLeft } from 'lucide-react';
+import { Printer, ArrowLeft, Plus } from 'lucide-react';
 import { API_BASE_URL } from '../api/endpoints';
+import Modal from '../components/ui/Modal';
 
 const InvoiceDetails = () => {
   const navigate = useNavigate();
@@ -12,6 +13,49 @@ const InvoiceDetails = () => {
   const [invoice, setInvoice] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [paymentAmount, setPaymentAmount] = useState('');
+  const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0]);
+  const [paymentRef, setPaymentRef] = useState('');
+  const [submittingPayment, setSubmittingPayment] = useState(false);
+
+  const handlePaymentSubmit = async (e) => {
+    e.preventDefault();
+    if (!paymentAmount || Number(paymentAmount) <= 0) {
+      alert('Please enter a valid payment amount');
+      return;
+    }
+    try {
+      setSubmittingPayment(true);
+      const response = await fetch(`${API_BASE_URL}/sales/invoices/${invoice._id}/payment`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          amount: Number(paymentAmount),
+          paymentDate,
+          referenceNumber: paymentRef
+        })
+      });
+      const data = await response.json();
+      if (data.success) {
+        alert('Payment recorded successfully!');
+        setIsPaymentModalOpen(false);
+        setPaymentAmount('');
+        setPaymentRef('');
+        fetchInvoiceDetails();
+      } else {
+        alert(data.message || 'Failed to record payment');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error occurred recording payment');
+    } finally {
+      setSubmittingPayment(false);
+    }
+  };
 
   const fetchInvoiceDetails = async () => {
     try {
@@ -88,6 +132,14 @@ const InvoiceDetails = () => {
           <h1 className={styles.title}>Invoice Details</h1>
         </div>
         <div className={styles.headerActions}>
+          {invoice.dueAmount > 0 && (
+            <button className={styles.btnPrimary} style={{backgroundColor: '#28C76F'}} onClick={() => {
+              setPaymentAmount(invoice.dueAmount);
+              setIsPaymentModalOpen(true);
+            }}>
+              <Plus size={18} /> Add Payment
+            </button>
+          )}
           <button className={styles.iconBtn} onClick={handlePrint}><Printer size={18} color="#4B5563" /></button>
           <button className={styles.btnPrimary} style={{backgroundColor: '#FF9F43'}} onClick={() => navigate('/invoices')}>
             <ArrowLeft size={18} /> Back to Invoices
@@ -132,24 +184,41 @@ const InvoiceDetails = () => {
           </div>
           <div>
             <p style={{fontSize: '0.875rem', color: '#1B2850', fontWeight: 600, marginBottom: '0.5rem'}}>Payment Status</p>
-            <span style={{
-              backgroundColor: invoice.status === 'Paid' ? '#E8F9EE' : '#FCEAEA', 
-              color: invoice.status === 'Paid' ? '#28C76F' : '#EA5455', 
-              padding: '4px 8px', 
-              borderRadius: '4px', 
-              fontSize: '12px', 
-              display: 'inline-flex', 
-              alignItems: 'center', 
-              gap: '4px', 
-              marginBottom: '1rem'
-            }}>
-              <span style={{
-                width: '6px', 
-                height: '6px', 
-                borderRadius: '50%', 
-                backgroundColor: invoice.status === 'Paid' ? '#28C76F' : '#EA5455'
-              }}></span> {invoice.status}
-            </span>
+            {(() => {
+              let bg = '#FCEAEA';
+              let color = '#EA5455';
+              if (invoice.status === 'Paid') {
+                bg = '#E8F9EE';
+                color = '#28C76F';
+              } else if (invoice.status === 'Partially Paid') {
+                bg = '#FFF1E6';
+                color = '#FF9F43';
+              } else if (invoice.status === 'Overdue') {
+                bg = '#FFF2F2';
+                color = '#EA5455';
+              }
+              return (
+                <span style={{
+                  backgroundColor: bg, 
+                  color: color, 
+                  padding: '4px 8px', 
+                  borderRadius: '4px', 
+                  fontSize: '12px', 
+                  display: 'inline-flex', 
+                  alignItems: 'center', 
+                  gap: '6px', 
+                  marginBottom: '1rem',
+                  fontWeight: 600
+                }}>
+                  <span style={{
+                    width: '6px', 
+                    height: '6px', 
+                    borderRadius: '50%', 
+                    backgroundColor: color
+                  }}></span> {invoice.status}
+                </span>
+              );
+            })()}
             <div style={{width: '80px', height: '80px', backgroundColor: '#F3F4F6'}}>
               <img src={`https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${invoice.invoiceNumber}`} alt="QR Code" style={{width: '100%', height: '100%'}} />
             </div>
@@ -189,7 +258,48 @@ const InvoiceDetails = () => {
           </table>
         </div>
 
-        <div style={{display: 'flex', justifyContent: 'flex-end', marginBottom: '2rem'}}>
+        <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '2rem', gap: '2rem', flexWrap: 'wrap'}}>
+          <div style={{flex: 1, minWidth: '300px'}}>
+            {invoice.payments && invoice.payments.length > 0 ? (
+              <div>
+                <p style={{fontSize: '0.875rem', color: '#1B2850', fontWeight: 600, marginBottom: '0.5rem'}}>Payment History</p>
+                <div style={{border: '1px solid #E5E7EB', borderRadius: '6px', overflow: 'hidden'}}>
+                  <table style={{width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.75rem'}}>
+                    <thead>
+                      <tr style={{backgroundColor: '#F9FAFB', color: '#4B5563'}}>
+                        <th style={{padding: '0.5rem 0.75rem', fontWeight: 600}}>Date</th>
+                        <th style={{padding: '0.5rem 0.75rem', fontWeight: 600}}>Ref No</th>
+                        <th style={{padding: '0.5rem 0.75rem', fontWeight: 600, textAlign: 'right'}}>Amount</th>
+                        <th style={{padding: '0.5rem 0.75rem', fontWeight: 600, textAlign: 'center'}}>Receipt</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {invoice.payments.map((p, idx) => (
+                        <tr key={idx} style={{borderTop: '1px solid #E5E7EB'}}>
+                          <td style={{padding: '0.5rem 0.75rem', color: '#4B5563'}}>{new Date(p.paymentDate).toLocaleDateString()}</td>
+                          <td style={{padding: '0.5rem 0.75rem', color: '#4B5563'}}>{p.referenceNumber || '—'}</td>
+                          <td style={{padding: '0.5rem 0.75rem', color: '#28C76F', fontWeight: 600, textAlign: 'right'}}>₹{p.amount.toFixed(2)}</td>
+                          <td style={{padding: '0.5rem 0.75rem', textAlign: 'center'}}>
+                            <button 
+                              onClick={() => navigate(`/payment-receipt/${invoice._id}/${p._id}`)}
+                              style={{border: 'none', background: 'none', cursor: 'pointer', color: '#FF9F43', display: 'inline-flex', alignItems: 'center'}}
+                              title="Print Receipt"
+                            >
+                              <Printer size={14} />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ) : (
+              <div style={{padding: '1rem', backgroundColor: '#F9FAFB', borderRadius: '6px', border: '1px dashed #D1D5DB'}}>
+                <p style={{fontSize: '0.875rem', color: '#9CA3AF', fontStyle: 'italic', margin: 0}}>No payments recorded yet.</p>
+              </div>
+            )}
+          </div>
           <div style={{width: '350px'}}>
             <div style={{display: 'flex', justifyContent: 'space-between', padding: '0.75rem 0'}}>
               <span style={{color: '#4B5563', fontSize: '0.875rem'}}>Sub Total</span>
@@ -234,6 +344,66 @@ const InvoiceDetails = () => {
           <Printer size={18} /> Print Invoice
         </button>
       </div>
+
+      <Modal isOpen={isPaymentModalOpen} onClose={() => setIsPaymentModalOpen(false)} title="Record Invoice Payment">
+        <form onSubmit={handlePaymentSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', padding: '1rem' }}>
+          <div>
+            <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#374151', marginBottom: '0.5rem' }}>
+              Payment Date
+            </label>
+            <input 
+              type="date" 
+              value={paymentDate} 
+              onChange={(e) => setPaymentDate(e.target.value)} 
+              style={{ width: '100%', padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: '4px', boxSizing: 'border-box' }}
+            />
+          </div>
+          <div>
+            <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#374151', marginBottom: '0.5rem' }}>
+              Amount (INR) <span style={{ color: 'red' }}>*</span>
+            </label>
+            <input 
+              type="number" 
+              min="0.01" 
+              step="0.01"
+              max={invoice.dueAmount}
+              value={paymentAmount} 
+              onChange={(e) => setPaymentAmount(e.target.value)} 
+              style={{ width: '100%', padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: '4px', boxSizing: 'border-box' }}
+              required
+            />
+            <small style={{ color: '#6B7280' }}>Max payable: ₹{invoice.dueAmount}</small>
+          </div>
+          <div>
+            <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#374151', marginBottom: '0.5rem' }}>
+              Reference / Transaction No. (Optional)
+            </label>
+            <input 
+              type="text" 
+              placeholder="e.g. UPI Ref, Bank Txn ID"
+              value={paymentRef} 
+              onChange={(e) => setPaymentRef(e.target.value)} 
+              style={{ width: '100%', padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: '4px', boxSizing: 'border-box' }}
+            />
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1.5rem' }}>
+            <button 
+              type="button" 
+              onClick={() => setIsPaymentModalOpen(false)} 
+              style={{ padding: '0.5rem 1rem', border: '1px solid #d1d5db', borderRadius: '4px', backgroundColor: 'white', cursor: 'pointer' }}
+            >
+              Cancel
+            </button>
+            <button 
+              type="submit" 
+              disabled={submittingPayment}
+              style={{ padding: '0.5rem 1rem', border: 'none', borderRadius: '4px', backgroundColor: '#28C76F', color: 'white', cursor: 'pointer', fontWeight: 500 }}
+            >
+              {submittingPayment ? 'Submitting...' : 'Submit Payment'}
+            </button>
+          </div>
+        </form>
+      </Modal>
     </DashboardLayout>
   );
 };

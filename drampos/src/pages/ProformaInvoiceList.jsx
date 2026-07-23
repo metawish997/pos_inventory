@@ -3,10 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import Card from '../components/ui/Card';
 import styles from './ProductList.module.css';
-import { Search, RefreshCw, Eye } from 'lucide-react';
+import { Search, RefreshCw, Eye, CheckCircle } from 'lucide-react';
 import { getInvoices } from '../services/salesService';
+import { API_BASE_URL } from '../api/endpoints';
 
-const InvoiceList = () => {
+const ProformaInvoiceList = () => {
   const navigate = useNavigate();
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -15,12 +16,12 @@ const InvoiceList = () => {
   const fetchInvoices = async () => {
     try {
       setLoading(true);
-      const res = await getInvoices('Tax Invoice');
+      const res = await getInvoices('Proforma Invoice');
       if (res.success) {
         setInvoices(res.data);
       }
     } catch (err) {
-      console.error('Failed to fetch invoices:', err);
+      console.error('Failed to fetch proforma invoices:', err);
     } finally {
       setLoading(false);
     }
@@ -29,6 +30,27 @@ const InvoiceList = () => {
   useEffect(() => {
     fetchInvoices();
   }, []);
+
+  const handleConvert = async (id) => {
+    if (!window.confirm('Convert this Proforma Invoice to a final Tax Invoice?')) return;
+    try {
+      const response = await fetch(`${API_BASE_URL}/sales/invoices/${id}/convert`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      const data = await response.json();
+      if (data.success) {
+        alert('Successfully converted to Tax Invoice!');
+        fetchInvoices();
+      } else {
+        alert(data.message || 'Conversion failed');
+      }
+    } catch (e) {
+      alert('Error occurred during conversion');
+    }
+  };
 
   const getStatusBadge = (status) => {
     switch (status) {
@@ -52,8 +74,8 @@ const InvoiceList = () => {
     <DashboardLayout>
       <div className={styles.pageHeader}>
         <div>
-          <h1 className={styles.title}>Invoices</h1>
-          <p className={styles.subtitle}>Manage Sales Invoices</p>
+          <h1 className={styles.title}>Proforma Invoices</h1>
+          <p className={styles.subtitle}>Manage Preliminary Invoices</p>
         </div>
         <div className={styles.headerActions}>
           <button className={styles.iconBtn} onClick={fetchInvoices}><RefreshCw size={18} /></button>
@@ -66,7 +88,7 @@ const InvoiceList = () => {
             <Search size={18} className={styles.searchIcon} />
             <input 
               type="text" 
-              placeholder="Search Invoice No or Customer" 
+              placeholder="Search Proforma Invoice No or Customer" 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -78,7 +100,7 @@ const InvoiceList = () => {
             <thead>
               <tr>
                 <th><input type="checkbox" /></th>
-                <th>Invoice No</th>
+                <th>Proforma No</th>
                 <th>Customer</th>
                 <th>Due Date</th>
                 <th>Amount</th>
@@ -91,11 +113,11 @@ const InvoiceList = () => {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan="9" style={{textAlign: 'center', padding: '2rem'}}>Loading Invoices...</td>
+                  <td colSpan="9" style={{textAlign: 'center', padding: '2rem'}}>Loading Proforma Invoices...</td>
                 </tr>
               ) : filteredInvoices.length === 0 ? (
                 <tr>
-                  <td colSpan="9" style={{textAlign: 'center', padding: '2rem'}}>No invoice records found</td>
+                  <td colSpan="9" style={{textAlign: 'center', padding: '2rem'}}>No proforma invoice records found</td>
                 </tr>
               ) : (
                 filteredInvoices.map((item, i) => (
@@ -116,12 +138,22 @@ const InvoiceList = () => {
                     <td>₹{item.dueAmount || 0}</td>
                     <td>{getStatusBadge(item.status)}</td>
                     <td>
-                      <button 
-                        style={{border: 'none', background: 'none', cursor: 'pointer', color: '#6B7280'}}
-                        onClick={() => navigate(`/invoice-details/${item._id}`)}
-                      >
-                        <Eye size={16} />
-                      </button>
+                      <div style={{display: 'flex', gap: '0.5rem', alignItems: 'center'}}>
+                        <button 
+                          style={{border: 'none', background: 'none', cursor: 'pointer', color: '#6B7280', display: 'inline-flex', alignItems: 'center'}}
+                          onClick={() => navigate(`/invoice-details/${item._id}`)}
+                          title="View Details"
+                        >
+                          <Eye size={16} />
+                        </button>
+                        <button 
+                          style={{border: 'none', background: 'none', cursor: 'pointer', color: '#28C76F', display: 'inline-flex', alignItems: 'center'}}
+                          onClick={() => handleConvert(item._id)}
+                          title="Convert to Tax Invoice"
+                        >
+                          <CheckCircle size={16} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -134,4 +166,4 @@ const InvoiceList = () => {
   );
 };
 
-export default InvoiceList;
+export default ProformaInvoiceList;

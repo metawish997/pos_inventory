@@ -164,7 +164,10 @@ exports.deleteSale = async (req, res) => {
 
 exports.getInvoices = async (req, res) => {
     try {
-        const invoices = await Invoice.find().populate('sale').sort({ createdAt: -1 });
+        const { type } = req.query;
+        const query = {};
+        if (type) query.invoiceType = type;
+        const invoices = await Invoice.find(query).populate('sale').sort({ createdAt: -1 });
         res.json({ success: true, data: invoices });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
@@ -254,6 +257,81 @@ exports.updateSalesReturn = async (req, res) => {
         if (!salesReturn) return res.status(404).json({ success: false, message: 'Sales return not found' });
         res.json({ success: true, data: salesReturn });
     } catch (error) {
+        const message = error.message;
+        res.status(400).json({ success: false, message });
+    }
+};
+
+exports.recordInvoicePayment = async (req, res) => {
+    try {
+        const { amount, paymentDate, referenceNumber } = req.body;
+        const invoice = await Invoice.findById(req.params.id);
+        if (!invoice) return res.status(404).json({ success: false, message: 'Invoice not found' });
+
+        const paymentAmount = Number(amount) || 0;
+        invoice.paidAmount = (invoice.paidAmount || 0) + paymentAmount;
+        invoice.dueAmount = Math.max(0, invoice.totalAmount - invoice.paidAmount);
+        
+        if (invoice.dueAmount <= 0) {
+            invoice.status = 'Paid';
+        } else if (invoice.paidAmount > 0) {
+            invoice.status = 'Partially Paid';
+        } else {
+            invoice.status = 'Unpaid';
+        }
+
+        if (paymentDate) {
+            invoice.notes = `${invoice.notes || ''}\n[Payment received: ₹${paymentAmount} on ${new Date(paymentDate).toLocaleDateString()}${referenceNumber ? ` (Ref: ${referenceNumber})` : ''}]`.trim();
+        }
+
+        // Push to payments array
+        invoice.payments.push({
+            amount: paymentAmount,
+            paymentDate: paymentDate || new Date(),
+            referenceNumber: referenceNumber || ''
+        });
+
+        await invoice.save();
+
+        // Update the linked Sale if it exists
+        if (invoice.sale) {
+            const sale = await Sale.findById(invoice.sale);
+            if (sale) {
+                sale.paidAmount = (sale.paidAmount || 0) + paymentAmount;
+                sale.dueAmount = Math.max(0, sale.grandTotal - sale.paidAmount);
+                if (sale.dueAmount <= 0) {
+                    sale.paymentStatus = 'Paid';
+                } else if (sale.paidAmount > 0) {
+                    sale.paymentStatus = 'Partial';
+                } else {
+                    sale.paymentStatus = 'Unpaid';
+                }
+                await sale.save();
+            }
+        }
+
+        res.json({ success: true, data: invoice });
+    } catch (error) {
         res.status(400).json({ success: false, message: error.message });
+    }
+};
+
+exports.convertProformaToTaxInvoice = async (req, res) => {
+    try {
+        const invoice = await Invoice.findById(req.params.id);
+        if (!invoice) return res.status(404).json({ success: false, message: 'Invoice not found' });
+        if (invoice.invoiceType !== 'Proforma Invoice') {
+            return res.status(400).json({ success: false, message: 'Only Proforma Invoices can be converted to Tax Invoices' });
+        }
+        
+        invoice.invoiceType = 'Tax Invoice';
+        // Generate new invoice number
+        const count = await Invoice.countDocuments({ invoiceType: 'Tax Invoice' });
+        invoice.invoiceNumber = `INV-${String(count + 1).padStart(4, '0')}`;
+        await invoice.save();
+
+        res.json({ success: true, data: invoice });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
     }
 };

@@ -27,6 +27,7 @@ const POS = () => {
   const [customerName, setCustomerName] = useState('Walk-in Customer');
   const [paymentMethod, setPaymentMethod] = useState('Cash');
   const [availablePaymentMethods, setAvailablePaymentMethods] = useState(['Cash', 'Card', 'UPI', 'Bank Transfer']);
+  const [customPaidAmount, setCustomPaidAmount] = useState('');
 
   const [isHoldOpen, setIsHoldOpen] = useState(false);
   const [isDiscountOpen, setIsDiscountOpen] = useState(false);
@@ -175,6 +176,9 @@ const POS = () => {
   };
 
   const { subtotal, totalTax, grandTotal } = calculateCartTotals();
+  const actualPaid = customPaidAmount === '' ? grandTotal : Number(customPaidAmount);
+  const dueAmt = Math.max(0, grandTotal - actualPaid);
+  const payStatus = dueAmt <= 0 ? 'Paid' : (actualPaid > 0 ? 'Partial' : 'Unpaid');
 
   const handleCheckout = async () => {
     if (cartItems.length === 0) {
@@ -199,8 +203,8 @@ const POS = () => {
         subtotal: subtotal,
         totalTax: totalTax,
         grandTotal: grandTotal,
-        paidAmount: grandTotal,
-        paymentStatus: 'Paid',
+        paidAmount: actualPaid,
+        paymentStatus: payStatus,
         orderStatus: 'Completed',
         paymentMethod: paymentMethod
       };
@@ -209,6 +213,7 @@ const POS = () => {
       if (res.success) {
         alert(`POS Order #${res.data.saleNumber} completed successfully!`);
         setCartItems([]);
+        setCustomPaidAmount('');
       }
     } catch (err) {
       alert(`Checkout failed: ${err.message}`);
@@ -374,6 +379,31 @@ const POS = () => {
               <span>Grand Total</span>
               <span>₹{grandTotal}</span>
             </div>
+            <div className={styles.summaryRow} style={{ marginTop: '0.5rem' }}>
+              <span style={{ fontWeight: 500 }}>Amount Paid</span>
+              <input 
+                type="number" 
+                min="0"
+                max={grandTotal}
+                placeholder={`Full: ₹${grandTotal}`}
+                value={customPaidAmount}
+                onChange={(e) => setCustomPaidAmount(e.target.value)}
+                style={{
+                  width: '120px', 
+                  padding: '0.25rem 0.5rem', 
+                  borderRadius: '4px', 
+                  border: '1px solid #D1D5DB', 
+                  textAlign: 'right',
+                  fontSize: '0.875rem'
+                }}
+              />
+            </div>
+            {customPaidAmount !== '' && (
+              <div className={styles.summaryRow} style={{ color: '#EA5455', fontWeight: 600 }}>
+                <span>Balance Due</span>
+                <span>₹{dueAmt.toFixed(2)}</span>
+              </div>
+            )}
           </div>
 
           <div className={styles.paymentTypes}>
