@@ -11,6 +11,8 @@ const deliveryChallanSchema = new mongoose.Schema({
     customerName: { type: String, required: true },
     customerEmail: { type: String, default: '' },
     customerPhone: { type: String, default: '' },
+    gstNumber: { type: String, default: '' },
+    placeOfSupply: { type: String, default: '' },
     challanDate: { type: Date, default: Date.now },
     items: [deliveryChallanItemSchema],
     status: {

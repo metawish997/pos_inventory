@@ -2,6 +2,9 @@ const mongoose = require('mongoose');
 
 const customerSchema = new mongoose.Schema({
   customerCode: { type: String, required: true, unique: true },
+  customerType: { type: String, enum: ['Individual', 'Company'], default: 'Individual' },
+  companyName: { type: String, default: '' },
+  displayName: { type: String, default: '' },
   firstName: { type: String, required: true },
   lastName: { type: String, required: true },
   email: { type: String, required: true },
@@ -12,6 +15,8 @@ const customerSchema = new mongoose.Schema({
   country: { type: String },
   postalCode: { type: String },
   avatar: { type: String },
+  gstNumber: { type: String, default: '' },
+  placeOfSupply: { type: String, default: '' },
   status: { type: String, enum: ['Active', 'Inactive'], default: 'Active' }
 }, { timestamps: true });
 

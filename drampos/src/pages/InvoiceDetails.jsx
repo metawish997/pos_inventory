@@ -180,6 +180,8 @@ const InvoiceDetails = () => {
             <div style={{color: '#4B5563', fontSize: '0.875rem', lineHeight: '1.5'}}>
               {invoice.customerEmail && <p>Email : {invoice.customerEmail}</p>}
               {invoice.customerPhone && <p>Phone : {invoice.customerPhone}</p>}
+              {invoice.gstNumber && <p>GST No : {invoice.gstNumber}</p>}
+              {invoice.placeOfSupply && <p>Place of Supply : {invoice.placeOfSupply}</p>}
             </div>
           </div>
           <div>

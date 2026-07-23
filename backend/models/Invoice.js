@@ -12,6 +12,8 @@ const invoiceSchema = new mongoose.Schema({
     customerName: { type: String, required: true },
     customerEmail: { type: String, default: '' },
     customerPhone: { type: String, default: '' },
+    gstNumber: { type: String, default: '' },
+    placeOfSupply: { type: String, default: '' },
     clientPoNumber: { type: String, default: '' },
     invoiceDate: { type: Date, default: Date.now },
     dueDate: { type: Date, default: () => new Date(Date.now() + 15 * 24 * 60 * 60 * 1000) },

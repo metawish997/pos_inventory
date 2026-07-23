@@ -19,6 +19,8 @@ const DeliveryChallanList = () => {
   const [customerName, setCustomerName] = useState('');
   const [customerEmail, setCustomerEmail] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
+  const [gstNumber, setGstNumber] = useState('');
+  const [placeOfSupply, setPlaceOfSupply] = useState('');
   const [status, setStatus] = useState('Draft');
   const [notes, setNotes] = useState('');
   const [selectedProduct, setSelectedProduct] = useState('');
@@ -87,6 +89,8 @@ const DeliveryChallanList = () => {
         customerName,
         customerEmail,
         customerPhone,
+        gstNumber,
+        placeOfSupply,
         status,
         notes,
         items: cartItems.map(ci => ({
@@ -110,6 +114,8 @@ const DeliveryChallanList = () => {
         setCustomerName('');
         setCustomerEmail('');
         setCustomerPhone('');
+        setGstNumber('');
+        setPlaceOfSupply('');
         setNotes('');
         setCartItems([]);
         fetchChallans();
@@ -261,6 +267,14 @@ const DeliveryChallanList = () => {
               <input type="text" className={modalStyles.input} placeholder="Phone" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} />
             </div>
             <div style={{flex: 1, minWidth: '150px'}}>
+              <label style={{display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#374151', marginBottom: '0.5rem'}}>GST No. (Optional)</label>
+              <input type="text" className={modalStyles.input} placeholder="GST No." value={gstNumber} onChange={(e) => setGstNumber(e.target.value)} />
+            </div>
+            <div style={{flex: 1, minWidth: '150px'}}>
+              <label style={{display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#374151', marginBottom: '0.5rem'}}>Place of Supply</label>
+              <input type="text" className={modalStyles.input} placeholder="Place of Supply" value={placeOfSupply} onChange={(e) => setPlaceOfSupply(e.target.value)} />
+            </div>
+            <div style={{flex: 1, minWidth: '150px'}}>
               <label style={{display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#374151', marginBottom: '0.5rem'}}>Status</label>
               <select className={modalStyles.select} value={status} onChange={(e) => setStatus(e.target.value)}>
                 <option value="Draft">Draft</option>
@@ -367,6 +381,8 @@ const DeliveryChallanList = () => {
                 <p style={{fontWeight: 600, color: '#1B2850', margin: '0 0 4px 0'}}>{selectedChallan.customerName}</p>
                 {selectedChallan.customerPhone && <p style={{fontSize: '0.875rem', color: '#6B7280', margin: 0}}>Phone: {selectedChallan.customerPhone}</p>}
                 {selectedChallan.customerEmail && <p style={{fontSize: '0.875rem', color: '#6B7280', margin: 0}}>Email: {selectedChallan.customerEmail}</p>}
+                {selectedChallan.gstNumber && <p style={{fontSize: '0.875rem', color: '#6B7280', margin: 0}}>GST No: {selectedChallan.gstNumber}</p>}
+                {selectedChallan.placeOfSupply && <p style={{fontSize: '0.875rem', color: '#6B7280', margin: 0}}>Place of Supply: {selectedChallan.placeOfSupply}</p>}
               </div>
             </div>
 

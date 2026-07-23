@@ -4,11 +4,17 @@ import styles from './ModalForm.module.css';
 import { Plus, Trash2 } from 'lucide-react';
 import { getAllProducts } from '../../services/productService';
 import { createQuotation } from '../../services/salesService';
+import { getCustomers } from '../../services/customerService';
 
 const AddQuotationModal = ({ isOpen, onClose }) => {
   const [customerName, setCustomerName] = useState('');
+  const [customerEmail, setCustomerEmail] = useState('');
+  const [customerPhone, setCustomerPhone] = useState('');
+  const [gstNumber, setGstNumber] = useState('');
+  const [placeOfSupply, setPlaceOfSupply] = useState('');
   const [clientPoNumber, setClientPoNumber] = useState('');
   const [products, setProducts] = useState([]);
+  const [customers, setCustomers] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState('');
   const [cartItems, setCartItems] = useState([]);
   const [status, setStatus] = useState('Sent');
@@ -20,6 +26,10 @@ const AddQuotationModal = ({ isOpen, onClose }) => {
       getAllProducts().then(res => {
         const prods = res.products || res.data || (Array.isArray(res) ? res : []);
         setProducts(prods);
+      }).catch(console.error);
+
+      getCustomers().then(data => {
+        if (data.success) setCustomers(data.data);
       }).catch(console.error);
     }
   }, [isOpen]);
@@ -61,6 +71,10 @@ const AddQuotationModal = ({ isOpen, onClose }) => {
       setLoading(true);
       const payload = {
         customerName,
+        customerEmail,
+        customerPhone,
+        gstNumber,
+        placeOfSupply,
         clientPoNumber,
         items: cartItems.map(ci => ({
           product: ci.product._id,
@@ -99,9 +113,38 @@ const AddQuotationModal = ({ isOpen, onClose }) => {
               className={styles.input} 
               placeholder="Customer Name" 
               value={customerName}
-              onChange={(e) => setCustomerName(e.target.value)}
+              onChange={(e) => {
+                const val = e.target.value;
+                setCustomerName(val);
+                const match = customers.find(c =>
+                  `${c.firstName} ${c.lastName}`.trim().toLowerCase() === val.toLowerCase() ||
+                  c.displayName?.toLowerCase() === val.toLowerCase()
+                );
+                if (match) {
+                  setCustomerEmail(match.email || '');
+                  setCustomerPhone(match.phone || '');
+                  setGstNumber(match.gstNumber || '');
+                  setPlaceOfSupply(match.placeOfSupply || '');
+                }
+              }}
+              list="quot-customer-suggestions"
               required
             />
+            <datalist id="quot-customer-suggestions">
+              {customers.map(c => (
+                <option key={c._id} value={c.displayName || `${c.firstName} ${c.lastName}`} />
+              ))}
+            </datalist>
+          </div>
+
+          <div style={{flex: 1}}>
+            <label style={{display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#374151', marginBottom: '0.5rem'}}>GST No. (Optional)</label>
+            <input type="text" className={styles.input} placeholder="GST No." value={gstNumber} onChange={(e) => setGstNumber(e.target.value)} />
+          </div>
+
+          <div style={{flex: 1}}>
+            <label style={{display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#374151', marginBottom: '0.5rem'}}>Place of Supply (Optional)</label>
+            <input type="text" className={styles.input} placeholder="Place of Supply" value={placeOfSupply} onChange={(e) => setPlaceOfSupply(e.target.value)} />
           </div>
 
           <div style={{flex: 1}}>

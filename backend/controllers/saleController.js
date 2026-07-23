@@ -107,6 +107,8 @@ exports.createSale = async (req, res) => {
             customerName: sale.customerName,
             customerEmail: sale.customerEmail,
             customerPhone: sale.customerPhone,
+            gstNumber: sale.gstNumber || '',
+            placeOfSupply: sale.placeOfSupply || '',
             subtotal: sale.subtotal,
             taxAmount: sale.totalTax,
             discountAmount: sale.totalDiscount,
