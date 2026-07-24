@@ -33,6 +33,7 @@ import DeliveryChallanList from './pages/DeliveryChallanList';
 import PaymentReceipt from './pages/PaymentReceipt';
 import CreateInvoice from './pages/CreateInvoice';
 import CreateQuotation from './pages/CreateQuotation';
+import ModuleIndex from './pages/ModuleIndex';
 
 import PurchaseDashboard from './modules/purchase/pages/Dashboard/PurchaseDashboard';
 import VendorList from './modules/purchase/pages/Vendor/VendorList';
@@ -132,6 +133,15 @@ function App() {
           <Route path="/invoices" element={<InvoiceList />} />
           <Route path="/create-invoice" element={<CreateInvoice />} />
           <Route path="/create-quotation" element={<CreateQuotation />} />
+          <Route path="/inventory-index" element={<ModuleIndex moduleId="inventory" />} />
+          <Route path="/tax-masters-index" element={<ModuleIndex moduleId="tax-masters" />} />
+          <Route path="/stock-index" element={<ModuleIndex moduleId="stock" />} />
+          <Route path="/sales-index" element={<ModuleIndex moduleId="sales" />} />
+          <Route path="/purchase-index" element={<ModuleIndex moduleId="purchase" />} />
+          <Route path="/promo-index" element={<ModuleIndex moduleId="promo" />} />
+          <Route path="/finance-index" element={<ModuleIndex moduleId="finance" />} />
+          <Route path="/reports-index" element={<ModuleIndex moduleId="reports" />} />
+          <Route path="/user-management-index" element={<ModuleIndex moduleId="user-management" />} />
           <Route path="/invoice-details" element={<InvoiceDetails />} />
           <Route path="/invoice-details/:id" element={<InvoiceDetails />} />
           <Route path="/proforma-invoices" element={<ProformaInvoiceList />} />
