@@ -4,7 +4,6 @@ import Card from '../components/ui/Card';
 import styles from './ProductList.module.css';
 import { Search, RefreshCw, PlusCircle } from 'lucide-react';
 import AddSalesReturnModal from '../components/modals/AddSalesReturnModal';
-import EditSalesReturnModal from '../components/modals/EditSalesReturnModal';
 import { getSalesReturns } from '../services/salesService';
 
 const SalesReturnList = () => {
@@ -12,6 +11,12 @@ const SalesReturnList = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddOpen, setIsAddOpen] = useState(false);
+
+  // Filter States
+  const [statusFilter, setStatusFilter] = useState('All');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [storeFilter, setStoreFilter] = useState('All');
 
   const fetchReturnsData = async () => {
     try {
@@ -38,14 +43,27 @@ const SalesReturnList = () => {
       case 'Pending':
         return <span style={{backgroundColor: '#FCEAEA', color: '#EA5455', padding: '4px 8px', borderRadius: '4px', fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px'}}><span style={{width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#EA5455'}}></span> {status}</span>;
       default:
-        return <span>{status || 'Refunded'}</span>;
+        return <span style={{backgroundColor: '#E8F9EE', color: '#28C76F', padding: '4px 8px', borderRadius: '4px', fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px'}}><span style={{width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#28C76F'}}></span> {status || 'Refunded'}</span>;
     }
   };
 
-  const filteredReturns = returns.filter(r =>
-    (r.customerName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (r.returnNumber || '').toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredReturns = returns.filter(r => {
+    const matchesSearch = (r.customerName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          (r.returnNumber || '').toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesStatus = statusFilter === 'All' || (r.refundStatus || 'Refunded') === statusFilter;
+
+    const storeName = r.store?.name || r.store;
+    const matchesStore = storeFilter === 'All' || storeName === storeFilter;
+
+    const dateVal = new Date(r.returnDate || r.createdAt);
+    const matchesStartDate = !startDate || dateVal >= new Date(startDate);
+    const matchesEndDate = !endDate || dateVal <= new Date(endDate);
+
+    return matchesSearch && matchesStatus && matchesStore && matchesStartDate && matchesEndDate;
+  });
+
+  const uniqueStores = Array.from(new Set(returns.map(r => r.store?.name || r.store).filter(Boolean)));
 
   return (
     <DashboardLayout>
@@ -72,6 +90,77 @@ const SalesReturnList = () => {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
+          </div>
+
+          <div className={styles.filters}>
+            {/* Refund Status Filter */}
+            <select 
+              value={statusFilter} 
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className={styles.select}
+            >
+              <option value="All">All Refund Statuses</option>
+              <option value="Refunded">Refunded</option>
+              <option value="Pending">Pending</option>
+            </select>
+
+            {/* Store Filter */}
+            <select 
+              value={storeFilter} 
+              onChange={(e) => setStoreFilter(e.target.value)}
+              className={styles.select}
+            >
+              <option value="All">All Stores</option>
+              {uniqueStores.map((st, idx) => (
+                <option key={idx} value={st}>{st}</option>
+              ))}
+            </select>
+
+            {/* Date Start Filter */}
+            <input 
+              type="date" 
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className={styles.select}
+              style={{ color: startDate ? '#1F2937' : '#9CA3AF' }}
+              placeholder="Start Date"
+            />
+
+            {/* Date End Filter */}
+            <input 
+              type="date" 
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className={styles.select}
+              style={{ color: endDate ? '#1F2937' : '#9CA3AF' }}
+              placeholder="End Date"
+            />
+
+            {/* Reset Button */}
+            <button 
+              onClick={() => {
+                setSearchTerm('');
+                setStatusFilter('All');
+                setStartDate('');
+                setEndDate('');
+                setStoreFilter('All');
+              }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '8px 12px',
+                borderRadius: '8px',
+                border: '1px solid #D1D5DB',
+                backgroundColor: 'white',
+                color: '#4B5563',
+                cursor: 'pointer',
+                fontSize: '0.875rem',
+                gap: '6px'
+              }}
+            >
+              Reset
+            </button>
           </div>
         </div>
 

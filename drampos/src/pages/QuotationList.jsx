@@ -12,6 +12,12 @@ const QuotationList = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
 
+  // Filter States
+  const [statusFilter, setStatusFilter] = useState('All');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [storeFilter, setStoreFilter] = useState('All');
+
   const fetchQuotationsData = async () => {
     try {
       setLoading(true);
@@ -40,14 +46,27 @@ const QuotationList = () => {
       case 'Converted':
         return <span style={{backgroundColor: '#FFF1E6', color: '#FF9F43', padding: '4px 8px', borderRadius: '4px', fontSize: '12px'}}>{status}</span>;
       default:
-        return <span>{status || 'Sent'}</span>;
+        return <span style={{backgroundColor: '#E8F9EE', color: '#28C76F', padding: '4px 8px', borderRadius: '4px', fontSize: '12px'}}>{status || 'Sent'}</span>;
     }
   };
 
-  const filteredQuotations = quotations.filter(q =>
-    (q.customerName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (q.quotationNumber || '').toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredQuotations = quotations.filter(q => {
+    const matchesSearch = (q.customerName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          (q.quotationNumber || '').toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesStatus = statusFilter === 'All' || (q.status || 'Sent') === statusFilter;
+
+    const storeName = q.store?.name || q.store;
+    const matchesStore = storeFilter === 'All' || storeName === storeFilter;
+
+    const dateVal = new Date(q.validUntil || q.createdAt);
+    const matchesStartDate = !startDate || dateVal >= new Date(startDate);
+    const matchesEndDate = !endDate || dateVal <= new Date(endDate);
+
+    return matchesSearch && matchesStatus && matchesStore && matchesStartDate && matchesEndDate;
+  });
+
+  const uniqueStores = Array.from(new Set(quotations.map(q => q.store?.name || q.store).filter(Boolean)));
 
   return (
     <DashboardLayout>
@@ -74,6 +93,79 @@ const QuotationList = () => {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
+          </div>
+
+          <div className={styles.filters}>
+            {/* Status Filter */}
+            <select 
+              value={statusFilter} 
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className={styles.select}
+            >
+              <option value="All">All Statuses</option>
+              <option value="Sent">Sent</option>
+              <option value="Draft">Draft</option>
+              <option value="Accepted">Accepted</option>
+              <option value="Converted">Converted</option>
+            </select>
+
+            {/* Store Filter */}
+            <select 
+              value={storeFilter} 
+              onChange={(e) => setStoreFilter(e.target.value)}
+              className={styles.select}
+            >
+              <option value="All">All Stores</option>
+              {uniqueStores.map((st, idx) => (
+                <option key={idx} value={st}>{st}</option>
+              ))}
+            </select>
+
+            {/* Date Start Filter */}
+            <input 
+              type="date" 
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className={styles.select}
+              style={{ color: startDate ? '#1F2937' : '#9CA3AF' }}
+              placeholder="Start Date"
+            />
+
+            {/* Date End Filter */}
+            <input 
+              type="date" 
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className={styles.select}
+              style={{ color: endDate ? '#1F2937' : '#9CA3AF' }}
+              placeholder="End Date"
+            />
+
+            {/* Reset Button */}
+            <button 
+              onClick={() => {
+                setSearchTerm('');
+                setStatusFilter('All');
+                setStartDate('');
+                setEndDate('');
+                setStoreFilter('All');
+              }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '8px 12px',
+                borderRadius: '8px',
+                border: '1px solid #D1D5DB',
+                backgroundColor: 'white',
+                color: '#4B5563',
+                cursor: 'pointer',
+                fontSize: '0.875rem',
+                gap: '6px'
+              }}
+            >
+              Reset
+            </button>
           </div>
         </div>
 
@@ -121,7 +213,6 @@ const QuotationList = () => {
           </table>
         </div>
       </Card>
-
     </DashboardLayout>
   );
 };

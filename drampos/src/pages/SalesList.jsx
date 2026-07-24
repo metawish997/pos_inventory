@@ -14,6 +14,12 @@ const SalesList = () => {
   const [sales, setSales] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Filter States
+  const [statusFilter, setStatusFilter] = useState('All');
+  const [paymentFilter, setPaymentFilter] = useState('All');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
@@ -98,10 +104,16 @@ const SalesList = () => {
     }
   };
 
-  const filteredSales = sales.filter(s => 
-    (s.customerName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (s.saleNumber || '').toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredSales = sales.filter(s => {
+    const matchesSearch = (s.customerName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          (s.saleNumber || '').toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === 'All' || (s.orderStatus || 'Completed') === statusFilter;
+    const matchesPayment = paymentFilter === 'All' || (s.paymentStatus || 'Paid') === paymentFilter;
+    const dateVal = new Date(s.createdAt || s.saleDate);
+    const matchesStartDate = !startDate || dateVal >= new Date(startDate);
+    const matchesEndDate = !endDate || dateVal <= new Date(endDate);
+    return matchesSearch && matchesStatus && matchesPayment && matchesStartDate && matchesEndDate;
+  });
 
   return (
     <DashboardLayout>
@@ -128,6 +140,32 @@ const SalesList = () => {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
+          </div>
+
+          <div className={styles.filters}>
+            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className={styles.select}>
+              <option value="All">All Order Statuses</option>
+              <option value="Completed">Completed</option>
+              <option value="Pending">Pending</option>
+              <option value="Cancelled">Cancelled</option>
+            </select>
+
+            <select value={paymentFilter} onChange={(e) => setPaymentFilter(e.target.value)} className={styles.select}>
+              <option value="All">All Payment Statuses</option>
+              <option value="Paid">Paid</option>
+              <option value="Unpaid">Unpaid</option>
+              <option value="Overdue">Overdue</option>
+            </select>
+
+            <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className={styles.select} style={{ color: startDate ? '#1F2937' : '#9CA3AF' }} />
+            <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className={styles.select} style={{ color: endDate ? '#1F2937' : '#9CA3AF' }} />
+
+            <button
+              onClick={() => { setSearchTerm(''); setStatusFilter('All'); setPaymentFilter('All'); setStartDate(''); setEndDate(''); }}
+              style={{ display: 'flex', alignItems: 'center', padding: '8px 12px', borderRadius: '8px', border: '1px solid #D1D5DB', backgroundColor: 'white', color: '#4B5563', cursor: 'pointer', fontSize: '0.875rem' }}
+            >
+              Reset
+            </button>
           </div>
         </div>
 

@@ -15,6 +15,8 @@ const WarrantyList = () => {
   const [warranties, setWarranties] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('All');
 
   const fetchWarranties = async () => {
     try {
@@ -48,6 +50,13 @@ const WarrantyList = () => {
     setIsEditModalOpen(true);
   };
 
+  const filteredWarranties = warranties.filter(w => {
+    const matchesSearch = (w.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          (w.description || '').toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === 'All' || (w.status || 'Active') === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
   return (
     <DashboardLayout>
       <div className={styles.pageHeader}>
@@ -70,7 +79,15 @@ const WarrantyList = () => {
         <div className={styles.filterBar}>
           <div className={styles.searchBox}>
             <Search size={18} className={styles.searchIcon} />
-            <input type="text" placeholder="Search warranties..." />
+            <input type="text" placeholder="Search warranties..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+          </div>
+          <div className={styles.filters}>
+            <select className={styles.select} value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+              <option value="All">All Statuses</option>
+              <option value="Active">Active</option>
+              <option value="Inactive">Inactive</option>
+            </select>
+            <button onClick={() => { setSearchTerm(''); setStatusFilter('All'); }} style={{ display: 'flex', alignItems: 'center', padding: '8px 12px', borderRadius: '8px', border: '1px solid #D1D5DB', backgroundColor: 'white', color: '#4B5563', cursor: 'pointer', fontSize: '0.875rem' }}>Reset</button>
           </div>
         </div>
 
@@ -90,10 +107,10 @@ const WarrantyList = () => {
             <tbody>
               {loading ? (
                 <tr><td colSpan="6" style={{ textAlign: 'center', padding: '2rem' }}>Loading...</td></tr>
-              ) : warranties.length === 0 ? (
+              ) : filteredWarranties.length === 0 ? (
                 <tr><td colSpan="6" style={{ textAlign: 'center', padding: '2rem' }}>No warranty options found</td></tr>
               ) : (
-                warranties.map((item) => (
+                filteredWarranties.map((item) => (
                   <tr key={item._id}>
                     <td><input type="checkbox" /></td>
                     <td><strong>{item.name}</strong></td>

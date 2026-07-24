@@ -13,6 +13,11 @@ const DeliveryChallanList = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Filter States
+  const [statusFilter, setStatusFilter] = useState('All');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   
   // Add Modal State
   const [isOpen, setIsOpen] = useState(false);
@@ -167,10 +172,15 @@ const DeliveryChallanList = () => {
     }
   };
 
-  const filteredChallans = challans.filter(ch =>
-    (ch.customerName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (ch.challanNumber || '').toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredChallans = challans.filter(ch => {
+    const matchesSearch = (ch.customerName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          (ch.challanNumber || '').toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === 'All' || (ch.status || 'Draft') === statusFilter;
+    const dateVal = new Date(ch.createdAt);
+    const matchesStartDate = !startDate || dateVal >= new Date(startDate);
+    const matchesEndDate = !endDate || dateVal <= new Date(endDate);
+    return matchesSearch && matchesStatus && matchesStartDate && matchesEndDate;
+  });
 
   return (
     <DashboardLayout>
@@ -197,6 +207,25 @@ const DeliveryChallanList = () => {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
+          </div>
+
+          <div className={styles.filters}>
+            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className={styles.select}>
+              <option value="All">All Statuses</option>
+              <option value="Draft">Draft</option>
+              <option value="Dispatched">Dispatched</option>
+              <option value="Delivered">Delivered</option>
+            </select>
+
+            <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className={styles.select} style={{ color: startDate ? '#1F2937' : '#9CA3AF' }} />
+            <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className={styles.select} style={{ color: endDate ? '#1F2937' : '#9CA3AF' }} />
+
+            <button
+              onClick={() => { setSearchTerm(''); setStatusFilter('All'); setStartDate(''); setEndDate(''); }}
+              style={{ display: 'flex', alignItems: 'center', padding: '8px 12px', borderRadius: '8px', border: '1px solid #D1D5DB', backgroundColor: 'white', color: '#4B5563', cursor: 'pointer', fontSize: '0.875rem' }}
+            >
+              Reset
+            </button>
           </div>
         </div>
 

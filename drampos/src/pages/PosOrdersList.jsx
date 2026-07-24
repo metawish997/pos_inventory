@@ -12,6 +12,13 @@ const PosOrdersList = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   
+  // Filter States
+  const [statusFilter, setStatusFilter] = useState('All');
+  const [paymentFilter, setPaymentFilter] = useState('All');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [storeFilter, setStoreFilter] = useState('All');
+
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [selectedSale, setSelectedSale] = useState(null);
@@ -54,7 +61,7 @@ const PosOrdersList = () => {
       case 'Pending':
         return <span style={{backgroundColor: '#00CFE8', color: 'white', padding: '4px 8px', borderRadius: '4px', fontSize: '12px'}}>{status}</span>;
       default:
-        return <span>{status || 'Completed'}</span>;
+        return <span style={{backgroundColor: '#28C76F', color: 'white', padding: '4px 8px', borderRadius: '4px', fontSize: '12px'}}>{status || 'Completed'}</span>;
     }
   };
 
@@ -65,7 +72,7 @@ const PosOrdersList = () => {
       case 'Unpaid':
         return <span style={{backgroundColor: '#FCEAEA', color: '#EA5455', padding: '4px 8px', borderRadius: '4px', fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px'}}><span style={{width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#EA5455'}}></span> {status}</span>;
       default:
-        return <span>{status || 'Paid'}</span>;
+        return <span style={{backgroundColor: '#E8F9EE', color: '#28C76F', padding: '4px 8px', borderRadius: '4px', fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px'}}><span style={{width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#28C76F'}}></span> {status || 'Paid'}</span>;
     }
   };
 
@@ -85,10 +92,24 @@ const PosOrdersList = () => {
     }
   };
 
-  const filteredSales = sales.filter(s => 
-    (s.customerName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (s.saleNumber || '').toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredSales = sales.filter(s => {
+    const matchesSearch = (s.customerName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          (s.saleNumber || '').toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesStatus = statusFilter === 'All' || (s.orderStatus || 'Completed') === statusFilter;
+    const matchesPayment = paymentFilter === 'All' || (s.paymentStatus || 'Paid') === paymentFilter;
+
+    const storeName = s.store?.name || s.store;
+    const matchesStore = storeFilter === 'All' || storeName === storeFilter;
+
+    const dateVal = new Date(s.createdAt || s.saleDate);
+    const matchesStartDate = !startDate || dateVal >= new Date(startDate);
+    const matchesEndDate = !endDate || dateVal <= new Date(endDate);
+
+    return matchesSearch && matchesStatus && matchesPayment && matchesStore && matchesStartDate && matchesEndDate;
+  });
+
+  const uniqueStores = Array.from(new Set(sales.map(s => s.store?.name || s.store).filter(Boolean)));
 
   return (
     <DashboardLayout>
@@ -115,6 +136,89 @@ const PosOrdersList = () => {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
+          </div>
+
+          <div className={styles.filters}>
+            {/* Order Status Filter */}
+            <select 
+              value={statusFilter} 
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className={styles.select}
+            >
+              <option value="All">All Order Statuses</option>
+              <option value="Completed">Completed</option>
+              <option value="Pending">Pending</option>
+            </select>
+
+            {/* Payment Status Filter */}
+            <select 
+              value={paymentFilter} 
+              onChange={(e) => setPaymentFilter(e.target.value)}
+              className={styles.select}
+            >
+              <option value="All">All Payment Statuses</option>
+              <option value="Paid">Paid</option>
+              <option value="Unpaid">Unpaid</option>
+            </select>
+
+            {/* Store Filter */}
+            <select 
+              value={storeFilter} 
+              onChange={(e) => setStoreFilter(e.target.value)}
+              className={styles.select}
+            >
+              <option value="All">All Stores</option>
+              {uniqueStores.map((st, idx) => (
+                <option key={idx} value={st}>{st}</option>
+              ))}
+            </select>
+
+            {/* Date Start Filter */}
+            <input 
+              type="date" 
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className={styles.select}
+              style={{ color: startDate ? '#1F2937' : '#9CA3AF' }}
+              placeholder="Start Date"
+            />
+
+            {/* Date End Filter */}
+            <input 
+              type="date" 
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className={styles.select}
+              style={{ color: endDate ? '#1F2937' : '#9CA3AF' }}
+              placeholder="End Date"
+            />
+
+            {/* Reset Button */}
+            <button 
+              onClick={() => {
+                setSearchTerm('');
+                setStatusFilter('All');
+                setPaymentFilter('All');
+                setStartDate('');
+                setEndDate('');
+                setStoreFilter('All');
+              }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '8px 12px',
+                borderRadius: '8px',
+                border: '1px solid #D1D5DB',
+                backgroundColor: 'white',
+                color: '#4B5563',
+                cursor: 'pointer',
+                fontSize: '0.875rem',
+                gap: '6px'
+              }}
+            >
+              Reset
+            </button>
           </div>
         </div>
 

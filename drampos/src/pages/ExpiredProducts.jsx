@@ -9,6 +9,9 @@ const ExpiredProducts = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('All');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
   const fetchExpired = async () => {
     try {
@@ -27,10 +30,18 @@ const ExpiredProducts = () => {
     fetchExpired();
   }, []);
 
-  const filteredProducts = products.filter(p =>
-    (p.productName || p.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (p.sku || '').toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredProducts = products.filter(p => {
+    const matchesSearch = (p.productName || p.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          (p.sku || '').toLowerCase().includes(searchTerm.toLowerCase());
+    const cat = p.category?.categoryName || p.category?.name || '';
+    const matchesCategory = categoryFilter === 'All' || cat === categoryFilter;
+    const expDate = new Date(p.expiryDate);
+    const matchesStart = !startDate || expDate >= new Date(startDate);
+    const matchesEnd = !endDate || expDate <= new Date(endDate);
+    return matchesSearch && matchesCategory && matchesStart && matchesEnd;
+  });
+
+  const uniqueCategories = Array.from(new Set(products.map(p => p.category?.categoryName || p.category?.name).filter(Boolean)));
 
   return (
     <DashboardLayout>
@@ -45,7 +56,7 @@ const ExpiredProducts = () => {
       </div>
 
       <Card className={styles.tableCard}>
-        <div className={styles.filterBar}>
+          <div className={styles.filterBar}>
           <div className={styles.searchBox}>
             <Search size={18} className={styles.searchIcon} />
             <input 
@@ -54,6 +65,18 @@ const ExpiredProducts = () => {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
+          </div>
+
+          <div className={styles.filters}>
+            <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} className={styles.select}>
+              <option value="All">All Categories</option>
+              {uniqueCategories.map((c, i) => <option key={i} value={c}>{c}</option>)}
+            </select>
+
+            <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className={styles.select} style={{ color: startDate ? '#1F2937' : '#9CA3AF' }} />
+            <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className={styles.select} style={{ color: endDate ? '#1F2937' : '#9CA3AF' }} />
+
+            <button onClick={() => { setSearchTerm(''); setCategoryFilter('All'); setStartDate(''); setEndDate(''); }} style={{ display: 'flex', alignItems: 'center', padding: '8px 12px', borderRadius: '8px', border: '1px solid #D1D5DB', backgroundColor: 'white', color: '#4B5563', cursor: 'pointer', fontSize: '0.875rem' }}>Reset</button>
           </div>
         </div>
 

@@ -15,6 +15,8 @@ const BrandList = () => {
   const [brands, setBrands] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('All');
 
   const fetchBrands = async () => {
     try {
@@ -50,6 +52,12 @@ const BrandList = () => {
     setIsEditModalOpen(true);
   };
 
+  const filteredBrands = brands.filter(b => {
+    const matchesSearch = (b.name || '').toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === 'All' || (b.status || 'Active') === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
   return (
     <DashboardLayout>
       <div className={styles.pageHeader}>
@@ -72,15 +80,15 @@ const BrandList = () => {
         <div className={styles.filterBar}>
           <div className={styles.searchBox}>
             <Search size={18} className={styles.searchIcon} />
-            <input type="text" placeholder="Search" />
+            <input type="text" placeholder="Search brands..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
           </div>
           <div className={styles.filters}>
-            <select className={styles.select}>
-              <option>Status</option>
+            <select className={styles.select} value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+              <option value="All">All Statuses</option>
+              <option value="Active">Active</option>
+              <option value="Inactive">Inactive</option>
             </select>
-            <select className={styles.select}>
-              <option>Sort By : Latest</option>
-            </select>
+            <button onClick={() => { setSearchTerm(''); setStatusFilter('All'); }} style={{ display: 'flex', alignItems: 'center', padding: '8px 12px', borderRadius: '8px', border: '1px solid #D1D5DB', backgroundColor: 'white', color: '#4B5563', cursor: 'pointer', fontSize: '0.875rem' }}>Reset</button>
           </div>
         </div>
 
@@ -99,10 +107,10 @@ const BrandList = () => {
             <tbody>
               {loading ? (
                 <tr><td colSpan="5" style={{textAlign: 'center', padding: '2rem'}}>Loading...</td></tr>
-              ) : brands.length === 0 ? (
+              ) : filteredBrands.length === 0 ? (
                 <tr><td colSpan="5" style={{textAlign: 'center', padding: '2rem'}}>No brands found</td></tr>
               ) : (
-                brands.map((item) => (
+                filteredBrands.map((item) => (
                   <tr key={item._id}>
                     <td><input type="checkbox" /></td>
                     <td>

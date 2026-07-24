@@ -13,6 +13,12 @@ const ProformaInvoiceList = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
 
+  // Filter States
+  const [statusFilter, setStatusFilter] = useState('All');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [storeFilter, setStoreFilter] = useState('All');
+
   const fetchInvoices = async () => {
     try {
       setLoading(true);
@@ -65,10 +71,23 @@ const ProformaInvoiceList = () => {
     }
   };
 
-  const filteredInvoices = invoices.filter(inv =>
-    (inv.customerName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (inv.invoiceNumber || '').toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredInvoices = invoices.filter(inv => {
+    const matchesSearch = (inv.customerName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          (inv.invoiceNumber || '').toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesStatus = statusFilter === 'All' || inv.status === statusFilter;
+
+    const invStoreName = inv.store?.name || inv.store;
+    const matchesStore = storeFilter === 'All' || invStoreName === storeFilter;
+
+    const invDate = new Date(inv.dueDate || inv.createdAt);
+    const matchesStartDate = !startDate || invDate >= new Date(startDate);
+    const matchesEndDate = !endDate || invDate <= new Date(endDate);
+
+    return matchesSearch && matchesStatus && matchesStore && matchesStartDate && matchesEndDate;
+  });
+
+  const uniqueStores = Array.from(new Set(invoices.map(inv => inv.store?.name || inv.store).filter(Boolean)));
 
   return (
     <DashboardLayout>
@@ -95,6 +114,78 @@ const ProformaInvoiceList = () => {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
+          </div>
+
+          <div className={styles.filters}>
+            {/* Status Filter */}
+            <select 
+              value={statusFilter} 
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className={styles.select}
+            >
+              <option value="All">All Statuses</option>
+              <option value="Paid">Paid</option>
+              <option value="Unpaid">Unpaid</option>
+              <option value="Overdue">Overdue</option>
+            </select>
+
+            {/* Store Filter */}
+            <select 
+              value={storeFilter} 
+              onChange={(e) => setStoreFilter(e.target.value)}
+              className={styles.select}
+            >
+              <option value="All">All Stores</option>
+              {uniqueStores.map((st, idx) => (
+                <option key={idx} value={st}>{st}</option>
+              ))}
+            </select>
+
+            {/* Date Start Filter */}
+            <input 
+              type="date" 
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className={styles.select}
+              style={{ color: startDate ? '#1F2937' : '#9CA3AF' }}
+              placeholder="Start Date"
+            />
+
+            {/* Date End Filter */}
+            <input 
+              type="date" 
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className={styles.select}
+              style={{ color: endDate ? '#1F2937' : '#9CA3AF' }}
+              placeholder="End Date"
+            />
+
+            {/* Reset Button */}
+            <button 
+              onClick={() => {
+                setSearchTerm('');
+                setStatusFilter('All');
+                setStartDate('');
+                setEndDate('');
+                setStoreFilter('All');
+              }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '8px 12px',
+                borderRadius: '8px',
+                border: '1px solid #D1D5DB',
+                backgroundColor: 'white',
+                color: '#4B5563',
+                cursor: 'pointer',
+                fontSize: '0.875rem',
+                gap: '6px'
+              }}
+            >
+              Reset
+            </button>
           </div>
         </div>
 

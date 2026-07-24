@@ -11,6 +11,7 @@ const LowStocks = () => {
   const [outOfStockData, setOutOfStockData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('All');
   const [sendingMail, setSendingMail] = useState(false);
 
   const fetchLowStocks = async () => {
@@ -48,11 +49,16 @@ const LowStocks = () => {
 
   const currentList = activeTab === 'low' ? lowStockData : outOfStockData;
 
-  const filteredProducts = currentList.filter(p =>
-    (p.productName || p.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (p.sku || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (p.category?.categoryName || p.category?.name || '').toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredProducts = currentList.filter(p => {
+    const matchesSearch = (p.productName || p.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (p.sku || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (p.category?.categoryName || p.category?.name || '').toLowerCase().includes(searchTerm.toLowerCase());
+    const cat = p.category?.categoryName || p.category?.name || '';
+    const matchesCategory = categoryFilter === 'All' || cat === categoryFilter;
+    return matchesSearch && matchesCategory;
+  });
+
+  const uniqueCategories = Array.from(new Set(currentList.map(p => p.category?.categoryName || p.category?.name).filter(Boolean)));
 
   return (
     <DashboardLayout>
@@ -102,6 +108,14 @@ const LowStocks = () => {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
+          </div>
+
+          <div className={styles.filters}>
+            <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} className={styles.select}>
+              <option value="All">All Categories</option>
+              {uniqueCategories.map((c, i) => <option key={i} value={c}>{c}</option>)}
+            </select>
+            <button onClick={() => { setSearchTerm(''); setCategoryFilter('All'); }} style={{ display: 'flex', alignItems: 'center', padding: '8px 12px', borderRadius: '8px', border: '1px solid #D1D5DB', backgroundColor: 'white', color: '#4B5563', cursor: 'pointer', fontSize: '0.875rem' }}>Reset</button>
           </div>
         </div>
 
