@@ -301,6 +301,15 @@ const InvoiceDetails = () => {
                 <p style={{fontSize: '0.875rem', color: '#9CA3AF', fontStyle: 'italic', margin: 0}}>No payments recorded yet.</p>
               </div>
             )}
+
+            {invoice.notes && (
+              <div style={{ marginTop: '2rem', padding: '1.25rem', backgroundColor: '#F9FAFB', borderRadius: '6px', border: '1px solid #E5E7EB' }}>
+                <p style={{ fontSize: '0.875rem', color: '#1B2850', fontWeight: 600, marginBottom: '0.5rem' }}>Terms & Conditions</p>
+                <div style={{ fontSize: '0.75rem', color: '#4B5563', whiteSpace: 'pre-line', lineHeight: '1.6' }}>
+                  {invoice.notes}
+                </div>
+              </div>
+            )}
           </div>
           <div style={{width: '350px'}}>
             <div style={{display: 'flex', justifyContent: 'space-between', padding: '0.75rem 0'}}>

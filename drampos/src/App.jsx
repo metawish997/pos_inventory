@@ -31,6 +31,8 @@ import PurchaseReturnsList from './pages/PurchaseReturnsList';
 import ProformaInvoiceList from './pages/ProformaInvoiceList';
 import DeliveryChallanList from './pages/DeliveryChallanList';
 import PaymentReceipt from './pages/PaymentReceipt';
+import CreateInvoice from './pages/CreateInvoice';
+import CreateQuotation from './pages/CreateQuotation';
 
 import PurchaseDashboard from './modules/purchase/pages/Dashboard/PurchaseDashboard';
 import VendorList from './modules/purchase/pages/Vendor/VendorList';
@@ -128,6 +130,8 @@ function App() {
           <Route path="/sales" element={<SalesList />} />
           <Route path="/pos-orders" element={<PosOrdersList />} />
           <Route path="/invoices" element={<InvoiceList />} />
+          <Route path="/create-invoice" element={<CreateInvoice />} />
+          <Route path="/create-quotation" element={<CreateQuotation />} />
           <Route path="/invoice-details" element={<InvoiceDetails />} />
           <Route path="/invoice-details/:id" element={<InvoiceDetails />} />
           <Route path="/proforma-invoices" element={<ProformaInvoiceList />} />

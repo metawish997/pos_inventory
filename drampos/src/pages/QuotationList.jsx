@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import Card from '../components/ui/Card';
 import styles from './ProductList.module.css';
 import { Search, RefreshCw, PlusCircle } from 'lucide-react';
-import AddQuotationModal from '../components/modals/AddQuotationModal';
 import { getQuotations } from '../services/salesService';
 
 const QuotationList = () => {
+  const navigate = useNavigate();
   const [quotations, setQuotations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [isAddOpen, setIsAddOpen] = useState(false);
 
   const fetchQuotationsData = async () => {
     try {
@@ -58,7 +58,7 @@ const QuotationList = () => {
         </div>
         <div className={styles.headerActions}>
           <button className={styles.iconBtn} onClick={fetchQuotationsData}><RefreshCw size={18} /></button>
-          <button className={styles.btnPrimary} onClick={() => setIsAddOpen(true)}>
+          <button className={styles.btnPrimary} onClick={() => navigate('/create-quotation')}>
             <PlusCircle size={18} /> Add Quotation
           </button>
         </div>
@@ -122,7 +122,6 @@ const QuotationList = () => {
         </div>
       </Card>
 
-      <AddQuotationModal isOpen={isAddOpen} onClose={() => { setIsAddOpen(false); fetchQuotationsData(); }} />
     </DashboardLayout>
   );
 };

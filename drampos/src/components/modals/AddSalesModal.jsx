@@ -6,7 +6,7 @@ import { getAllProducts } from '../../services/productService';
 import { createSale } from '../../services/salesService';
 import { getCustomers } from '../../services/customerService';
 
-const AddSalesModal = ({ isOpen, onClose }) => {
+const AddSalesModal = ({ isOpen, onClose, invoiceType = 'Tax Invoice', onSuccess }) => {
   const [customerName, setCustomerName] = useState('');
   const [customerEmail, setCustomerEmail] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
@@ -74,6 +74,7 @@ const AddSalesModal = ({ isOpen, onClose }) => {
       setLoading(true);
       const payload = {
         saleType: 'Online',
+        invoiceType: invoiceType,
         customerName: customerName,
         customerEmail: customerEmail,
         customerPhone: customerPhone,
@@ -99,7 +100,8 @@ const AddSalesModal = ({ isOpen, onClose }) => {
 
       const res = await createSale(payload);
       if (res.success) {
-        alert(`Sale #${res.data.saleNumber} created successfully!`);
+        alert(`${invoiceType} created successfully!`);
+        if (onSuccess) onSuccess();
         onClose();
       }
     } catch (err) {

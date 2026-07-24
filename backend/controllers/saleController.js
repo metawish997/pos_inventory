@@ -109,13 +109,18 @@ exports.createSale = async (req, res) => {
             customerPhone: sale.customerPhone,
             gstNumber: sale.gstNumber || '',
             placeOfSupply: sale.placeOfSupply || '',
+            clientPoNumber: sale.clientPoNumber || '',
+            invoiceType: req.body.invoiceType || 'Tax Invoice',
+            invoiceDate: req.body.invoiceDate || Date.now(),
+            dueDate: req.body.dueDate || new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
             subtotal: sale.subtotal,
             taxAmount: sale.totalTax,
             discountAmount: sale.totalDiscount,
             totalAmount: sale.grandTotal,
             paidAmount: sale.paidAmount,
             dueAmount: sale.dueAmount,
-            status: sale.paymentStatus === 'Paid' ? 'Paid' : (sale.paidAmount > 0 ? 'Partially Paid' : 'Unpaid')
+            status: sale.paymentStatus === 'Paid' ? 'Paid' : (sale.paidAmount > 0 ? 'Partially Paid' : 'Unpaid'),
+            notes: req.body.notes || ''
         });
         await invoice.save();
 
@@ -168,7 +173,16 @@ exports.getInvoices = async (req, res) => {
     try {
         const { type } = req.query;
         const query = {};
-        if (type) query.invoiceType = type;
+        if (type) {
+            if (type === 'Tax Invoice') {
+                query.$or = [
+                    { invoiceType: 'Tax Invoice' },
+                    { invoiceType: { $exists: false } }
+                ];
+            } else {
+                query.invoiceType = type;
+            }
+        }
         const invoices = await Invoice.find(query).populate('sale').sort({ createdAt: -1 });
         res.json({ success: true, data: invoices });
     } catch (error) {

@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import HoldOrderModal from '../components/modals/HoldOrderModal';
 import POSDiscountModal from '../components/modals/POSDiscountModal';
-import POSCreateCustomerModal from '../components/modals/POSCreateCustomerModal';
+import AddCustomerModal from '../components/modals/AddCustomerModal';
 import POSCashRegisterModal from '../components/modals/POSCashRegisterModal';
 import POSCalculatorModal from '../components/modals/POSCalculatorModal';
 import POSTodaysSaleModal from '../components/modals/POSTodaysSaleModal';
@@ -379,27 +379,40 @@ const POS = () => {
               <span>Grand Total</span>
               <span>₹{grandTotal}</span>
             </div>
-            <div className={styles.summaryRow} style={{ marginTop: '0.5rem' }}>
-              <span style={{ fontWeight: 500 }}>Amount Paid</span>
-              <input 
-                type="number" 
-                min="0"
-                max={grandTotal}
-                placeholder={`Full: ₹${grandTotal}`}
-                value={customPaidAmount}
-                onChange={(e) => setCustomPaidAmount(e.target.value)}
-                style={{
-                  width: '120px', 
-                  padding: '0.25rem 0.5rem', 
-                  borderRadius: '4px', 
-                  border: '1px solid #D1D5DB', 
-                  textAlign: 'right',
-                  fontSize: '0.875rem'
-                }}
-              />
+          </div>
+
+          <div style={{ padding: '0.75rem 1rem', borderBottom: '1px solid #E5E7EB' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontWeight: 500, color: '#4B5563', fontSize: '0.875rem' }}>Amount Paid</span>
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                <span style={{ position: 'absolute', left: '0.5rem', color: '#1B2850', fontWeight: 600, fontSize: '0.875rem', pointerEvents: 'none' }}>₹</span>
+                <input
+                  type="number"
+                  min="0"
+                  max={grandTotal}
+                  placeholder={grandTotal}
+                  value={customPaidAmount}
+                  onChange={(e) => setCustomPaidAmount(e.target.value)}
+                  style={{
+                    width: '100px',
+                    paddingLeft: '1.25rem',
+                    paddingRight: '0.5rem',
+                    paddingTop: '0.35rem',
+                    paddingBottom: '0.35rem',
+                    borderRadius: '6px',
+                    border: '1.5px solid #1B2850',
+                    background: '#F0F4FF',
+                    color: '#1B2850',
+                    fontWeight: 600,
+                    fontSize: '0.875rem',
+                    textAlign: 'right',
+                    outline: 'none'
+                  }}
+                />
+              </div>
             </div>
             {customPaidAmount !== '' && (
-              <div className={styles.summaryRow} style={{ color: '#EA5455', fontWeight: 600 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.5rem', fontSize: '0.875rem', color: '#EA5455', fontWeight: 600 }}>
                 <span>Balance Due</span>
                 <span>₹{dueAmt.toFixed(2)}</span>
               </div>
@@ -435,7 +448,7 @@ const POS = () => {
 
       <HoldOrderModal isOpen={isHoldOpen} onClose={() => setIsHoldOpen(false)} />
       <POSDiscountModal isOpen={isDiscountOpen} onClose={() => setIsDiscountOpen(false)} />
-      <POSCreateCustomerModal isOpen={isCustomerOpen} onClose={() => setIsCustomerOpen(false)} onSuccess={(name) => setCustomerName(name)} />
+      <AddCustomerModal isOpen={isCustomerOpen} onClose={() => setIsCustomerOpen(false)} onSuccess={(name) => setCustomerName(name)} />
       <POSCashRegisterModal isOpen={isCashRegisterOpen} onClose={() => setIsCashRegisterOpen(false)} />
       <POSCalculatorModal isOpen={isCalculatorOpen} onClose={() => setIsCalculatorOpen(false)} />
       <POSTodaysSaleModal isOpen={isTodaysSaleOpen} onClose={() => setIsTodaysSaleOpen(false)} />

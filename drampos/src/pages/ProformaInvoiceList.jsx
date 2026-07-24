@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import Card from '../components/ui/Card';
 import styles from './ProductList.module.css';
-import { Search, RefreshCw, Eye, CheckCircle } from 'lucide-react';
+import { Search, RefreshCw, Eye, CheckCircle, PlusCircle } from 'lucide-react';
 import { getInvoices } from '../services/salesService';
 import { API_BASE_URL } from '../api/endpoints';
 
@@ -79,6 +79,9 @@ const ProformaInvoiceList = () => {
         </div>
         <div className={styles.headerActions}>
           <button className={styles.iconBtn} onClick={fetchInvoices}><RefreshCw size={18} /></button>
+          <button className={styles.btnPrimary} onClick={() => navigate('/create-invoice?type=Proforma Invoice')}>
+            <PlusCircle size={18} /> Create Proforma Invoice
+          </button>
         </div>
       </div>
 

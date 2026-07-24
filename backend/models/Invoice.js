@@ -36,7 +36,7 @@ const invoiceSchema = new mongoose.Schema({
 invoiceSchema.pre('save', async function () {
     if (this.isNew && !this.invoiceNumber) {
         const count = await mongoose.model('Invoice').countDocuments({ invoiceType: this.invoiceType });
-        const prefix = this.invoiceType === 'Proforma Invoice' ? 'PI' : 'INV';
+        const prefix = this.invoiceType === 'Proforma Invoice' ? 'PINV' : 'INV';
         this.invoiceNumber = `${prefix}-${String(count + 1).padStart(4, '0')}`;
     }
     this.dueAmount = Math.max(0, this.totalAmount - this.paidAmount);

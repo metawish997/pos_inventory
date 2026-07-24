@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import Card from '../components/ui/Card';
 import styles from './ProductList.module.css';
-import { Search, RefreshCw, Eye } from 'lucide-react';
+import { Search, RefreshCw, Eye, PlusCircle } from 'lucide-react';
 import { getInvoices } from '../services/salesService';
 
 const InvoiceList = () => {
@@ -57,6 +57,9 @@ const InvoiceList = () => {
         </div>
         <div className={styles.headerActions}>
           <button className={styles.iconBtn} onClick={fetchInvoices}><RefreshCw size={18} /></button>
+          <button className={styles.btnPrimary} onClick={() => navigate('/create-invoice?type=Tax Invoice')}>
+            <PlusCircle size={18} /> Create Invoice
+          </button>
         </div>
       </div>
 
