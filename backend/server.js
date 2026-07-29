@@ -38,6 +38,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/customers', require('./routes/customerRoutes'));
 app.use('/api/notifications', require('./routes/notificationRoutes'));
 app.use('/api/delivery-challans', require('./routes/deliveryChallanRoutes'));
+app.use('/api/company-settings', require('./routes/companySettingsRoutes'));
 
 const eventService = require('./services/eventService');
 app.get('/api/events', (req, res) => {

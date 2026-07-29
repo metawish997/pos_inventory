@@ -5,7 +5,7 @@ import Card from '../../../../components/ui/Card';
 import styles from '../../purchase.module.css';
 import { getVendors, getWarehouses, getTaxes, createPurchase, updatePurchase, getPurchaseById, getProductVariants } from '../../services/purchaseService';
 import ProductModal from '../../../../components/modals/ProductModal';
-import { Plus, Edit, Trash2 } from 'lucide-react';
+import { Plus, Edit, Trash2, Calendar, FileText, Landmark, ShieldAlert } from 'lucide-react';
 
 const emptyItem = {
     product: '',
@@ -126,15 +126,8 @@ const AddPurchase = () => {
                     const computedNew = tempItems.map(it => computeLine({ ...emptyItem, ...it }, taxes));
                     setItems(prev => {
                         const filteredPrev = prev.filter(it => it.product);
-                        // If we were editing a virtual product, filter out the old temp rows
                         let filtered = filteredPrev;
                         if (editUnsavedPayload) {
-                            // Find the existing temp product ID that holds this payload, or simply rely on the fact
-                            // that we are overwriting the whole product's variants.
-                            // To be safe, we find which `product` ID currently matches this payload.
-                            // Since we didn't store the old temp product ID in state, we look it up by reference or name,
-                            // but actually, we CAN store `editTempProductId`! 
-                            // Wait, it's easier: just filter out any rows where `newProductPayload === editUnsavedPayload`.
                             filtered = filteredPrev.filter(it => it.newProductPayload !== editUnsavedPayload);
                         }
                         return [...filtered, ...computedNew];
@@ -278,7 +271,6 @@ const AddPurchase = () => {
         setItems((prev) => (prev.length > 1 ? prev.filter((_, i) => i !== idx) : prev));
     };
 
-    // Remove all variants for a specific product
     const removeProductGroup = (productId) => {
         setItems((prev) => {
             const filtered = prev.filter(it => it.product !== productId);
@@ -286,7 +278,6 @@ const AddPurchase = () => {
         });
     };
 
-    // Group items for display
     const groupedItems = items.reduce((acc, it) => {
         if (!it.product) return acc;
         const existing = acc.find(g => g.productId === it.product);
@@ -373,106 +364,233 @@ const AddPurchase = () => {
         }
     };
 
+    const selectedVendorDetails = vendors.find(v => v._id === header.vendor);
+    const selectedWarehouseDetails = warehouses.find(w => w._id === header.warehouse);
+
+    const labelStyle = {
+        fontSize: '0.825rem',
+        fontWeight: 600,
+        color: '#4B5563',
+        marginBottom: '0.4rem',
+        display: 'block'
+    };
+
+    const inputStyle = {
+        width: '100%',
+        padding: '0.4rem 0.5rem',
+        border: 'none',
+        borderBottom: '1px solid #D1D5DB',
+        fontSize: '0.875rem',
+        color: '#111827',
+        backgroundColor: 'transparent',
+        outline: 'none',
+        boxSizing: 'border-box'
+    };
+
     return (
         <DashboardLayout>
-            <div className={styles.pageHeader}>
-                <div>
-                    <h1 className={styles.title}>{isEdit ? 'Edit Purchase' : 'Add Purchase'}</h1>
-                    <p className={styles.subtitle}>{isEdit ? 'Update purchase order details' : 'Create a new purchase order'}</p>
-                </div>
-            </div>
+            <div style={{ backgroundColor: '#F9FAFB', minHeight: '100vh', padding: '2rem 1.5rem' }}>
+                <div style={{ backgroundColor: 'white', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', padding: '2.5rem' }}>
+                    
+                    {/* Centered Page Title */}
+                    <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
+                        <h2 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#111827', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                            {isEdit ? 'Edit Purchase' : 'Record Purchase'}
+                        </h2>
+                        <div style={{ height: '3px', width: '60px', backgroundColor: '#FF9F43', margin: '0.75rem auto 0 auto', borderRadius: '2px' }} />
+                    </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                {pageLoading ? (
-                    <Card><div style={{ padding: '2rem', textAlign: 'center' }}>Loading...</div></Card>
-                ) : (
-                    <>
-                        <Card>
-                            <div style={{ padding: '1rem' }}>
-                                <div className={styles.formRow}>
-                                    <div className={styles.formCol}>
-                                        <label>Vendor <span className={styles.required}>*</span></label>
-                                        <select className={styles.select} value={header.vendor} onChange={(e) => setHeader({ ...header, vendor: e.target.value })}>
-                                            <option value="">Select Vendor</option>
-                                            {vendors.map((v) => <option key={v._id} value={v._id}>{v.vendorName} {v.vendorCode ? `(${v.vendorCode})` : ''}</option>)}
-                                        </select>
+                    {pageLoading ? (
+                        <div style={{ padding: '4rem', textAlign: 'center', fontSize: '1.1rem', color: '#6B7280' }}>Loading...</div>
+                    ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem' }}>
+                            
+                            {/* Top Grid: Metadata Inputs */}
+                            <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '4rem', borderBottom: '1px solid #F3F4F6', paddingBottom: '2.5rem' }}>
+                                
+                                {/* Left Side: Underlying Styled Text Inputs */}
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                                    <div>
+                                        <label style={labelStyle}>Ref / PO Number</label>
+                                        <input 
+                                            type="text" 
+                                            placeholder="Enter Reference Number"
+                                            value={header.referenceNumber} 
+                                            onChange={(e) => setHeader({ ...header, referenceNumber: e.target.value })} 
+                                            style={inputStyle} 
+                                        />
                                     </div>
-                                    <div className={styles.formCol}>
-                                        <label>Warehouse <span className={styles.required}>*</span></label>
-                                        <select className={styles.select} value={header.warehouse} onChange={(e) => setHeader({ ...header, warehouse: e.target.value })}>
-                                            <option value="">Select Warehouse</option>
-                                            {warehouses.map((w) => <option key={w._id} value={w._id}>{w.name}</option>)}
-                                        </select>
+                                    <div>
+                                        <label style={labelStyle}>Invoice Number</label>
+                                        <input 
+                                            type="text" 
+                                            placeholder="Enter Invoice Number"
+                                            value={header.invoiceNumber} 
+                                            onChange={(e) => setHeader({ ...header, invoiceNumber: e.target.value })} 
+                                            style={inputStyle} 
+                                        />
                                     </div>
-                                    <div className={styles.formCol}>
-                                        <label>Purchase Date <span className={styles.required}>*</span></label>
-                                        <input type="date" className={styles.input} value={header.purchaseDate} onChange={(e) => setHeader({ ...header, purchaseDate: e.target.value })} />
+                                    <div>
+                                        <label style={labelStyle}>Purchase Date*</label>
+                                        <input 
+                                            type="date" 
+                                            value={header.purchaseDate} 
+                                            onChange={(e) => setHeader({ ...header, purchaseDate: e.target.value })} 
+                                            style={inputStyle} 
+                                        />
+                                    </div>
+                                    <div>
+                                        <label style={labelStyle}>Invoice Date</label>
+                                        <input 
+                                            type="date" 
+                                            value={header.invoiceDate} 
+                                            onChange={(e) => setHeader({ ...header, invoiceDate: e.target.value })} 
+                                            style={inputStyle} 
+                                        />
+                                    </div>
+                                    <div>
+                                        <label style={labelStyle}>Due Date</label>
+                                        <input 
+                                            type="date" 
+                                            value={header.dueDate} 
+                                            onChange={(e) => setHeader({ ...header, dueDate: e.target.value })} 
+                                            style={inputStyle} 
+                                        />
+                                    </div>
+                                    <div>
+                                        <label style={labelStyle}>Payment Terms</label>
+                                        <input 
+                                            type="text" 
+                                            placeholder="e.g. Net 30, Due on Receipt"
+                                            value={header.paymentTerms} 
+                                            onChange={(e) => setHeader({ ...header, paymentTerms: e.target.value })} 
+                                            style={inputStyle} 
+                                        />
                                     </div>
                                 </div>
 
-                                <div className={styles.formRow}>
-                                    <div className={styles.formCol}>
-                                        <label>Invoice Number</label>
-                                        <input className={styles.input} value={header.invoiceNumber} onChange={(e) => setHeader({ ...header, invoiceNumber: e.target.value })} />
-                                    </div>
-                                    <div className={styles.formCol}>
-                                        <label>Invoice Date</label>
-                                        <input type="date" className={styles.input} value={header.invoiceDate} onChange={(e) => setHeader({ ...header, invoiceDate: e.target.value })} />
-                                    </div>
-                                    <div className={styles.formCol}>
-                                        <label>Due Date</label>
-                                        <input type="date" className={styles.input} value={header.dueDate} onChange={(e) => setHeader({ ...header, dueDate: e.target.value })} />
-                                    </div>
-                                    <div className={styles.formCol}>
-                                        <label>Reference</label>
-                                        <input className={styles.input} value={header.referenceNumber} onChange={(e) => setHeader({ ...header, referenceNumber: e.target.value })} />
-                                    </div>
-                                    {/* Status is always Approved - hidden from UI */}
+                                {/* Right Side: Simple Placeholder/Details Card */}
+                                <div style={{ border: '1px dashed #D1D5DB', borderRadius: '8px', backgroundColor: '#F9FAFB', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', textAlign: 'center' }}>
+                                    <FileText size={28} style={{ color: '#FF9F43', marginBottom: '0.5rem' }} />
+                                    <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#374151', display: 'block', marginBottom: '0.25rem' }}>Purchase Details</span>
+                                    <span style={{ fontSize: '0.75rem', color: '#6B7280', display: 'block', lineHeight: 1.4 }}>Status is automatically set to Approved on submission to register stock updates.</span>
                                 </div>
-
                             </div>
-                        </Card>
 
-                        <Card>
-                            <div style={{ padding: '1rem' }}>
+                            {/* Vendor & Warehouse details row */}
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+                                
+                                {/* Vendor Card (Billed By Vendor) */}
+                                <div style={{ border: '1px solid #F3F4F6', borderRadius: '8px', padding: '1.5rem', backgroundColor: '#F9FAFB' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                                        <span style={{ fontSize: '0.875rem', fontWeight: 700, color: '#374151' }}>Vendor / Supplier <span style={{ fontSize: '0.75rem', color: '#EA5455', fontWeight: 400 }}>*</span></span>
+                                    </div>
+                                    <div style={{ position: 'relative', marginBottom: '1rem' }}>
+                                        <select 
+                                            value={header.vendor} 
+                                            onChange={(e) => setHeader({ ...header, vendor: e.target.value })}
+                                            style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: '6px', border: '1px solid #D1D5DB', backgroundColor: 'white', fontSize: '0.875rem', fontWeight: 500, outline: 'none' }}
+                                        >
+                                            <option value="">Select Vendor</option>
+                                            {vendors.map((v) => (
+                                                <option key={v._id} value={v._id}>{v.vendorName} {v.vendorCode ? `(${v.vendorCode})` : ''}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    {selectedVendorDetails && (
+                                        <div style={{ backgroundColor: 'white', borderRadius: '8px', border: '1px solid #E5E7EB', padding: '1.25rem' }}>
+                                            <div style={{ fontWeight: 600, color: '#111827', fontSize: '0.9rem', marginBottom: '0.5rem' }}>{selectedVendorDetails.vendorName}</div>
+                                            <div style={{ fontSize: '0.8rem', color: '#6B7280', marginBottom: '0.5rem' }}>
+                                                {selectedVendorDetails.address || 'No address provided'}
+                                            </div>
+                                            <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr', gap: '0.25rem', fontSize: '0.8rem' }}>
+                                                <span style={{ color: '#9CA3AF' }}>Email</span>
+                                                <span style={{ fontWeight: 500, color: '#374151' }}>{selectedVendorDetails.email || 'N/A'}</span>
+                                                <span style={{ color: '#9CA3AF' }}>Phone</span>
+                                                <span style={{ fontWeight: 500, color: '#374151' }}>{selectedVendorDetails.phone || 'N/A'}</span>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Warehouse Card (Deliver To) */}
+                                <div style={{ border: '1px solid #F3F4F6', borderRadius: '8px', padding: '1.5rem', backgroundColor: '#F9FAFB' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                                        <span style={{ fontSize: '0.875rem', fontWeight: 700, color: '#374151' }}>Deliver To (Warehouse) <span style={{ fontSize: '0.75rem', color: '#EA5455', fontWeight: 400 }}>*</span></span>
+                                    </div>
+                                    <div style={{ position: 'relative', marginBottom: '1rem' }}>
+                                        <select 
+                                            value={header.warehouse} 
+                                            onChange={(e) => setHeader({ ...header, warehouse: e.target.value })}
+                                            style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: '6px', border: '1px solid #D1D5DB', backgroundColor: 'white', fontSize: '0.875rem', fontWeight: 500, outline: 'none' }}
+                                        >
+                                            <option value="">Select Warehouse</option>
+                                            {warehouses.map((w) => (
+                                                <option key={w._id} value={w._id}>{w.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    {selectedWarehouseDetails && (
+                                        <div style={{ backgroundColor: 'white', borderRadius: '8px', border: '1px solid #E5E7EB', padding: '1.25rem' }}>
+                                            <div style={{ fontWeight: 600, color: '#111827', fontSize: '0.9rem', marginBottom: '0.5rem' }}>{selectedWarehouseDetails.name}</div>
+                                            <div style={{ fontSize: '0.8rem', color: '#6B7280', marginBottom: '0.5rem' }}>
+                                                {selectedWarehouseDetails.location || 'No location configured'}
+                                            </div>
+                                            <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr', gap: '0.25rem', fontSize: '0.8rem' }}>
+                                                <span style={{ color: '#9CA3AF' }}>Type</span>
+                                                <span style={{ fontWeight: 500, color: '#374151' }}>Stock Warehouse</span>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Billing Items Table Section */}
+                            <div>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                                    <label style={{ fontSize: '1.1rem', fontWeight: 600, color: '#1B2850' }}>Purchase Items</label>
-                                    <button type="button" onClick={() => setIsProductModalOpen(true)} style={{ backgroundColor: '#1B2850', color: 'white', border: 'none', padding: '0.6rem 1rem', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 500 }}>
-                                        <Plus size={16} /> Add New Item
+                                    <span style={{ fontSize: '1rem', fontWeight: 700, color: '#1F2937' }}>Purchase Items</span>
+                                    <button 
+                                        type="button" 
+                                        onClick={() => setIsProductModalOpen(true)} 
+                                        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', border: 'none', backgroundColor: '#FF9F43', color: 'white', padding: '0.5rem 1.25rem', borderRadius: '6px', fontSize: '0.825rem', cursor: 'pointer', fontWeight: 600, boxShadow: '0 2px 4px rgba(255, 159, 67, 0.2)' }}
+                                    >
+                                        <Plus size={16} /> Add / Select Items
                                     </button>
                                 </div>
 
-                                <div className={styles.itemsTableWrap}>
-                                    <table className={styles.itemsTable}>
+                                <div style={{ border: '1px solid #E5E7EB', borderRadius: '8px 8px 0 0', overflow: 'hidden', marginBottom: '1.5rem' }}>
+                                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                                         <thead>
-                                            <tr>
-                                                <th>Product</th>
-                                                <th>Variant Info</th>
-                                                <th>Total Qty</th>
-                                                <th>Total Discount</th>
-                                                <th>Avg Tax</th>
-                                                <th>Total GST</th>
-                                                <th>Total Amount</th>
-                                                <th style={{ textAlign: 'center' }}>Actions</th>
+                                            <tr style={{ backgroundColor: '#FF9F43', color: 'white', fontSize: '0.875rem' }}>
+                                                <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontWeight: 600 }}>Product</th>
+                                                <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontWeight: 600, width: '120px' }}>Variant Info</th>
+                                                <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontWeight: 600, width: '100px' }}>Total Qty</th>
+                                                <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontWeight: 600, width: '120px' }}>Total Discount</th>
+                                                <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontWeight: 600, width: '100px' }}>Avg Tax</th>
+                                                <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontWeight: 600, width: '110px' }}>Total GST</th>
+                                                <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontWeight: 600, width: '130px' }}>Total Amount</th>
+                                                <th style={{ padding: '0.75rem 1rem', textAlign: 'center', fontWeight: 600, width: '150px' }}>Actions</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             {groupedItems.map((group, idx) => (
-                                                <tr key={idx}>
-                                                    <td style={{ minWidth: 160 }}>
-                                                        <div style={{ fontWeight: 600, color: '#111827' }}>{group.productName || 'Unknown Product'}</div>
+                                                <tr key={idx} style={{ borderBottom: '1px solid #F3F4F6', fontSize: '0.875rem' }}>
+                                                    <td style={{ padding: '1rem', fontWeight: 600, color: '#111827' }}>
+                                                        {group.productName || 'Unknown Product'}
                                                     </td>
-                                                    <td>
-                                                        <span style={{ fontSize: '0.8rem', color: '#6B7280', backgroundColor: '#F3F4F6', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>
+                                                    <td style={{ padding: '1rem' }}>
+                                                        <span style={{ fontSize: '0.75rem', color: '#4B5563', backgroundColor: '#F3F4F6', padding: '0.2rem 0.5rem', borderRadius: '4px', fontWeight: 500 }}>
                                                             {group.variantsCount > 0 ? `${group.variantsCount} Variants` : 'Single Product'}
                                                         </span>
                                                     </td>
-                                                    <td style={{ fontWeight: 500 }}>{group.quantity}</td>
-                                                    <td style={{ color: '#E11D48', fontWeight: 500 }}>-₹{group.discountAmount.toFixed(2)}</td>
-                                                    <td>{group.taxTypeStr}</td>
-                                                    <td>₹{group.taxAmount.toFixed(2)}</td>
-                                                    <td style={{ fontWeight: 600, color: '#047857' }}>₹{group.total.toFixed(2)}</td>
-                                                    <td style={{ textAlign: 'center' }}>
+                                                    <td style={{ padding: '1rem', fontWeight: 500 }}>{group.quantity}</td>
+                                                    <td style={{ padding: '1rem', color: '#EF4444', fontWeight: 500 }}>-₹{group.discountAmount.toFixed(2)}</td>
+                                                    <td style={{ padding: '1rem', color: '#4B5563' }}>{group.taxTypeStr}</td>
+                                                    <td style={{ padding: '1rem', color: '#4B5563' }}>₹{group.taxAmount.toFixed(2)}</td>
+                                                    <td style={{ padding: '1rem', fontWeight: 700, color: '#10B981' }}>₹{group.total.toFixed(2)}</td>
+                                                    <td style={{ padding: '1rem', textAlign: 'center' }}>
                                                         <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
                                                             <button
                                                                 type="button"
@@ -486,60 +604,131 @@ const AddPurchase = () => {
                                                                     }
                                                                     setIsProductModalOpen(true);
                                                                 }}
-                                                                className={styles.actionBtn}
-                                                                style={{ color: '#4F46E5', backgroundColor: '#EEF2FF', border: '1px solid #C7D2FE', borderRadius: '4px', padding: '0.3rem 0.5rem' }}
+                                                                style={{ border: '1px solid #FF9F43', background: 'none', color: '#FF9F43', padding: '0.3rem 0.65rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}
                                                             >
-                                                                <Edit size={14} /> Edit
+                                                                <Edit size={12} /> Edit
                                                             </button>
                                                             <button 
                                                                 type="button" 
-                                                                className={styles.actionBtn} 
                                                                 onClick={() => removeProductGroup(group.productId)} 
-                                                                style={{ color: '#EA5455', backgroundColor: '#FEF2F2', border: '1px solid #FECACA', borderRadius: '4px', padding: '0.3rem 0.5rem' }}
+                                                                style={{ border: '1px solid #FCA5A5', background: 'none', color: '#EF4444', padding: '0.3rem 0.65rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}
                                                             >
-                                                                <Trash2 size={14} /> Remove
+                                                                <Trash2 size={12} /> Delete
                                                             </button>
                                                         </div>
                                                     </td>
                                                 </tr>
                                             ))}
                                             {items.length === 0 && (
-                                                <tr><td colSpan="11" className={styles.emptyState}>No items added</td></tr>
+                                                <tr>
+                                                    <td colSpan="8" style={{ padding: '3rem', textAlign: 'center', color: '#9CA3AF', fontSize: '0.875rem' }}>
+                                                        No items added yet. Click "+ Add / Select Items" to begin.
+                                                    </td>
+                                                </tr>
                                             )}
                                         </tbody>
                                     </table>
                                 </div>
+                            </div>
 
-                                <div className={styles.totalsBox}>
-                                    <div className={styles.totalsRow}><span>Subtotal</span><span>₹{totals.subtotal.toFixed(2)}</span></div>
-                                    <div className={styles.totalsRow}><span>Discount</span><span>₹{totals.discount.toFixed(2)}</span></div>
-                                    <div className={styles.totalsRow}><span>GST</span><span>₹{totals.tax.toFixed(2)}</span></div>
-                                    <div className={styles.formRow} style={{ margin: '0.5rem 0' }}>
-                                        <div className={styles.formCol}>
-                                            <label>Shipping</label>
-                                            <input type="number" className={styles.input} value={header.shipping} onChange={(e) => setHeader({ ...header, shipping: e.target.value })} />
+                            {/* Bottom row: Note, Shipping & Totals grid */}
+                            <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '3rem' }}>
+                                
+                                {/* Left Side: Notes & Extra Inputs */}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                                    <div>
+                                        <label style={labelStyle}>Notes / Remarks</label>
+                                        <textarea 
+                                            rows={4} 
+                                            placeholder="Write internal purchase remarks or vendor guidelines here..." 
+                                            value={header.notes} 
+                                            onChange={(e) => setHeader({ ...header, notes: e.target.value })} 
+                                            style={{ width: '100%', padding: '0.75rem 1rem', border: '1px solid #D1D5DB', borderRadius: '8px', outline: 'none', fontSize: '0.875rem', resize: 'vertical', boxSizing: 'border-box' }}
+                                        />
+                                    </div>
+                                    
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                                        <div>
+                                            <label style={labelStyle}>Shipping Charges (₹)</label>
+                                            <input 
+                                                type="number" 
+                                                value={header.shipping} 
+                                                onChange={(e) => setHeader({ ...header, shipping: e.target.value })} 
+                                                style={{ width: '100%', padding: '0.6rem 0.85rem', border: '1px solid #D1D5DB', borderRadius: '6px', fontSize: '0.875rem', outline: 'none', boxSizing: 'border-box' }}
+                                            />
                                         </div>
-                                        <div className={styles.formCol}>
-                                            <label>Round Off</label>
-                                            <input type="number" className={styles.input} value={header.roundOff} onChange={(e) => setHeader({ ...header, roundOff: e.target.value })} />
+                                        <div>
+                                            <label style={labelStyle}>Round Off Adjust (₹)</label>
+                                            <input 
+                                                type="number" 
+                                                value={header.roundOff} 
+                                                onChange={(e) => setHeader({ ...header, roundOff: e.target.value })} 
+                                                style={{ width: '100%', padding: '0.6rem 0.85rem', border: '1px solid #D1D5DB', borderRadius: '6px', fontSize: '0.875rem', outline: 'none', boxSizing: 'border-box' }}
+                                            />
                                         </div>
                                     </div>
-                                    <div className={styles.totalsRow}><span>Grand Total</span><span>₹{grandTotal.toFixed(2)}</span></div>
                                 </div>
 
-                                {error && <div style={{ color: '#EA5455', margin: '1rem 0', fontSize: '0.875rem' }}>{error}</div>}
-
-                                <div className={styles.footerActions} style={{ marginTop: '2rem', justifyContent: 'flex-end', display: 'flex', gap: '1rem' }}>
-                                    <button type="button" className={styles.btnCancel} onClick={() => navigate('/purchase-orders')}>Cancel</button>
-                                    <button type="button" className={styles.btnSubmit} disabled={saving} onClick={() => handleSave('Approved')}>
-                                        {saving ? 'Saving...' : 'Save & Approve'}
-                                    </button>
+                                {/* Right Side: Totals Card */}
+                                <div>
+                                    <div style={{ backgroundColor: '#F9FAFB', borderRadius: '8px', border: '1px solid #E5E7EB', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', color: '#4B5563' }}>
+                                            <span>Subtotal</span>
+                                            <span style={{ fontWeight: 500 }}>₹{totals.subtotal.toFixed(2)}</span>
+                                        </div>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', color: '#EF4444' }}>
+                                            <span>Total Discount</span>
+                                            <span style={{ fontWeight: 500 }}>-₹{totals.discount.toFixed(2)}</span>
+                                        </div>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', color: '#4B5563' }}>
+                                            <span>GST Tax Paid</span>
+                                            <span style={{ fontWeight: 500 }}>₹{totals.tax.toFixed(2)}</span>
+                                        </div>
+                                        {header.shipping > 0 && (
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', color: '#4B5563' }}>
+                                                <span>Shipping</span>
+                                                <span style={{ fontWeight: 500 }}>₹{Number(header.shipping).toFixed(2)}</span>
+                                            </div>
+                                        )}
+                                        {header.roundOff !== 0 && (
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', color: '#4B5563' }}>
+                                                <span>Round Off</span>
+                                                <span style={{ fontWeight: 500 }}>₹{Number(header.roundOff).toFixed(2)}</span>
+                                            </div>
+                                        )}
+                                        <div style={{ borderTop: '1px solid #E5E7EB', paddingTop: '0.85rem', marginTop: '0.25rem', display: 'flex', justifyContent: 'space-between', fontSize: '1.05rem', fontWeight: 800, color: '#111827' }}>
+                                            <span>Grand Total</span>
+                                            <span style={{ color: '#FF9F43' }}>₹{grandTotal.toFixed(2)}</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                        </Card>
-                    </>
-                )}
+
+                            {/* Error alerts */}
+                            {error && (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', backgroundColor: '#FEF2F2', border: '1px solid #FCA5A5', color: '#EF4444', padding: '0.75rem 1rem', borderRadius: '6px', fontSize: '0.875rem', fontWeight: 500 }}>
+                                    <ShieldAlert size={16} /> {error}
+                                </div>
+                            )}
+
+                            {/* Footer Actions */}
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', borderTop: '1px solid #F3F4F6', paddingTop: '1.5rem', marginTop: '1rem' }}>
+                                <button type="button" onClick={() => navigate('/purchase-orders')} style={{ border: 'none', backgroundColor: '#F3F4F6', color: '#4B5563', padding: '0.65rem 1.5rem', borderRadius: '6px', fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
+                                <button 
+                                    type="button" 
+                                    disabled={saving} 
+                                    onClick={() => handleSave('Approved')} 
+                                    style={{ border: 'none', backgroundColor: '#FF9F43', color: 'white', padding: '0.65rem 2rem', borderRadius: '6px', fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer', boxShadow: '0 2px 4px rgba(255, 159, 67, 0.2)' }}
+                                >
+                                    {saving ? 'Saving...' : 'Save & Approve'}
+                                </button>
+                            </div>
+
+                        </div>
+                    )}
+                </div>
             </div>
+
             <ProductModal
                 isOpen={isProductModalOpen}
                 onClose={() => {

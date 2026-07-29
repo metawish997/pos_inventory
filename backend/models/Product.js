@@ -12,6 +12,7 @@ const productSchema = new mongoose.Schema({
     brand: { type: mongoose.Schema.Types.ObjectId, ref: 'Brand', required: true },
     barcodeSymbology: { type: String, required: true },
     itemBarcode: { type: String, required: true },
+    hsnCode: { type: String, default: '' },
     description: { type: String, default: '' },
     productType: { type: String, enum: ['single', 'variable'], required: true, default: 'single' },
 

@@ -120,6 +120,7 @@ const ProductForm = ({ mode = 'create', initialData = null, initialVariants = []
         name: '',
         slug: '',
         sku: '',
+        hsnCode: '',
         sellingType: '',
         category: '',
         subCategory: '',
@@ -220,6 +221,7 @@ const ProductForm = ({ mode = 'create', initialData = null, initialVariants = []
                         name: initialData.name || '',
                         slug: initialData.slug || '',
                         sku: initialData.sku || '',
+                        hsnCode: initialData.hsnCode || '',
                         sellingType: initialData.sellingType || '',
                         category: initialData.category?._id || initialData.category || '',
                         subCategory: initialData.subCategory?._id || initialData.subCategory || '',
@@ -458,6 +460,11 @@ const ProductForm = ({ mode = 'create', initialData = null, initialVariants = []
                                 <input type="text" className={styles.input} value={formData.itemBarcode} onChange={e => handleInputChange('itemBarcode', e.target.value)} required />
                                 <button type="button" onClick={handleGenerateBarcode} className={styles.btnSecondary} style={{ backgroundColor: '#FF9F43', color: 'white', border: 'none' }}>Generate</button>
                             </div>
+                        </div>
+
+                        <div className={styles.formGroup}>
+                            <label>HSN/SAC Code</label>
+                            <input type="text" className={styles.input} value={formData.hsnCode} onChange={e => handleInputChange('hsnCode', e.target.value)} />
                         </div>
                     </div>
 

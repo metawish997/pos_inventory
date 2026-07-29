@@ -162,3 +162,21 @@ form input[type="checkbox"], form input[type="radio"],
   border-radius: 0 !important;
 }
 
+/* Term list input resets to override global form styles */
+form input[type="text"].term-list-input,
+form input.term-list-input,
+input.term-list-input {
+  border: none !important;
+  background-color: transparent !important;
+  padding: 0.25rem 0 !important;
+  border-radius: 0px !important;
+  box-shadow: none !important;
+  height: auto !important;
+}
+form input[type="text"].term-list-input:focus,
+form input.term-list-input:focus,
+input.term-list-input:focus {
+  border: none !important;
+  box-shadow: none !important;
+}
+

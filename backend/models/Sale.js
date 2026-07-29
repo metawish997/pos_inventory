@@ -38,12 +38,12 @@ const saleSchema = new mongoose.Schema({
     dueAmount: { type: Number, default: 0 },
     paymentStatus: {
         type: String,
-        enum: ['Paid', 'Unpaid', 'Partial', 'Overdue'],
+        enum: ['Paid', 'Unpaid', 'Partial', 'Overdue', 'Draft'],
         default: 'Paid'
     },
     orderStatus: {
         type: String,
-        enum: ['Completed', 'Pending', 'Processing', 'Cancelled'],
+        enum: ['Completed', 'Pending', 'Processing', 'Cancelled', 'Draft'],
         default: 'Completed'
     },
     paymentMethod: { type: String, enum: ['Cash', 'Card', 'UPI', 'Bank Transfer', 'Other'], default: 'Cash' },
