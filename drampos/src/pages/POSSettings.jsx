@@ -574,29 +574,6 @@ const POSSettings = () => {
             </div>
           </div>
         );
-      case 'Invoice Settings':
-        return (
-          <div className={styles.card}>
-            <div className={styles.cardHeader}>Invoice Settings</div>
-            <div className={styles.cardBody}>
-              <div className={styles.formGroup}>
-                <div className={styles.formLabel}>Invoice Prefix</div>
-                <div className={styles.formControl} style={{ maxWidth: '200px' }}>
-                  <input type="text" value={invoicePrefix} onChange={(e) => setInvoicePrefix(e.target.value)} className={styles.input} />
-                </div>
-              </div>
-              <div className={styles.formGroup}>
-                <div className={styles.formLabel}>Invoice Footer Text</div>
-                <div className={styles.formControl} style={{ maxWidth: '400px' }}>
-                  <textarea value={invoiceFooter} onChange={(e) => setInvoiceFooter(e.target.value)} className={styles.textarea} style={{ width: '100%', minHeight: '80px', padding: '0.5rem' }} />
-                </div>
-              </div>
-              <div className={styles.actions}>
-                <button className={styles.saveBtn} onClick={() => handleSave('Invoice Settings')}>Save Changes</button>
-              </div>
-            </div>
-          </div>
-        );
       case 'Invoice Templates':
         return (
           <div className={styles.card}>
@@ -977,7 +954,6 @@ const POSSettings = () => {
             </div>
             {appSettingsOpen && (
               <div className={styles.subList}>
-                <div className={`${styles.subItem} ${activeSection === 'Invoice Settings' ? styles.active : ''}`} onClick={() => { setActiveSection('Invoice Settings'); }}>Invoice Settings</div>
                 <div className={`${styles.subItem} ${activeSection === 'POS' ? styles.active : ''}`} onClick={() => { setActiveSection('POS'); }}>
                   POS <span style={{ marginLeft: 'auto', width: '6px', height: '6px', backgroundColor: '#FF9F43', borderRadius: '50%' }}></span>
                 </div>

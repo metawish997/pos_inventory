@@ -236,3 +236,83 @@ exports.getFinancialSummary = async (req, res) => {
         });
     } catch (err) { res.status(500).json({ success: false, message: err.message }); }
 };
+
+exports.getCashFlow = async (req, res) => {
+    try {
+        const [sales, purchases, expenses, incomes] = await Promise.all([
+            Sale.find({ orderStatus: 'Completed' }).populate('store'),
+            Purchase.find({ status: { $in: ['Received', 'Completed'] } }).populate('vendor'),
+            Expense.find().populate('category'),
+            Income.find().populate('category')
+        ]);
+
+        const flows = [];
+
+        sales.forEach(s => {
+            flows.push({
+                date: s.saleDate || s.createdAt,
+                reference: s.saleNumber,
+                description: `Sales revenue from ${s.customerName || 'Walk-in'}`,
+                credit: s.grandTotal || 0,
+                debit: 0,
+                paymentMethod: s.paymentMethod || 'Cash'
+            });
+        });
+
+        incomes.forEach(i => {
+            flows.push({
+                date: i.incomeDate || i.createdAt,
+                reference: i.incomeNumber || 'INC-N/A',
+                description: `Income: ${i.category?.categoryName || 'General'} - ${i.notes || ''}`.trim(),
+                credit: i.amount || 0,
+                debit: 0,
+                paymentMethod: 'Cash'
+            });
+        });
+
+        purchases.forEach(p => {
+            flows.push({
+                date: p.purchaseDate || p.createdAt,
+                reference: p.purchaseNumber,
+                description: `Purchase from ${p.vendor?.name || 'Supplier'}`,
+                credit: 0,
+                debit: p.grandTotal || 0,
+                paymentMethod: 'Bank Transfer'
+            });
+        });
+
+        expenses.forEach(e => {
+            flows.push({
+                date: e.expenseDate || e.createdAt,
+                reference: e.expenseNumber || 'EXP-N/A',
+                description: `Expense: ${e.category?.categoryName || 'General'} - ${e.notes || ''}`.trim(),
+                credit: 0,
+                debit: e.amount || 0,
+                paymentMethod: e.paymentType || 'Cash'
+            });
+        });
+
+        // Sort by date descending
+        flows.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        // Compute running balance starting from the oldest to newest
+        // For rendering, we can compute running totals
+        let balance = 0;
+        const sortedOldToNew = [...flows].reverse();
+        sortedOldToNew.forEach(f => {
+            balance += (f.credit - f.debit);
+            f.runningBalance = balance;
+        });
+
+        // Reverse back to desc
+        const resultFlows = sortedOldToNew.reverse();
+
+        res.json({
+            success: true,
+            data: resultFlows,
+            totalBalance: balance
+        });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+};

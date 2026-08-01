@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Sale = require('../models/Sale');
 const Invoice = require('../models/Invoice');
 const Quotation = require('../models/Quotation');
@@ -390,3 +391,160 @@ exports.convertProformaToTaxInvoice = async (req, res) => {
         res.status(500).json({ success: false, message: error.message });
     }
 };
+
+exports.getBestSellers = async (req, res) => {
+    try {
+        const { startDate, endDate, storeId, productId } = req.query;
+        
+        const match = { orderStatus: 'Completed' };
+        
+        if (startDate || endDate) {
+            match.saleDate = {};
+            if (startDate) match.saleDate.$gte = new Date(startDate);
+            if (endDate) match.saleDate.$lte = new Date(endDate);
+        }
+        
+        if (storeId && storeId !== 'All') {
+            match.store = new mongoose.Types.ObjectId(storeId);
+        }
+        
+        const pipeline = [
+            { $match: match },
+            { $unwind: '$items' }
+        ];
+        
+        if (productId && productId !== 'All') {
+            pipeline.push({
+                $match: { 'items.product': new mongoose.Types.ObjectId(productId) }
+            });
+        }
+        
+        pipeline.push(
+            {
+                $group: {
+                    _id: '$items.product',
+                    sku: { $first: '$items.sku' },
+                    soldQty: { $sum: '$items.quantity' },
+                    soldAmount: { $sum: '$items.total' }
+                }
+            },
+            {
+                $lookup: {
+                    from: 'products',
+                    localField: '_id',
+                    foreignField: '_id',
+                    as: 'productInfo'
+                }
+            },
+            { $unwind: '$productInfo' },
+            {
+                $lookup: {
+                    from: 'brands',
+                    localField: 'productInfo.brand',
+                    foreignField: '_id',
+                    as: 'brandInfo'
+                }
+            },
+            {
+                $lookup: {
+                    from: 'categories',
+                    localField: 'productInfo.category',
+                    foreignField: '_id',
+                    as: 'categoryInfo'
+                }
+            },
+            {
+                $project: {
+                    _id: 1,
+                    sku: { $ifNull: ['$sku', '$productInfo.sku'] },
+                    name: '$productInfo.name',
+                    brand: { $ifNull: [{ $arrayElemAt: ['$brandInfo.name', 0] }, 'N/A'] },
+                    category: { $ifNull: [{ $arrayElemAt: ['$categoryInfo.name', 0] }, 'N/A'] },
+                    soldQty: 1,
+                    soldAmount: 1,
+                    instockQty: '$productInfo.quantity',
+                    img: { $arrayElemAt: ['$productInfo.images', 0] }
+                }
+            },
+            { $sort: { soldQty: -1 } }
+        );
+        
+        const results = await Sale.aggregate(pipeline);
+        res.json({ success: true, data: results });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+exports.getInvoiceReport = async (req, res) => {
+    try {
+        const { startDate, endDate, customerName, status } = req.query;
+
+        const match = {};
+
+        if (startDate || endDate) {
+            match.invoiceDate = {};
+            if (startDate) match.invoiceDate.$gte = new Date(startDate);
+            if (endDate) match.invoiceDate.$lte = new Date(endDate);
+        }
+
+        if (customerName && customerName !== 'All') {
+            match.customerName = customerName;
+        }
+
+        if (status && status !== 'All') {
+            match.status = status;
+        }
+
+        const invoices = await Invoice.find(match).populate('sale').sort({ invoiceDate: -1 });
+
+        const now = new Date();
+        const summaryStats = await Invoice.aggregate([
+            { $match: match },
+            {
+                $group: {
+                    _id: null,
+                    totalAmount: { $sum: '$totalAmount' },
+                    totalPaid: { $sum: '$paidAmount' },
+                    totalUnpaid: { $sum: '$dueAmount' },
+                    overdue: {
+                        $sum: {
+                            $cond: [
+                                {
+                                    $and: [
+                                        { $lt: ['$dueDate', now] },
+                                        { $ne: ['$status', 'Paid'] }
+                                    ]
+                                },
+                                '$dueAmount',
+                                0
+                            ]
+                        }
+                    }
+                }
+            }
+        ]);
+
+        const summary = summaryStats[0] || {
+            totalAmount: 0,
+            totalPaid: 0,
+            totalUnpaid: 0,
+            overdue: 0
+        };
+
+        const uniqueCustomers = await Invoice.distinct('customerName');
+
+        res.json({
+            success: true,
+            data: {
+                invoices,
+                summary,
+                customers: uniqueCustomers
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+

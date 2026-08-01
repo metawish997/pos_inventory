@@ -215,5 +215,51 @@ module.exports = {
         } catch (error) {
             res.status(500).json({ success: false, message: error.message });
         }
+    },
+
+    // 10. INVENTORY REPORT
+    getInventoryReport: async (req, res) => {
+        try {
+            const { warehouseId, storeId } = req.query;
+
+            const match = {};
+            if (warehouseId && warehouseId !== 'All') {
+                match.warehouse = new mongoose.Types.ObjectId(warehouseId);
+            }
+            if (storeId && storeId !== 'All') {
+                match.store = new mongoose.Types.ObjectId(storeId);
+            }
+
+            const products = await Product.find(match)
+                .populate('store warehouse category subCategory brand tax')
+                .sort({ createdAt: -1 });
+
+            let totalProducts = products.length;
+            let totalItems = 0;
+            let totalStockValue = 0;
+            let totalExpectedSalesValue = 0;
+
+            products.forEach(p => {
+                const qty = p.quantity || 0;
+                totalItems += qty;
+                totalStockValue += qty * (p.price || 0);
+                totalExpectedSalesValue += qty * (p.finalPrice || 0);
+            });
+
+            res.status(200).json({
+                success: true,
+                data: {
+                    products,
+                    summary: {
+                        totalProducts,
+                        totalItems,
+                        totalStockValue,
+                        totalExpectedSalesValue
+                    }
+                }
+            });
+        } catch (error) {
+            res.status(500).json({ success: false, message: error.message });
+        }
     }
 };

@@ -448,7 +448,7 @@ const Header = ({ isCollapsed, toggleCollapse, toggleMobile }) => {
               )}
             </div>
             
-            <button className={styles.iconBtn} onClick={() => navigate('/profile')}><Settings size={20} /></button>
+            <button className={styles.iconBtn} onClick={() => navigate('/pos-settings')}><Settings size={20} /></button>
           </div>
           
           <div className={styles.profile} ref={userDropdownRef}>
@@ -477,7 +477,7 @@ const Header = ({ isCollapsed, toggleCollapse, toggleMobile }) => {
                   <div className={styles.userMenuItem} onClick={() => { setIsUserDropdownOpen(false); navigate('/balance-sheet'); }} style={{ cursor: 'pointer' }}>
                     <FileText size={16} /> Reports
                   </div>
-                  <div className={styles.userMenuItem} onClick={() => { setIsUserDropdownOpen(false); navigate('/profile'); }} style={{ cursor: 'pointer' }}>
+                  <div className={styles.userMenuItem} onClick={() => { setIsUserDropdownOpen(false); navigate('/pos-settings'); }} style={{ cursor: 'pointer' }}>
                     <Settings size={16} /> Settings
                   </div>
                 </div>

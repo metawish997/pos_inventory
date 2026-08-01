@@ -27,5 +27,6 @@ router.post('/transfers', financeController.createMoneyTransfer);
 
 // Reports Summary
 router.get('/summary', financeController.getFinancialSummary);
+router.get('/cash-flow', financeController.getCashFlow);
 
 module.exports = router;

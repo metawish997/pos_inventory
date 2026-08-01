@@ -4,6 +4,7 @@ const saleController = require('../controllers/saleController');
 
 // Sales Routes
 router.get('/', saleController.getSales);
+router.get('/bestsellers', saleController.getBestSellers);
 router.get('/:id', saleController.getSaleById);
 router.post('/', saleController.createSale);
 router.put('/:id', saleController.updateSale);
@@ -11,6 +12,7 @@ router.delete('/:id', saleController.deleteSale);
 
 // Invoice Routes
 router.get('/invoices/list', saleController.getInvoices);
+router.get('/invoices/report', saleController.getInvoiceReport);
 router.get('/invoices/:id', saleController.getInvoiceById);
 router.put('/invoices/:id/payment', saleController.recordInvoicePayment);
 router.put('/invoices/:id/convert', saleController.convertProformaToTaxInvoice);

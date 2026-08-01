@@ -239,7 +239,10 @@ const Sidebar = ({ isCollapsed, isMobileOpen, closeMobile }) => {
             { name: "Inventory Report", path: "/inventory-report" },
             { name: "Invoice Report", path: "/invoice-report" },
             { name: "Supplier Report", path: "/supplier-report" },
-            { name: "Customer Report", path: "/customer-report" }
+            { name: "Customer Report", path: "/customer-report" },
+            { name: "GSTR-1 Sales Report", path: "/gstr-1" },
+            { name: "GSTR-2B Purchase Report", path: "/gstr-2b" },
+            { name: "GSTR-3B Summary", path: "/gstr-3b" }
           ])}
 
           {renderSidebarItem('userManagement', '/user-management-index', <Users size={18} />, 'User Management', [

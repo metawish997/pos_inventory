@@ -68,6 +68,10 @@ import SalesReport from './pages/SalesReport';
 import BestSeller from './pages/BestSeller';
 import PurchaseReport from './pages/PurchaseReport';
 import InvoiceReport from './pages/InvoiceReport';
+import InventoryReport from './pages/InventoryReport';
+import GSTR1Report from './pages/GSTR1Report';
+import GSTR2BReport from './pages/GSTR2BReport';
+import GSTR3BReport from './pages/GSTR3BReport';
 import SupplierReport from './pages/SupplierReport';
 import SupplierDueReport from './pages/SupplierDueReport';
 import CustomerReport from './pages/CustomerReport';
@@ -192,6 +196,10 @@ function App() {
           <Route path="/best-seller" element={<BestSeller />} />
           <Route path="/purchase-report" element={<PurchaseReport />} />
           <Route path="/invoice-report" element={<InvoiceReport />} />
+          <Route path="/inventory-report" element={<InventoryReport />} />
+          <Route path="/gstr-1" element={<GSTR1Report />} />
+          <Route path="/gstr-2b" element={<GSTR2BReport />} />
+          <Route path="/gstr-3b" element={<GSTR3BReport />} />
           <Route path="/supplier-report" element={<SupplierReport />} />
           <Route path="/supplier-due-report" element={<SupplierDueReport />} />
           <Route path="/customer-report" element={<CustomerReport />} />

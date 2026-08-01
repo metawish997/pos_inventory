@@ -9,6 +9,7 @@ router.post('/send-low-stock-email', productController.sendLowStockEmail);
 
 // All standard catalog system CRUD endpoints
 router.post('/', productController.createProduct);
+router.get('/inventory-report', productController.getInventoryReport);
 router.get('/', productController.getAllProducts);
 router.get('/:id', productController.getProductById);
 router.put('/:id', productController.updateProduct);

@@ -107,7 +107,10 @@ const moduleConfigs = {
       { name: "Inventory Report", desc: "Current values and counts", path: "/inventory-report", icon: <Filter size={24} color="#00CFE8" /> },
       { name: "Invoice Report", desc: "Outstanding invoice counts", path: "/invoice-report", icon: <DollarSign size={24} color="#EA5455" /> },
       { name: "Supplier Report", desc: "Supplier balances overview", path: "/supplier-report", icon: <UserPlus size={24} color="#1B2850" /> },
-      { name: "Customer Report", desc: "Customer balances overview", path: "/customer-report", icon: <UserCheck size={24} color="#7367F0" /> }
+      { name: "Customer Report", desc: "Customer balances overview", path: "/customer-report", icon: <UserCheck size={24} color="#7367F0" /> },
+      { name: "GSTR-1 Sales Report", desc: "GST Outward Supplies Statement", path: "/gstr-1", icon: <FileText size={24} color="#7367F0" /> },
+      { name: "GSTR-2B Purchase Report", desc: "GST Auto-drafted ITC Statement", path: "/gstr-2b", icon: <FileText size={24} color="#28C76F" /> },
+      { name: "GSTR-3B Summary", desc: "GST Consolidated Summary Return", path: "/gstr-3b", icon: <FileText size={24} color="#FF9F43" /> }
     ]
   },
   'user-management': {
