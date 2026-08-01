@@ -15,9 +15,9 @@ const Sidebar = ({ isCollapsed, isMobileOpen, closeMobile }) => {
   const navigate = useNavigate();
 
   const [expandedSections, setExpandedSections] = React.useState({
-    inventory: location.pathname.includes('inventory') || location.pathname.includes('product') || location.pathname.includes('categor') || location.pathname.includes('brand') || location.pathname.includes('variant') || location.pathname.includes('store') || location.pathname.includes('warehouse') || location.pathname.includes('warrant') || location.pathname.includes('barcode') || location.pathname.includes('qrcode') || location.pathname.includes('expired'),
+    inventory: location.pathname.includes('inventory') || location.pathname.includes('product') || location.pathname.includes('categor') || location.pathname.includes('brand') || location.pathname.includes('variant') || location.pathname.includes('store') || location.pathname.includes('warehouse') || location.pathname.includes('warrant') || location.pathname.includes('barcode') || location.pathname.includes('qrcode') || location.pathname.includes('expired') || location.pathname.includes('low-stock'),
     taxMasters: location.pathname.includes('tax'),
-    stock: location.pathname.includes('stock'),
+    stock: location.pathname.includes('stock') && !location.pathname.includes('low-stock'),
     sales: location.pathname.includes('sales') || location.pathname.includes('pos') || location.pathname.includes('invoice') || location.pathname.includes('quotation') || location.pathname.includes('challan'),
     purchase: location.pathname.includes('purchase') || location.pathname.includes('vendor') || location.pathname.includes('draft'),
     promo: location.pathname.includes('coupon') || location.pathname.includes('gift') || location.pathname.includes('discount'),
@@ -51,6 +51,29 @@ const Sidebar = ({ isCollapsed, isMobileOpen, closeMobile }) => {
       }
     }
   }, []);
+
+  React.useEffect(() => {
+    const currentPath = location.pathname;
+    setExpandedSections(prev => {
+      const nextState = {
+        inventory: currentPath.includes('inventory') || currentPath.includes('product') || currentPath.includes('categor') || currentPath.includes('brand') || currentPath.includes('variant') || currentPath.includes('store') || currentPath.includes('warehouse') || currentPath.includes('warrant') || currentPath.includes('barcode') || currentPath.includes('qrcode') || currentPath.includes('expired') || currentPath.includes('low-stock'),
+        taxMasters: currentPath.includes('tax'),
+        stock: currentPath.includes('stock') && !currentPath.includes('low-stock'),
+        sales: currentPath.includes('sales') || currentPath.includes('pos') || currentPath.includes('invoice') || currentPath.includes('quotation') || currentPath.includes('challan'),
+        purchase: currentPath.includes('purchase') || currentPath.includes('vendor') || currentPath.includes('draft'),
+        promo: currentPath.includes('coupon') || currentPath.includes('gift') || currentPath.includes('discount'),
+        finance: currentPath.includes('expense') || currentPath.includes('income') || currentPath.includes('bank') || currentPath.includes('transfer') || currentPath.includes('sheet') || currentPath.includes('balance') || currentPath.includes('flow') || currentPath.includes('statement'),
+        reports: currentPath.includes('report') || currentPath.includes('best'),
+        userManagement: currentPath.includes('user') || currentPath.includes('role') || currentPath.includes('permission') || currentPath.includes('delete')
+      };
+      
+      const hasAnyMatch = Object.values(nextState).some(val => val === true);
+      if (hasAnyMatch) {
+        return nextState;
+      }
+      return prev;
+    });
+  }, [location.pathname]);
 
   const toggleSection = (section, e) => {
     if (e) {
@@ -163,7 +186,6 @@ const Sidebar = ({ isCollapsed, isMobileOpen, closeMobile }) => {
         <div className={styles.menuTitle}>Main Navigation</div>
         <ul className={styles.menuList}>
           {renderSidebarItem('dashboard', '/', <Home size={18} />, 'Dashboard')}
-          {renderSidebarItem('salesDashboard', '/sales-index', <LayoutGrid size={18} />, 'Sales Dashboard')}
           
           {renderSidebarItem('sales', '/sales-index', <ShoppingCart size={18} />, 'Sales', [
             { name: "POS Terminal", path: "/pos" },

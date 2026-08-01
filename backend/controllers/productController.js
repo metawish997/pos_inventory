@@ -193,7 +193,10 @@ module.exports = {
     getLowStocks: async (req, res) => {
         try {
             const products = await Product.find().populate('category brand store warehouse');
-            const lowStocks = products.filter(p => (p.quantity || p.stock || 0) <= (p.quantityAlert || 10));
+            const lowStocks = products.filter(p => {
+                const qty = p.quantity || p.stock || 0;
+                return qty > 0 && qty <= (p.quantityAlert || 10);
+            });
             const outOfStocks = products.filter(p => (p.quantity || p.stock || 0) === 0);
 
             res.status(200).json({
