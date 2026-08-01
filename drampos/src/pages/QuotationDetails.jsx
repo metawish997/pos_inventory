@@ -133,58 +133,62 @@ const QuotationDetails = () => {
       </div>
 
       <Card id="printable-quotation-card" style={{padding: '3rem', marginBottom: '1.5rem'}}>
-        <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '2rem'}}>
+        <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem'}}>
           <div>
-            <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem'}}>
-              <span style={{fontWeight: 'bold', fontSize: '1.5rem', color: '#1B2850'}}>
-                <span style={{color: '#FF9F43'}}>{storeName}</span>
-              </span>
-            </div>
-            {storeAddress && <p style={{color: '#4B5563', fontSize: '0.875rem'}}>{storeAddress}</p>}
+            {companySettings?.orgLogo && (
+              <img src={companySettings.orgLogo} alt="Logo" style={{maxHeight: '50px', maxWidth: '150px', objectFit: 'contain'}} />
+            )}
           </div>
-          <div style={{textAlign: 'right', fontSize: '0.875rem', color: '#4B5563'}}>
-            <p>Quotation No <span style={{color: '#FF9F43', fontWeight: 600}}>{quotation.quotationNumber}</span></p>
-            <p>Created Date : <span style={{fontWeight: 600, color: '#1B2850'}}>{new Date(quotation.quotationDate).toLocaleDateString()}</span></p>
-            <p>Valid Until : <span style={{fontWeight: 600, color: '#1B2850'}}>{new Date(quotation.validUntil).toLocaleDateString()}</span></p>
+          <div style={{textAlign: 'right', maxWidth: '350px'}}>
+            <div style={{fontWeight: 'bold', fontSize: '1.25rem', color: '#1B2850', marginBottom: '0.25rem'}}>{storeName}</div>
+            {storeAddress && <p style={{color: '#4B5563', fontSize: '0.8rem', marginBottom: '0.5rem', lineHeight: '1.4'}}>{storeAddress}</p>}
+            <div style={{fontSize: '0.8rem', color: '#4B5563', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2px 1rem', textAlign: 'left'}}>
+              {storePhone && <div><strong>Phone:</strong> {storePhone}</div>}
+              {storeEmail && <div><strong>Email:</strong> {storeEmail}</div>}
+              {companySettings?.orgGst && <div><strong>GSTIN:</strong> {companySettings.orgGst}</div>}
+              {companySettings?.orgState && <div><strong>State:</strong> {companySettings.orgState}</div>}
+            </div>
           </div>
         </div>
 
-        <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '2rem'}}>
-          <div>
-            <p style={{fontSize: '0.875rem', color: '#1B2850', fontWeight: 600, marginBottom: '0.5rem'}}>From</p>
-            <p style={{fontSize: '1.125rem', color: '#1B2850', fontWeight: 600, marginBottom: '0.5rem'}}>{storeName}</p>
-            <div style={{color: '#4B5563', fontSize: '0.875rem', lineHeight: '1.5'}}>
-              {storeAddress && <p>{storeAddress}</p>}
-              {storeEmail && <p>Email : {storeEmail}</p>}
-              {storePhone && <p>Phone : {storePhone}</p>}
-            </div>
-          </div>
-          <div>
-            <p style={{fontSize: '0.875rem', color: '#1B2850', fontWeight: 600, marginBottom: '0.5rem'}}>Bill To</p>
-            <p style={{fontSize: '1.125rem', color: '#1B2850', fontWeight: 600, marginBottom: '0.5rem'}}>{quotation.customerName}</p>
-            <div style={{color: '#4B5563', fontSize: '0.875rem', lineHeight: '1.5'}}>
-              {quotation.customerEmail && <p>Email : {quotation.customerEmail}</p>}
-              {quotation.customerPhone && <p>Phone : {quotation.customerPhone}</p>}
-              {quotation.gstNumber && <p>GST No : {quotation.gstNumber}</p>}
-              {quotation.placeOfSupply && <p>Place of Supply : {quotation.placeOfSupply}</p>}
-            </div>
-          </div>
-          <div>
-            <p style={{fontSize: '0.875rem', color: '#1B2850', fontWeight: 600, marginBottom: '0.5rem'}}>Status</p>
-            <span style={{
-              backgroundColor: badge.bg, color: badge.color,
-              padding: '4px 8px', borderRadius: '4px', fontSize: '12px',
-              display: 'inline-flex', alignItems: 'center', gap: '6px',
-              marginBottom: '1rem', fontWeight: 600
-            }}>
-              <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: badge.color }}></span>
-              {quotation.status}
-            </span>
-            <div style={{width: '80px', height: '80px', backgroundColor: '#F3F4F6', marginTop: '0.5rem'}}>
-              <img src={`https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${quotation.quotationNumber}`} alt="QR Code" style={{width: '100%', height: '100%'}} />
-            </div>
-          </div>
-        </div>
+        {/* Visual Reference Aligned Bill To & Quotation Details Table */}
+        <table style={{width: '100%', borderCollapse: 'collapse', border: '1px solid #E5E7EB', marginBottom: '2rem'}}>
+          <thead>
+            <tr style={{backgroundColor: '#F9FAFB', borderBottom: '1px solid #E5E7EB', textAlign: 'left', fontSize: '0.875rem', color: '#1F2937'}}>
+              <th style={{padding: '0.75rem 1rem', fontWeight: 700, width: '50%', borderRight: '1px solid #E5E7EB'}}>Bill To:</th>
+              <th style={{padding: '0.75rem 1rem', fontWeight: 700, width: '50%'}}>Quotation Details: <span style={{
+                backgroundColor: badge.bg, color: badge.color,
+                padding: '4px 8px', borderRadius: '4px', fontSize: '12px',
+                display: 'inline-flex', alignItems: 'center', gap: '6px',
+                fontWeight: 600, verticalAlign: 'middle'
+              }}>
+                <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: badge.color }}></span>
+                {quotation.status}
+              </span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style={{fontSize: '0.875rem', color: '#4B5563', verticalAlign: 'top'}}>
+              <td style={{padding: '1rem', borderRight: '1px solid #E5E7EB', lineHeight: '1.6'}}>
+                <strong style={{color: '#1B2850', display: 'block', fontSize: '1rem', marginBottom: '0.25rem'}}>{quotation.customerName}</strong>
+                {quotation.customerEmail && <div>Email : {quotation.customerEmail}</div>}
+                {quotation.customerPhone && <div>Phone : {quotation.customerPhone}</div>}
+                {quotation.gstNumber && <div>GST No : {quotation.gstNumber}</div>}
+                {quotation.placeOfSupply && <div>Place of Supply : {quotation.placeOfSupply}</div>}
+              </td>
+              <td style={{padding: '1rem', lineHeight: '1.6', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                <div>
+                  <div>No: <strong style={{color: '#1B2850'}}>{quotation.quotationNumber}</strong></div>
+                  <div>Date: <strong style={{color: '#1B2850'}}>{new Date(quotation.quotationDate).toLocaleDateString('en-GB')}</strong></div>
+                  <div>Valid Until: <strong style={{color: '#1B2850'}}>{new Date(quotation.validUntil).toLocaleDateString('en-GB')}</strong></div>
+                </div>
+                <div style={{width: '70px', height: '70px', backgroundColor: '#F3F4F6', border: '1px solid #E5E7EB', padding: '2px', borderRadius: '4px'}}>
+                  <img src={`https://api.qrserver.com/v1/create-qr-code/?size=70x70&data=${quotation.quotationNumber}`} alt="QR Code" style={{width: '100%', height: '100%'}} />
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
 
         <div style={{border: '1px solid #E5E7EB', borderRadius: '8px', overflow: 'hidden', marginBottom: '2rem'}}>
           <table style={{width: '100%', borderCollapse: 'collapse', textAlign: 'left'}}>

@@ -190,84 +190,71 @@ const InvoiceDetails = () => {
       </div>
 
       <Card id="printable-invoice-card" style={{padding: '3rem', marginBottom: '1.5rem'}}>
-        <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '2rem'}}>
+        <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem'}}>
           <div>
-            <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem'}}>
-              <span style={{fontWeight: 'bold', fontSize: '1.5rem', color: '#1B2850'}}>
-                <span style={{color: '#FF9F43'}}>{storeName}</span>
-              </span>
-            </div>
-            <p style={{color: '#4B5563', fontSize: '0.875rem'}}>{storeAddress}</p>
+            {companySettings?.orgLogo && (
+              <img src={companySettings.orgLogo} alt="Logo" style={{maxHeight: '50px', maxWidth: '150px', objectFit: 'contain'}} />
+            )}
           </div>
-          <div style={{textAlign: 'right', fontSize: '0.875rem', color: '#4B5563'}}>
-            <p>Invoice No <span style={{color: '#FF9F43', fontWeight: 600}}>{invoice.invoiceNumber}</span></p>
-            <p>Created Date : <span style={{fontWeight: 600, color: '#1B2850'}}>{new Date(invoice.invoiceDate).toLocaleDateString()}</span></p>
-            <p>Due Date : <span style={{fontWeight: 600, color: '#1B2850'}}>{new Date(invoice.dueDate).toLocaleDateString()}</span></p>
+          <div style={{textAlign: 'right', maxWidth: '350px'}}>
+            <div style={{fontWeight: 'bold', fontSize: '1.25rem', color: '#1B2850', marginBottom: '0.25rem'}}>{storeName}</div>
+            {storeAddress && <p style={{color: '#4B5563', fontSize: '0.8rem', marginBottom: '0.5rem', lineHeight: '1.4'}}>{storeAddress}</p>}
+            <div style={{fontSize: '0.8rem', color: '#4B5563', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2px 1rem', textAlign: 'left'}}>
+              {storePhone && <div><strong>Phone:</strong> {storePhone}</div>}
+              {storeEmail && <div><strong>Email:</strong> {storeEmail}</div>}
+              {companySettings?.orgGst && <div><strong>GSTIN:</strong> {companySettings.orgGst}</div>}
+              {companySettings?.orgState && <div><strong>State:</strong> {companySettings.orgState}</div>}
+            </div>
           </div>
         </div>
 
-        <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '2rem'}}>
-          <div>
-            <p style={{fontSize: '0.875rem', color: '#1B2850', fontWeight: 600, marginBottom: '0.5rem'}}>From</p>
-            <p style={{fontSize: '1.125rem', color: '#1B2850', fontWeight: 600, marginBottom: '0.5rem'}}>{storeName}</p>
-            <div style={{color: '#4B5563', fontSize: '0.875rem', lineHeight: '1.5'}}>
-              <p>{storeAddress}</p>
-              {storeEmail && <p>Email : {storeEmail}</p>}
-              {storePhone && <p>Phone : {storePhone}</p>}
-            </div>
-          </div>
-          <div>
-            <p style={{fontSize: '0.875rem', color: '#1B2850', fontWeight: 600, marginBottom: '0.5rem'}}>Bill To</p>
-            <p style={{fontSize: '1.125rem', color: '#1B2850', fontWeight: 600, marginBottom: '0.5rem'}}>{invoice.customerName}</p>
-            <div style={{color: '#4B5563', fontSize: '0.875rem', lineHeight: '1.5'}}>
-              {invoice.customerEmail && <p>Email : {invoice.customerEmail}</p>}
-              {invoice.customerPhone && <p>Phone : {invoice.customerPhone}</p>}
-              {invoice.gstNumber && <p>GST No : {invoice.gstNumber}</p>}
-              {invoice.placeOfSupply && <p>Place of Supply : {invoice.placeOfSupply}</p>}
-            </div>
-          </div>
-          <div>
-            <p style={{fontSize: '0.875rem', color: '#1B2850', fontWeight: 600, marginBottom: '0.5rem'}}>Payment Status</p>
-            {(() => {
-              let bg = '#FCEAEA';
-              let color = '#EA5455';
-              if (invoice.status === 'Paid') {
-                bg = '#E8F9EE';
-                color = '#28C76F';
-              } else if (invoice.status === 'Partially Paid') {
-                bg = '#FFF1E6';
-                color = '#FF9F43';
-              } else if (invoice.status === 'Overdue') {
-                bg = '#FFF2F2';
-                color = '#EA5455';
-              }
-              return (
-                <span style={{
-                  backgroundColor: bg, 
-                  color: color, 
-                  padding: '4px 8px', 
-                  borderRadius: '4px', 
-                  fontSize: '12px', 
-                  display: 'inline-flex', 
-                  alignItems: 'center', 
-                  gap: '6px', 
-                  marginBottom: '1rem',
-                  fontWeight: 600
-                }}>
+        {/* Visual Reference Aligned Bill To & Invoice Details Table */}
+        <table style={{width: '100%', borderCollapse: 'collapse', border: '1px solid #E5E7EB', marginBottom: '2rem'}}>
+          <thead>
+            <tr style={{backgroundColor: '#F9FAFB', borderBottom: '1px solid #E5E7EB', textAlign: 'left', fontSize: '0.875rem', color: '#1F2937'}}>
+              <th style={{padding: '0.75rem 1rem', fontWeight: 700, width: '50%', borderRight: '1px solid #E5E7EB'}}>Bill To:</th>
+              <th style={{padding: '0.75rem 1rem', fontWeight: 700, width: '50%'}}>Invoice Details: {(() => {
+                let bg = '#FCEAEA';
+                let color = '#EA5455';
+                if (invoice.status === 'Paid') { bg = '#E8F9EE'; color = '#28C76F'; }
+                else if (invoice.status === 'Partially Paid') { bg = '#FFF1E6'; color = '#FF9F43'; }
+                else if (invoice.status === 'Overdue') { bg = '#FFF2F2'; color = '#EA5455'; }
+                return (
                   <span style={{
-                    width: '6px', 
-                    height: '6px', 
-                    borderRadius: '50%', 
-                    backgroundColor: color
-                  }}></span> {invoice.status}
-                </span>
-              );
-            })()}
-            <div style={{width: '80px', height: '80px', backgroundColor: '#F3F4F6'}}>
-              <img src={`https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${invoice.invoiceNumber}`} alt="QR Code" style={{width: '100%', height: '100%'}} />
-            </div>
-          </div>
-        </div>
+                    backgroundColor: bg, color: color,
+                    padding: '4px 8px', borderRadius: '4px', fontSize: '12px',
+                    display: 'inline-flex', alignItems: 'center', gap: '6px',
+                    fontWeight: 600, verticalAlign: 'middle'
+                  }}>
+                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: color }}></span>
+                    {invoice.status}
+                  </span>
+                );
+              })()}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style={{fontSize: '0.875rem', color: '#4B5563', verticalAlign: 'top'}}>
+              <td style={{padding: '1rem', borderRight: '1px solid #E5E7EB', lineHeight: '1.6'}}>
+                <strong style={{color: '#1B2850', display: 'block', fontSize: '1rem', marginBottom: '0.25rem'}}>{invoice.customerName}</strong>
+                {invoice.customerEmail && <div>Email : {invoice.customerEmail}</div>}
+                {invoice.customerPhone && <div>Phone : {invoice.customerPhone}</div>}
+                {invoice.gstNumber && <div>GST No : {invoice.gstNumber}</div>}
+                {invoice.placeOfSupply && <div>Place of Supply : {invoice.placeOfSupply}</div>}
+              </td>
+              <td style={{padding: '1rem', lineHeight: '1.6', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                <div>
+                  <div>No: <strong style={{color: '#1B2850'}}>{invoice.invoiceNumber}</strong></div>
+                  <div>Date: <strong style={{color: '#1B2850'}}>{new Date(invoice.invoiceDate).toLocaleDateString('en-GB')}</strong></div>
+                  <div>Due Date: <strong style={{color: '#1B2850'}}>{new Date(invoice.dueDate).toLocaleDateString('en-GB')}</strong></div>
+                </div>
+                <div style={{width: '70px', height: '70px', backgroundColor: '#F3F4F6', border: '1px solid #E5E7EB', padding: '2px', borderRadius: '4px'}}>
+                  <img src={`https://api.qrserver.com/v1/create-qr-code/?size=70x70&data=${invoice.invoiceNumber}`} alt="QR Code" style={{width: '100%', height: '100%'}} />
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
 
         <div style={{border: '1px solid #E5E7EB', borderRadius: '8px', overflow: 'hidden', marginBottom: '2rem'}}>
           <table style={{width: '100%', borderCollapse: 'collapse', textAlign: 'left'}}>

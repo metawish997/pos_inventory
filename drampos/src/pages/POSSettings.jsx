@@ -968,11 +968,6 @@ const POSSettings = () => {
               <Settings size={18} /> General Settings
             </div>
           </div>
-          <div className={`${styles.sidebarItem} ${activeSection === 'Website Settings' ? styles.active : ''}`} onClick={() => setActiveSection('Website Settings')}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <Globe size={18} /> Website Settings
-            </div>
-          </div>
           <div>
             <div className={styles.sidebarItem} style={{ color: '#FF9F43', cursor: 'pointer' }} onClick={() => setAppSettingsOpen(!appSettingsOpen)}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -982,31 +977,13 @@ const POSSettings = () => {
             </div>
             {appSettingsOpen && (
               <div className={styles.subList}>
-                <div className={`${styles.subItem} ${activeSection === 'Invoice Settings' ? styles.active : ''}`} onClick={() => setActiveSection('Invoice Settings')}>Invoice Settings</div>
-                <div className={`${styles.subItem} ${activeSection === 'Invoice Templates' ? styles.active : ''}`} onClick={() => setActiveSection('Invoice Templates')}>Invoice Templates</div>
-                <div className={`${styles.subItem} ${activeSection === 'Printer' ? styles.active : ''}`} onClick={() => setActiveSection('Printer')}>Printer</div>
-                <div className={`${styles.subItem} ${activeSection === 'POS' ? styles.active : ''}`} onClick={() => setActiveSection('POS')}>
+                <div className={`${styles.subItem} ${activeSection === 'Invoice Settings' ? styles.active : ''}`} onClick={() => { setActiveSection('Invoice Settings'); }}>Invoice Settings</div>
+                <div className={`${styles.subItem} ${activeSection === 'POS' ? styles.active : ''}`} onClick={() => { setActiveSection('POS'); }}>
                   POS <span style={{ marginLeft: 'auto', width: '6px', height: '6px', backgroundColor: '#FF9F43', borderRadius: '50%' }}></span>
                 </div>
-                <div className={`${styles.subItem} ${activeSection === 'Signatures' ? styles.active : ''}`} onClick={() => setActiveSection('Signatures')}>Signatures</div>
-                <div className={`${styles.subItem} ${activeSection === 'Custom Fields' ? styles.active : ''}`} onClick={() => setActiveSection('Custom Fields')}>Custom Fields</div>
+                <div className={`${styles.subItem} ${activeSection === 'Signatures' ? styles.active : ''}`} onClick={() => { setActiveSection('Signatures'); }}>Signatures</div>
               </div>
             )}
-          </div>
-          <div className={`${styles.sidebarItem} ${activeSection === 'System Settings' ? styles.active : ''}`} onClick={() => setActiveSection('System Settings')}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <Monitor size={18} /> System Settings
-            </div>
-          </div>
-          <div className={`${styles.sidebarItem} ${activeSection === 'Financial Settings' ? styles.active : ''}`} onClick={() => setActiveSection('Financial Settings')}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <DollarSign size={18} /> Financial Settings
-            </div>
-          </div>
-          <div className={`${styles.sidebarItem} ${activeSection === 'Other Settings' ? styles.active : ''}`} onClick={() => setActiveSection('Other Settings')}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <List size={18} /> Other Settings
-            </div>
           </div>
         </div>
 
