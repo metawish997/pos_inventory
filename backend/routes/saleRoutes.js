@@ -14,9 +14,12 @@ router.get('/invoices/list', saleController.getInvoices);
 router.get('/invoices/:id', saleController.getInvoiceById);
 router.put('/invoices/:id/payment', saleController.recordInvoicePayment);
 router.put('/invoices/:id/convert', saleController.convertProformaToTaxInvoice);
+router.put('/invoices/:id', saleController.updateInvoice);
+router.delete('/invoices/:id', saleController.deleteInvoice);
 
 // Quotation Routes
 router.get('/quotations/list', saleController.getQuotations);
+router.get('/quotations/:id', saleController.getQuotationById);
 router.post('/quotations', saleController.createQuotation);
 router.put('/quotations/:id', saleController.updateQuotation);
 

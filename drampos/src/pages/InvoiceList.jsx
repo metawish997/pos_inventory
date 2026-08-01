@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import Card from '../components/ui/Card';
 import styles from './ProductList.module.css';
-import { Search, RefreshCw, Eye, PlusCircle, ChevronDown, ChevronUp, Circle } from 'lucide-react';
+import { Search, RefreshCw, PlusCircle, ChevronDown, ChevronUp, MoreVertical, Edit3, Trash2 } from 'lucide-react';
+import { API_BASE_URL } from '../api/endpoints';
 import { getInvoices } from '../services/salesService';
 
 const InvoiceList = () => {
@@ -13,8 +14,8 @@ const InvoiceList = () => {
   const [searchTerm, setSearchTerm] = useState('');
   
   // Accordion Expand/Collapse States
-  const [showGraph, setShowGraph] = useState(true);
-  const [showSummary, setShowSummary] = useState(true);
+  const [showGraph, setShowGraph] = useState(false);
+  const [showSummary, setShowSummary] = useState(false);
 
   // Filter States
   const [statusFilter, setStatusFilter] = useState('All');
@@ -26,6 +27,23 @@ const InvoiceList = () => {
   const [timeframe, setTimeframe] = useState('Monthly');
   const [chartType, setChartType] = useState('Line Chart');
   const [hoveredIndex, setHoveredIndex] = useState(null);
+  const [openMenuId, setOpenMenuId] = useState(null);
+
+  const handleDeleteInvoice = async (invoiceId) => {
+    if (!window.confirm('Are you sure you want to delete this invoice?')) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/sales/invoices/${invoiceId}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.success) {
+        setInvoices(prev => prev.filter(inv => inv._id !== invoiceId));
+      } else {
+        alert(data.message || 'Failed to delete invoice');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error deleting invoice');
+    }
+  };
 
   const fetchInvoices = async () => {
     try {
@@ -504,7 +522,7 @@ const InvoiceList = () => {
           </div>
         </div>
 
-        <div className={styles.tableResponsive}>
+        <div className={styles.tableResponsive} onClick={(e) => { if (!e.target.closest('[data-menu]')) setOpenMenuId(null); }}>
           <table className={styles.productTable}>
             <thead>
               <tr>
@@ -532,7 +550,16 @@ const InvoiceList = () => {
                 filteredInvoices.map((item, i) => (
                   <tr key={item._id || i}>
                     <td><input type="checkbox" /></td>
-                    <td>{item.invoiceNumber}</td>
+                    <td>
+                      <span
+                        style={{color: '#FF9F43', cursor: 'pointer', fontWeight: 500, textDecoration: 'none'}}
+                        onClick={() => navigate(`/invoice-details/${item._id}`)}
+                        onMouseEnter={e => e.target.style.textDecoration = 'underline'}
+                        onMouseLeave={e => e.target.style.textDecoration = 'none'}
+                      >
+                        {item.invoiceNumber}
+                      </span>
+                    </td>
                     <td>
                       <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
                         <div style={{width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, fontSize: '12px'}}>
@@ -546,13 +573,37 @@ const InvoiceList = () => {
                     <td>₹{item.paidAmount || 0}</td>
                     <td>₹{item.dueAmount || 0}</td>
                     <td>{getStatusBadge(item.status)}</td>
-                    <td>
+                    <td style={{position: 'relative'}} data-menu>
                       <button 
-                        style={{border: 'none', background: 'none', cursor: 'pointer', color: '#6B7280'}}
-                        onClick={() => navigate(`/invoice-details/${item._id}`)}
+                        style={{border: 'none', background: 'none', cursor: 'pointer', color: '#6B7280', padding: '4px'}}
+                        onClick={() => setOpenMenuId(openMenuId === item._id ? null : item._id)}
                       >
-                        <Eye size={16} />
+                        <MoreVertical size={16} />
                       </button>
+                      {openMenuId === item._id && (
+                        <div style={{
+                          position: 'absolute', right: 0, top: '100%', zIndex: 20,
+                          backgroundColor: 'white', border: '1px solid #E5E7EB', borderRadius: '8px',
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.1)', minWidth: '140px', overflow: 'hidden'
+                        }}>
+                          <button
+                            onClick={() => { setOpenMenuId(null); navigate(`/create-invoice?type=Tax Invoice&edit=${item._id}`); }}
+                            style={{display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '10px 14px', border: 'none', background: 'none', cursor: 'pointer', fontSize: '0.85rem', color: '#374151'}}
+                            onMouseEnter={e => e.currentTarget.style.backgroundColor = '#F9FAFB'}
+                            onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                          >
+                            <Edit3 size={14} /> Edit
+                          </button>
+                          <button
+                            onClick={() => { setOpenMenuId(null); handleDeleteInvoice(item._id); }}
+                            style={{display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '10px 14px', border: 'none', background: 'none', cursor: 'pointer', fontSize: '0.85rem', color: '#EA5455'}}
+                            onMouseEnter={e => e.currentTarget.style.backgroundColor = '#FEF2F2'}
+                            onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                          >
+                            <Trash2 size={14} /> Delete
+                          </button>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ))

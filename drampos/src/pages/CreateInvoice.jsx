@@ -15,11 +15,13 @@ import { getCustomers } from '../services/customerService';
 import AddCustomerModal from '../components/modals/AddCustomerModal';
 import HsnModal from '../components/modals/HsnModal';
 import { API_BASE_URL } from '../api/endpoints';
+import { State, Country } from 'country-state-city';
 
 const CreateInvoice = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const invoiceType = searchParams.get('type') === 'Proforma Invoice' ? 'Proforma Invoice' : 'Tax Invoice';
+  const editId = searchParams.get('edit');
 
   // State Variables matching original form + new fields
   const [customerName, setCustomerName] = useState('');
@@ -453,6 +455,55 @@ const CreateInvoice = () => {
     return () => document.removeEventListener('click', handleOutsideClick);
   }, []);
 
+  // Edit mode: load existing invoice data
+  useEffect(() => {
+    if (!editId) return;
+    fetch(`${API_BASE_URL}/sales/invoices/${editId}`)
+      .then(res => res.json())
+      .then(data => {
+        if (!data.success || !data.data) return;
+        const inv = data.data;
+        setCustomerName(inv.customerName || '');
+        setCustomerEmail(inv.customerEmail || '');
+        setCustomerPhone(inv.customerPhone || '');
+        setGstNumber(inv.gstNumber || '');
+        setPlaceOfSupply(inv.placeOfSupply || '');
+        setClientPoNumber(inv.clientPoNumber || '');
+        setNextInvoiceNumber(inv.invoiceNumber || '');
+        if (inv.invoiceDate) setInvoiceDate(new Date(inv.invoiceDate).toISOString().split('T')[0]);
+        if (inv.dueDate) setDueDate(new Date(inv.dueDate).toISOString().split('T')[0]);
+        setNotes(inv.notes || '');
+        if (inv.terms && inv.terms.length > 0) {
+          setTermsList(inv.terms.map(t => ({ text: t })));
+        }
+        // Load items from sale
+        const saleItems = inv.sale?.items || [];
+        if (saleItems.length > 0) {
+          setCartItems(saleItems.map((si, idx) => ({
+            id: idx + 1,
+            product: si.product || null,
+            nameOrSku: si.product?.name || '',
+            hsn: si.hsn || '',
+            gstRate: si.taxRate || 0,
+            qty: si.quantity || 0,
+            price: si.unitPrice || 0,
+            discountRate: si.discount || 0,
+            discountType: 'Fixed',
+            cgst: 0,
+            sgst: 0,
+            total: si.total || 0,
+            showDescription: false,
+            showImage: false,
+            description: '',
+            image: '',
+            unit: 'Product',
+            salesLedger: 'Sales'
+          })));
+        }
+      })
+      .catch(err => console.error('Failed to load invoice for edit:', err));
+  }, [editId]);
+
   useEffect(() => {
     if (!invoiceDate) return;
     const date = new Date(invoiceDate);
@@ -672,6 +723,7 @@ const CreateInvoice = () => {
       const payload = {
         saleType: 'Online',
         invoiceType: invoiceType,
+        invoiceNumber: nextInvoiceNumber,
         invoiceDate: invoiceDate,
         dueDate: dueDate,
         customerName: customerName,
@@ -685,6 +737,7 @@ const CreateInvoice = () => {
           quantity: ci.qty,
           unitPrice: ci.price,
           subtotal: ci.price * ci.qty,
+          hsn: ci.hsn || '',
           total: ci.total
         })),
         subtotal,
@@ -696,23 +749,71 @@ const CreateInvoice = () => {
         paymentStatus: mode === 'draft' ? 'Draft' : payStatus,
         paymentMethod: paymentMethod,
         orderStatus: mode === 'draft' ? 'Draft' : orderStatus,
-        notes
+        notes,
+        terms: termsList.map(t => t.text.trim()).filter(Boolean),
+        customFields: [
+          ...customFields.map(f => ({ label: f.label, value: f.value })),
+          ...additionalFieldsList.map(f => ({ label: f.label, value: f.value })),
+          ...(showShippingDetails && !shippedToSame ? [
+            { label: 'Shipped To Name', value: shippedToName },
+            { label: 'Shipped To Address', value: shippedToAddress },
+            { label: 'Shipped To City', value: shippedToCity },
+            { label: 'Shipped To State', value: shippedToState },
+            { label: 'Shipped To Pincode', value: shippedToPostal },
+            { label: 'Shipped To Country', value: shippedToCountry }
+          ] : [])
+        ],
+        attachments: attachmentsList.map(file => file.name)
       };
 
-      const res = await createSale(payload);
-      if (res.success) {
-        if (mode === 'new') {
-          alert(`${invoiceType} saved! Starting new invoice.`);
-          navigate(0); // reload same page = blank new invoice
-        } else if (mode === 'draft') {
-          alert('Draft saved successfully!');
-          navigate('/invoices');
+      let res;
+      if (editId) {
+        // Update existing invoice
+        const updateRes = await fetch(`${API_BASE_URL}/sales/invoices/${editId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            customerName: payload.customerName,
+            customerEmail: payload.customerEmail,
+            customerPhone: payload.customerPhone,
+            gstNumber: payload.gstNumber,
+            placeOfSupply: payload.placeOfSupply,
+            clientPoNumber: payload.clientPoNumber,
+            invoiceDate: payload.invoiceDate,
+            dueDate: payload.dueDate,
+            subtotal: payload.subtotal,
+            taxAmount: payload.totalTax,
+            discountAmount: payload.totalDiscount,
+            totalAmount: payload.grandTotal,
+            notes: payload.notes,
+            terms: payload.terms,
+            customFields: payload.customFields
+          })
+        });
+        res = await updateRes.json();
+        if (res.success) {
+          alert(`${invoiceType} updated successfully!`);
+          navigate(`/invoice-details/${editId}`);
         } else {
-          alert(`${invoiceType} created successfully!`);
-          if (invoiceType === 'Proforma Invoice') {
-            navigate('/proforma-invoices');
-          } else {
+          alert(res.message || 'Failed to update invoice');
+        }
+      } else {
+        res = await createSale(payload);
+        if (res.success) {
+          if (mode === 'new') {
+            alert(`${invoiceType} saved! Starting new invoice.`);
+            navigate(0);
+          } else if (mode === 'draft') {
+            alert('Draft saved successfully!');
             navigate('/invoices');
+          } else {
+            alert(`${invoiceType} created successfully!`);
+            const createdInvoiceId = res.invoice?._id || res.data?.invoice?._id || res.data?._id;
+            if (createdInvoiceId) {
+              navigate(`/invoice-details/${createdInvoiceId}`);
+            } else {
+              navigate(invoiceType === 'Proforma Invoice' ? '/proforma-invoices' : '/invoices');
+            }
           }
         }
       }
@@ -771,103 +872,150 @@ const CreateInvoice = () => {
       <Card style={{ padding: '2.5rem', maxWidth: '1200px', margin: '0 auto', border: '1px solid #F3F4F6', boxShadow: '0 4px 20px -2px rgba(0,0,0,0.05)' }}>
         <form onSubmit={handleSubmit}>
           
-          {/* Header Title Section */}
-          <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
-            <h1 style={{ fontSize: '2.25rem', fontWeight: 700, color: '#111827', margin: 0 }}>{invoiceType}</h1>
-          </div>
+          {/* Header & Logo Flex Row */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2.5rem', position: 'relative', minHeight: '100px' }}>
+            {/* Empty spacer to push title to exact center */}
+            <div style={{ width: '240px' }}></div>
 
-          {/* Top Metadata Section (Two Columns) */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '4rem', marginBottom: '3rem', alignItems: 'start' }}>
-            
-            {/* Left Column (Underlined Inputs) */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center' }}>
-                <label style={{ width: '120px', fontSize: '0.875rem', fontWeight: 500, color: '#374151', textDecoration: 'underline', textDecorationColor: '#D1D5DB' }}>Invoice No*</label>
+            {/* Header Title Section (Centered) */}
+            <div style={{ textAlign: 'center' }}>
+              <h1 style={{ fontSize: '2.25rem', fontWeight: 700, color: '#111827', margin: 0 }}>{invoiceType}</h1>
+            </div>
+
+            {/* Business Logo Upload (Right Side) */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <div style={{ 
+                width: '240px', 
+                height: '100px', 
+                border: businessLogo ? 'none' : '1px dashed #D1D5DB', 
+                borderRadius: '8px', 
+                backgroundColor: businessLogo ? 'transparent' : '#F9FAFB', 
+                display: 'flex', 
+                flexDirection: 'column', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                cursor: 'pointer',
+                position: 'relative',
+                overflow: 'hidden',
+                padding: businessLogo ? '0' : '0.5rem',
+                textAlign: 'center'
+              }}>
                 <input 
-                  type="text" 
-                  value={nextInvoiceNumber}
-                  onChange={(e) => setNextInvoiceNumber(e.target.value)}
-                  style={{ flex: 1, border: 'none', borderBottom: '1px dashed #D1D5DB', padding: '0.35rem 0', outline: 'none', fontSize: '0.925rem', color: '#111827', fontWeight: 500 }}
+                  type="file" 
+                  accept="image/*" 
+                  onChange={handleLogoUpload}
+                  style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0, cursor: 'pointer' }} 
                 />
-              </div>
-
-              <div style={{ display: 'flex', alignItems: 'center' }}>
-                <label style={{ width: '120px', fontSize: '0.875rem', fontWeight: 500, color: '#374151', textDecoration: 'underline', textDecorationColor: '#D1D5DB' }}>PO Number</label>
-                <input 
-                  type="text" 
-                  placeholder="Enter PO Number"
-                  value={clientPoNumber}
-                  onChange={(e) => setClientPoNumber(e.target.value)}
-                  style={{ flex: 1, border: 'none', borderBottom: '1px dashed #D1D5DB', padding: '0.35rem 0', outline: 'none', fontSize: '0.925rem', color: '#111827' }}
-                />
-              </div>
-
-              <div style={{ display: 'flex', alignItems: 'center', position: 'relative' }}>
-                <label style={{ width: '120px', fontSize: '0.875rem', fontWeight: 500, color: '#374151', textDecoration: 'underline', textDecorationColor: '#D1D5DB' }}>Invoice Date*</label>
-                <input 
-                  type="date" 
-                  value={invoiceDate}
-                  onChange={(e) => setInvoiceDate(e.target.value)}
-                  style={{ flex: 1, border: 'none', borderBottom: '1px dashed #D1D5DB', padding: '0.35rem 0', outline: 'none', fontSize: '0.925rem', color: '#111827', backgroundColor: 'transparent' }}
-                />
-              </div>
-
-              {showDueDate && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <label style={{ width: '120px', fontSize: '0.875rem', fontWeight: 500, color: '#374151', textDecoration: 'underline', textDecorationColor: '#D1D5DB' }}>Due Date</label>
-                  <input 
-                    type="date" 
-                    value={dueDate}
-                    onChange={(e) => setDueDate(e.target.value)}
-                    style={{ flex: 1, border: 'none', borderBottom: '1px dashed #D1D5DB', padding: '0.35rem 0', outline: 'none', fontSize: '0.925rem', color: '#111827', backgroundColor: 'transparent' }}
-                  />
-                  <Settings size={16} style={{ color: '#4B5563', cursor: 'pointer' }} onClick={() => setIsDueDateModalOpen(true)} />
-                  <button 
-                    type="button"
-                    title="Remove Due Date"
-                    onClick={() => {
-                      setDueDate('');
-                      setShowDueDate(false);
-                    }}
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      width: '28px',
-                      height: '28px',
-                      borderRadius: '6px',
-                      backgroundColor: '#F3F4F6',
-                      border: '1px solid #E5E7EB',
-                      color: '#4B5563',
-                      cursor: 'pointer',
-                      padding: 0
-                    }}
-                  >
-                    <X size={14} />
-                  </button>
-                </div>
-              )}
-
-              <div style={{ marginTop: '0.5rem', display: 'flex', gap: '1rem' }}>
-                <button 
-                  type="button" 
-                  onClick={() => setCustomFields(prev => [...prev, { label: 'Custom Field', value: '' }])}
-                  style={{ background: 'none', border: 'none', color: '#FF9F43', fontSize: '0.875rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.25rem', cursor: 'pointer' }}
-                >
-                  <Plus size={14} /> Add Custom Fields
-                </button>
-
-                {!showDueDate && (
-                  <button 
-                    type="button" 
-                    onClick={() => setShowDueDate(true)}
-                    style={{ background: 'none', border: 'none', color: '#FF9F43', fontSize: '0.875rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.25rem', cursor: 'pointer' }}
-                  >
-                    <Plus size={14} /> Add Due Date
-                  </button>
+                {businessLogo ? (
+                  <img src={businessLogo} alt="Logo" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+                ) : (
+                  <>
+                    <Upload size={20} style={{ color: '#FF9F43', marginBottom: '0.25rem' }} />
+                    <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#374151', display: 'block', marginBottom: '0.15rem' }}>Add Business Logo</span>
+                    <span style={{ fontSize: '0.7rem', color: '#6B7280', display: 'block', lineHeight: 1.2 }}>Resolution up to 1080x1080px.</span>
+                  </>
                 )}
               </div>
+            </div>
+          </div>
 
+          {/* Top Metadata Section (Full width / Two Columns) */}
+          <div style={{ marginBottom: '3rem' }}>
+            {/* Left Column (Underlined Inputs) */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.2fr', gap: '3rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <label style={{ width: '120px', fontSize: '0.875rem', fontWeight: 500, color: '#374151', textDecoration: 'underline', textDecorationColor: '#D1D5DB' }}>Invoice No*</label>
+                  <input 
+                    type="text" 
+                    value={nextInvoiceNumber}
+                    onChange={(e) => setNextInvoiceNumber(e.target.value)}
+                    style={{ flex: 1, border: 'none', borderBottom: '1px dashed #D1D5DB', padding: '0.35rem 0', outline: 'none', fontSize: '0.925rem', color: '#111827', fontWeight: 500 }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <label style={{ width: '120px', fontSize: '0.875rem', fontWeight: 500, color: '#374151', textDecoration: 'underline', textDecorationColor: '#D1D5DB' }}>PO Number</label>
+                  <input 
+                    type="text" 
+                    placeholder="Enter PO Number"
+                    value={clientPoNumber}
+                    onChange={(e) => setClientPoNumber(e.target.value)}
+                    style={{ flex: 1, border: 'none', borderBottom: '1px dashed #D1D5DB', padding: '0.35rem 0', outline: 'none', fontSize: '0.925rem', color: '#111827' }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', position: 'relative' }}>
+                  <label style={{ width: '120px', fontSize: '0.875rem', fontWeight: 500, color: '#374151', textDecoration: 'underline', textDecorationColor: '#D1D5DB' }}>Invoice Date*</label>
+                  <input 
+                    type="date" 
+                    value={invoiceDate}
+                    onChange={(e) => setInvoiceDate(e.target.value)}
+                    style={{ flex: 1, border: 'none', borderBottom: '1px dashed #D1D5DB', padding: '0.35rem 0', outline: 'none', fontSize: '0.925rem', color: '#111827', backgroundColor: 'transparent' }}
+                  />
+                </div>
+
+                {showDueDate && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <label style={{ width: '120px', fontSize: '0.875rem', fontWeight: 500, color: '#374151', textDecoration: 'underline', textDecorationColor: '#D1D5DB' }}>Due Date</label>
+                    <input 
+                      type="date" 
+                      value={dueDate}
+                      onChange={(e) => setDueDate(e.target.value)}
+                      style={{ flex: 1, border: 'none', borderBottom: '1px dashed #D1D5DB', padding: '0.35rem 0', outline: 'none', fontSize: '0.925rem', color: '#111827', backgroundColor: 'transparent' }}
+                    />
+                    <Settings size={16} style={{ color: '#4B5563', cursor: 'pointer' }} onClick={() => setIsDueDateModalOpen(true)} />
+                    <button 
+                      type="button"
+                      title="Remove Due Date"
+                      onClick={() => {
+                        setDueDate('');
+                        setShowDueDate(false);
+                      }}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        width: '28px',
+                        height: '28px',
+                        borderRadius: '6px',
+                        backgroundColor: '#F3F4F6',
+                        border: '1px solid #E5E7EB',
+                        color: '#4B5563',
+                        cursor: 'pointer',
+                        padding: 0
+                      }}
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div style={{ marginTop: '1.25rem', display: 'flex', gap: '1rem' }}>
+              <button 
+                type="button" 
+                onClick={() => setCustomFields(prev => [...prev, { label: 'Custom Field', value: '' }])}
+                style={{ background: 'none', border: 'none', color: '#FF9F43', fontSize: '0.875rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.25rem', cursor: 'pointer' }}
+              >
+                <Plus size={14} /> Add Custom Fields
+              </button>
+
+              {!showDueDate && (
+                <button 
+                  type="button" 
+                  onClick={() => setShowDueDate(true)}
+                  style={{ background: 'none', border: 'none', color: '#FF9F43', fontSize: '0.875rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.25rem', cursor: 'pointer' }}
+                >
+                  <Plus size={14} /> Add Due Date
+                </button>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1.25rem' }}>
               {customFields.map((field, idx) => (
                 <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                   <input 
@@ -894,42 +1042,6 @@ const CreateInvoice = () => {
                   <Trash2 size={16} style={{ color: '#EF4444', cursor: 'pointer' }} onClick={() => setCustomFields(prev => prev.filter((_, i) => i !== idx))} />
                 </div>
               ))}
-            </div>
-
-            {/* Right Column (Logo Box) */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-              <div style={{ 
-                width: '240px', 
-                height: '140px', 
-                border: businessLogo ? 'none' : '1px dashed #D1D5DB', 
-                borderRadius: '8px', 
-                backgroundColor: businessLogo ? 'transparent' : '#F9FAFB', 
-                display: 'flex', 
-                flexDirection: 'column', 
-                alignItems: 'center', 
-                justifyContent: 'center', 
-                cursor: 'pointer',
-                position: 'relative',
-                overflow: 'hidden',
-                padding: businessLogo ? '0' : '1rem',
-                textAlign: 'center'
-              }}>
-                <input 
-                  type="file" 
-                  accept="image/*" 
-                  onChange={handleLogoUpload}
-                  style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0, cursor: 'pointer' }} 
-                />
-                {businessLogo ? (
-                  <img src={businessLogo} alt="Logo" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
-                ) : (
-                  <>
-                    <Upload size={28} style={{ color: '#FF9F43', marginBottom: '0.5rem' }} />
-                    <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#374151', display: 'block', marginBottom: '0.25rem' }}>Add Business Logo</span>
-                    <span style={{ fontSize: '0.75rem', color: '#6B7280', display: 'block', lineHeight: 1.4 }}>Resolution up to 1080x1080px. PNG or JPEG file.</span>
-                  </>
-                )}
-              </div>
             </div>
           </div>
 
@@ -996,7 +1108,12 @@ const CreateInvoice = () => {
                               setCustomerEmail(c.email || '');
                               setCustomerPhone(c.phone || '');
                               setGstNumber(c.gstNumber || '');
-                              setPlaceOfSupply(c.placeOfSupply || '');
+                              
+                              // Fallback logic for placeOfSupply: c.placeOfSupply -> c.state -> store/organization state -> 'Madhya Pradesh'
+                              const parsedSettings = JSON.parse(localStorage.getItem('pos_settings') || '{}');
+                              const storeStateFallback = parsedSettings.orgState || 'Madhya Pradesh';
+                              setPlaceOfSupply(c.placeOfSupply || c.state || storeStateFallback);
+                              
                               setSelectedCustomer(c);
                               setShowCustomerDropdown(false);
                             }}
@@ -1030,11 +1147,17 @@ const CreateInvoice = () => {
                     <Edit2 size={14} style={{ color: '#FF9F43', cursor: 'pointer' }} onClick={() => { setCustomerToEdit(selectedCustomer); setIsCustomerModalOpen(true); }} />
                   </div>
                   <div style={{ fontSize: '0.8rem', color: '#6B7280', marginBottom: '0.5rem' }}>{selectedCustomer.address || 'No address specified'}</div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr', gap: '0.25rem', fontSize: '0.8rem' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '0.25rem', fontSize: '0.8rem' }}>
                     {selectedCustomer.gstNumber && (
                       <>
                         <span style={{ color: '#9CA3AF' }}>GSTIN</span>
                         <span style={{ fontWeight: 500, color: '#374151' }}>{selectedCustomer.gstNumber}</span>
+                      </>
+                    )}
+                    {(selectedCustomer.placeOfSupply || selectedCustomer.state) && (
+                      <>
+                        <span style={{ color: '#9CA3AF' }}>Place of Supply</span>
+                        <span style={{ fontWeight: 500, color: '#374151' }}>{selectedCustomer.placeOfSupply || selectedCustomer.state}</span>
                       </>
                     )}
                     {selectedCustomer.phone && (
@@ -1137,9 +1260,9 @@ const CreateInvoice = () => {
                   onChange={(e) => setShippedFromCountry(e.target.value)}
                   style={{ width: '100%', padding: '0.6rem 0.85rem', border: '1px solid #D1D5DB', borderRadius: '6px', fontSize: '0.875rem', backgroundColor: 'white', outline: 'none' }}
                 >
-                  <option value="India">India</option>
-                  <option value="United States">United States</option>
-                  <option value="United Kingdom">United Kingdom</option>
+                  {Country.getAllCountries().map(c => (
+                    <option key={c.isoCode} value={c.name}>{c.name}</option>
+                  ))}
                 </select>
 
                 <input 
@@ -1224,9 +1347,9 @@ const CreateInvoice = () => {
                   onChange={(e) => setShippedToCountry(e.target.value)}
                   style={{ width: '100%', padding: '0.6rem 0.85rem', border: '1px solid #D1D5DB', borderRadius: '6px', fontSize: '0.875rem', backgroundColor: 'white', outline: 'none' }}
                 >
-                  <option value="India">India</option>
-                  <option value="United States">United States</option>
-                  <option value="United Kingdom">United Kingdom</option>
+                  {Country.getAllCountries().map(c => (
+                    <option key={c.isoCode} value={c.name}>{c.name}</option>
+                  ))}
                 </select>
 
                 <input 
@@ -1285,7 +1408,7 @@ const CreateInvoice = () => {
               <thead>
                 <tr style={{ backgroundColor: '#FF9F43', color: 'white', fontSize: '0.875rem' }}>
                   <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontWeight: 600, width: '40px' }}>#</th>
-                  <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontWeight: 600 }}>Item</th>
+                  <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontWeight: 600, width: '250px' }}>Item</th>
                   <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontWeight: 600, width: '130px' }}>HSN/SAC</th>
                   <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontWeight: 600, width: '90px' }}>GST Rate</th>
                   <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontWeight: 600, width: '90px' }}>Quantity</th>
@@ -1323,7 +1446,8 @@ const CreateInvoice = () => {
                             style={{ width: '36px', height: '36px', borderRadius: '6px', objectFit: 'cover', border: '1px solid #E5E7EB', flexShrink: 0 }} 
                           />
                           <select 
-                            style={{ flex: 1, border: '1px solid #D1D5DB', padding: '0.4rem 0.5rem', borderRadius: '4px', fontSize: '0.825rem', outline: 'none' }}
+                            className="term-list-input"
+                            style={{ flex: 1, border: 'none', borderBottom: '1.5px dashed #FF9F43', padding: '0.4rem 0.5rem 0.25rem', fontSize: '0.825rem', outline: 'none', backgroundColor: 'transparent', width: '100%' }}
                             value={item.product?._id || ''}
                             onChange={(e) => handleRowProductSelect(index, e.target.value)}
                           >
@@ -1340,10 +1464,11 @@ const CreateInvoice = () => {
                         <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }}>
                           <input 
                             type="text" 
+                            className="term-list-input"
                             placeholder="#"
                             value={item.hsn}
                             onChange={(e) => updateRowField(index, 'hsn', e.target.value)}
-                            style={{ flex: 1, border: '1px solid #D1D5DB', padding: '0.4rem 0.5rem', borderRadius: '4px', fontSize: '0.825rem', outline: 'none', minWidth: '60px' }}
+                            style={{ flex: 1, border: 'none', borderBottom: '1.5px dashed #FF9F43', padding: '0.4rem 0.5rem 0.25rem', fontSize: '0.825rem', outline: 'none', minWidth: '60px', backgroundColor: 'transparent' }}
                           />
                           <button 
                             type="button" 
@@ -1351,9 +1476,9 @@ const CreateInvoice = () => {
                               setHsnActiveRowIndex(index);
                               setIsHsnModalOpen(true);
                             }}
-                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', border: '1px solid #D1D5DB', borderRadius: '4px', backgroundColor: '#F3F4F6', cursor: 'pointer' }}
+                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '28px', height: '28px', border: 'none', backgroundColor: 'transparent', cursor: 'pointer' }}
                           >
-                            <Search size={14} style={{ color: '#6B7280' }} />
+                            <Search size={13} style={{ color: '#FF9F43' }} />
                           </button>
                         </div>
                       </td>
@@ -1361,9 +1486,10 @@ const CreateInvoice = () => {
                       {/* GST Rate */}
                       <td style={{ padding: '1rem 0.5rem' }}>
                         <select
+                          className="term-list-input"
                           value={item.gstRate}
                           onChange={(e) => updateRowField(index, 'gstRate', Number(e.target.value))}
-                          style={{ width: '100%', border: '1px solid #D1D5DB', padding: '0.4rem 0.5rem', borderRadius: '4px', fontSize: '0.825rem', outline: 'none' }}
+                          style={{ width: '100%', border: 'none', borderBottom: '1.5px dashed #FF9F43', padding: '0.4rem 0.5rem 0.25rem', fontSize: '0.825rem', outline: 'none', backgroundColor: 'transparent' }}
                         >
                           {taxes.map((t, idx) => (
                             <option key={idx} value={t.taxValue}>{t.name}</option>
@@ -1375,10 +1501,11 @@ const CreateInvoice = () => {
                       <td style={{ padding: '1rem 0.5rem' }}>
                         <input 
                           type="number" 
+                          className="term-list-input"
                           min="0"
                           value={item.qty}
                           onChange={(e) => updateRowField(index, 'qty', Number(e.target.value))}
-                          style={{ width: '100%', border: '1px solid #D1D5DB', padding: '0.4rem 0.5rem', borderRadius: '4px', fontSize: '0.825rem', outline: 'none' }}
+                          style={{ width: '100%', border: 'none', borderBottom: '1.5px dashed #FF9F43', padding: '0.4rem 0.5rem 0.25rem', fontSize: '0.825rem', outline: 'none', backgroundColor: 'transparent', textAlign: 'center' }}
                         />
                       </td>
 
@@ -1386,10 +1513,11 @@ const CreateInvoice = () => {
                       <td style={{ padding: '1rem 0.5rem' }}>
                         <input 
                           type="number" 
+                          className="term-list-input"
                           min="0"
                           value={item.price}
                           onChange={(e) => updateRowField(index, 'price', Number(e.target.value))}
-                          style={{ width: '100%', border: '1px solid #D1D5DB', padding: '0.4rem 0.5rem', borderRadius: '4px', fontSize: '0.825rem', outline: 'none' }}
+                          style={{ width: '100%', border: 'none', borderBottom: '1.5px dashed #FF9F43', padding: '0.4rem 0.5rem 0.25rem', fontSize: '0.825rem', outline: 'none', backgroundColor: 'transparent', textAlign: 'right' }}
                         />
                       </td>
 
@@ -1399,15 +1527,17 @@ const CreateInvoice = () => {
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                             <input 
                               type="number" 
+                              className="term-list-input"
                               min="0"
                               value={item.discountRate || 0}
                               onChange={(e) => updateRowField(index, 'discountRate', Number(e.target.value))}
-                              style={{ width: '60px', border: '1px solid #D1D5DB', padding: '0.4rem 0.5rem', borderRadius: '4px', fontSize: '0.825rem', outline: 'none' }}
+                              style={{ width: '50px', border: 'none', borderBottom: '1.5px dashed #FF9F43', padding: '0.4rem 0.5rem 0.25rem', fontSize: '0.825rem', outline: 'none', backgroundColor: 'transparent' }}
                             />
                             <select
+                              className="term-list-input"
                               value={item.discountType || 'Fixed'}
                               onChange={(e) => updateRowField(index, 'discountType', e.target.value)}
-                              style={{ border: '1px solid #D1D5DB', padding: '0.4rem 0.25rem', borderRadius: '4px', fontSize: '0.75rem', outline: 'none' }}
+                              style={{ border: 'none', borderBottom: '1.5px dashed #FF9F43', padding: '0.4rem 0.25rem 0.25rem', fontSize: '0.75rem', outline: 'none', backgroundColor: 'transparent', width: '40px' }}
                             >
                               <option value="Fixed">₹</option>
                               <option value="%">%</option>
@@ -2140,12 +2270,50 @@ const CreateInvoice = () => {
                     </div>
                   )}
 
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '1rem', fontWeight: 'bold' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '1rem', fontWeight: 'bold', marginBottom: '0.75rem' }}>
                     <span style={{ color: '#111827', textDecoration: 'underline', textDecorationStyle: 'dotted' }}>Total (INR)</span>
                     <span style={{ color: '#111827', fontSize: '1.125rem' }}>₹{grandTotal.toFixed(2)}</span>
                   </div>
 
+                  <div style={{ borderTop: '1px solid #E5E7EB', margin: '0.75rem 0' }}></div>
 
+                  {/* Payment Method Selector */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85rem', marginBottom: '0.5rem' }}>
+                    <span style={{ color: '#4B5563', fontWeight: 500 }}>Payment Method</span>
+                    <select
+                      value={paymentMethod}
+                      onChange={(e) => setPaymentMethod(e.target.value)}
+                      className="term-list-input"
+                      style={{ border: 'none', borderBottom: '1.5px dashed #FF9F43', outline: 'none', fontSize: '0.85rem', color: '#111827', fontWeight: 600, backgroundColor: 'transparent', textAlign: 'right', cursor: 'pointer', width: '120px' }}
+                    >
+                      <option value="Cash">Cash</option>
+                      <option value="Card">Card</option>
+                      <option value="UPI">UPI</option>
+                      <option value="Bank Transfer">Bank Transfer</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+
+                  {/* Paid Amount Input */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85rem', marginBottom: '0.5rem' }}>
+                    <span style={{ color: '#4B5563', fontWeight: 500 }}>Amount Paid (₹)</span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder={grandTotal.toFixed(2)}
+                      value={customPaidAmount}
+                      onChange={(e) => setCustomPaidAmount(e.target.value)}
+                      className="term-list-input"
+                      style={{ width: '140px', border: 'none', borderBottom: '1.5px dashed #FF9F43', outline: 'none', fontSize: '0.85rem', color: '#10B981', fontWeight: 600, backgroundColor: 'transparent', textAlign: 'right' }}
+                    />
+                  </div>
+
+                  {/* Balance / Due Amount Display */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85rem' }}>
+                    <span style={{ color: '#4B5563', fontWeight: 500 }}>Balance Due</span>
+                    <span style={{ color: dueAmt > 0 ? '#EF4444' : '#111827', fontWeight: 700 }}>₹{dueAmt.toFixed(2)}</span>
+                  </div>
                 </div>
               </div>
 
@@ -2222,7 +2390,11 @@ const CreateInvoice = () => {
                 setCustomerEmail(latest.email || '');
                 setCustomerPhone(latest.phone || '');
                 setGstNumber(latest.gstNumber || '');
-                setPlaceOfSupply(latest.placeOfSupply || '');
+                
+                const parsedSettings = JSON.parse(localStorage.getItem('pos_settings') || '{}');
+                const storeStateFallback = parsedSettings.orgState || 'Madhya Pradesh';
+                setPlaceOfSupply(latest.placeOfSupply || latest.state || storeStateFallback);
+                
                 setSelectedCustomer(latest);
               }
             }
@@ -2711,8 +2883,9 @@ const CreateInvoice = () => {
                     backgroundColor: 'white'
                   }}
                 >
-                  {['Madhya Pradesh', 'Maharashtra', 'Delhi', 'Uttar Pradesh', 'Karnataka', 'Gujarat', 'Tamil Nadu', 'Rajasthan', 'Haryana', 'Punjab', 'Bihar', 'West Bengal'].map(state => (
-                    <option key={state} value={state}>{state}</option>
+                  <option value="">-Select Place of Supply-</option>
+                  {State.getStatesOfCountry('IN').map(s => (
+                    <option key={s.isoCode} value={s.name}>{s.name}</option>
                   ))}
                 </select>
               </div>

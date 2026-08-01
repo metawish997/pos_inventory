@@ -54,6 +54,10 @@ export const getQuotations = async () => {
     return fetchSalesApi('/sales/quotations/list', { method: 'GET' });
 };
 
+export const getQuotationById = async (id) => {
+    return fetchSalesApi(`/sales/quotations/${id}`, { method: 'GET' });
+};
+
 export const createQuotation = async (quotationData) => {
     return fetchSalesApi('/sales/quotations', {
         method: 'POST',

@@ -57,6 +57,8 @@ const InvoiceDetails = () => {
     }
   };
 
+  const [companySettings, setCompanySettings] = useState(null);
+
   const fetchInvoiceDetails = async () => {
     try {
       setLoading(true);
@@ -94,10 +96,34 @@ const InvoiceDetails = () => {
 
   useEffect(() => {
     fetchInvoiceDetails();
+    fetch(`${API_BASE_URL}/company-settings`)
+      .then(res => res.json())
+      .then(data => {
+        if (data) setCompanySettings(data);
+      })
+      .catch(e => console.error("Error loading settings", e));
   }, [id]);
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleDownloadPdf = () => {
+    const element = document.getElementById('printable-invoice-card');
+    if (!element) return;
+    
+    if (window.html2pdf) {
+      const opt = {
+        margin:       0.5,
+        filename:     `Invoice_${invoice.invoiceNumber || 'Detail'}.pdf`,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true, letterRendering: true },
+        jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+      };
+      window.html2pdf().from(element).set(opt).save();
+    } else {
+      alert("PDF generator is still loading. Please try again in a few seconds or use browser print.");
+    }
   };
 
   if (loading) {
@@ -119,11 +145,24 @@ const InvoiceDetails = () => {
   }
 
   const items = invoice.sale?.items || [];
-  const savedSettings = JSON.parse(localStorage.getItem('pos_settings') || '{}');
-  const storeName = savedSettings.storeName || 'Eronix Store Admin';
-  const storeEmail = savedSettings.storeEmail || 'admin@eronixpos.com';
-  const storePhone = savedSettings.storePhone || '9876543210';
-  const storeAddress = savedSettings.storeAddress || '3099 Kennedy Court Framingham, MA 01702';
+  
+  // Load org data from the user-configured company-settings database record
+  const storeName = companySettings?.orgName || 'Dreams POS';
+  const storeEmail = companySettings?.orgEmail || 'admin@dreams.com';
+  const storePhone = companySettings?.orgPhone || '8817440858';
+  
+  // Format Address lines nicely 
+  const addrParts = [
+    companySettings?.orgAddress1,
+    companySettings?.orgAddress2,
+    companySettings?.orgCity,
+    companySettings?.orgState,
+    companySettings?.orgPincode
+  ].filter(Boolean);
+  
+  const storeAddress = addrParts.length > 0 
+    ? addrParts.join(', ') 
+    : '3099 Kennedy Court Framingham, MA 01702';
 
   return (
     <DashboardLayout>
@@ -140,14 +179,17 @@ const InvoiceDetails = () => {
               <Plus size={18} /> Add Payment
             </button>
           )}
-          <button className={styles.iconBtn} onClick={handlePrint}><Printer size={18} color="#4B5563" /></button>
+          <button className={styles.iconBtn} onClick={handlePrint} title="Print Invoice"><Printer size={18} color="#4B5563" /></button>
+          <button className={styles.btnPrimary} style={{backgroundColor: '#7367F0'}} onClick={handleDownloadPdf}>
+            Download PDF
+          </button>
           <button className={styles.btnPrimary} style={{backgroundColor: '#FF9F43'}} onClick={() => navigate('/invoices')}>
             <ArrowLeft size={18} /> Back to Invoices
           </button>
         </div>
       </div>
 
-      <Card style={{padding: '3rem', marginBottom: '1.5rem'}}>
+      <Card id="printable-invoice-card" style={{padding: '3rem', marginBottom: '1.5rem'}}>
         <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '2rem'}}>
           <div>
             <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem'}}>
@@ -175,7 +217,7 @@ const InvoiceDetails = () => {
             </div>
           </div>
           <div>
-            <p style={{fontSize: '0.875rem', color: '#1B2850', fontWeight: 600, marginBottom: '0.5rem'}}>To (Customer)</p>
+            <p style={{fontSize: '0.875rem', color: '#1B2850', fontWeight: 600, marginBottom: '0.5rem'}}>Bill To</p>
             <p style={{fontSize: '1.125rem', color: '#1B2850', fontWeight: 600, marginBottom: '0.5rem'}}>{invoice.customerName}</p>
             <div style={{color: '#4B5563', fontSize: '0.875rem', lineHeight: '1.5'}}>
               {invoice.customerEmail && <p>Email : {invoice.customerEmail}</p>}

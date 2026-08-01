@@ -3,6 +3,7 @@ import Modal from '../ui/Modal';
 import styles from './ModalForm.module.css';
 import { createCustomer, updateCustomer } from '../../services/customerService';
 import { ChevronDown, ChevronRight, Upload, X, HelpCircle, Edit2 } from 'lucide-react';
+import { State, City, Country } from 'country-state-city';
 
 const removeImageBackground = (base64Str) => {
   return new Promise((resolve) => {
@@ -108,7 +109,7 @@ const AddCustomerModal = ({ isOpen, onClose, customerToEdit = null, onSuccess })
       setPanNumber(customerToEdit.storePan || '');
       setClientType(customerToEdit.customerType || 'Individual');
       setTaxTreatment(customerToEdit.taxTreatment || '');
-      setState(customerToEdit.state || '');
+      setState(customerToEdit.state || customerToEdit.placeOfSupply || '');
       setPostalCode(customerToEdit.postalCode || '');
       setAddress(customerToEdit.address || '');
       setEmail(customerToEdit.email || '');
@@ -164,7 +165,7 @@ const AddCustomerModal = ({ isOpen, onClose, customerToEdit = null, onSuccess })
       avatar: logo,
       gstNumber,
       storePan: panNumber,
-      placeOfSupply: clientIndustry,
+      placeOfSupply: state,
       taxTreatment,
       status: 'Active'
     };
@@ -337,26 +338,25 @@ const AddCustomerModal = ({ isOpen, onClose, customerToEdit = null, onSuccess })
                 />
               </div>
               <div>
-                <label style={labelStyle}>Client Industry</label>
+                <label style={labelStyle}>State / Province<span style={{ color: '#EA5455' }}>*</span></label>
                 <select 
-                  value={clientIndustry} 
-                  onChange={(e) => setClientIndustry(e.target.value)} 
+                  value={state} 
+                  onChange={(e) => {
+                    setState(e.target.value);
+                    setCity(''); // Reset selected city when state changes
+                  }} 
                   style={selectStyle}
+                  required
                 >
-                  <option value="">-Select an Industry-</option>
-                  <option value="Retail">Retail</option>
-                  <option value="Wholesale">Wholesale</option>
-                  <option value="Technology & Software">Technology & Software</option>
-                  <option value="Healthcare & Pharmaceuticals">Healthcare & Pharmaceuticals</option>
-                  <option value="Real Estate & Construction">Real Estate & Construction</option>
-                  <option value="Food & Beverage">Food & Beverage</option>
-                  <option value="Manufacturing">Manufacturing</option>
-                  <option value="Logistics & Transportation">Logistics & Transportation</option>
-                  <option value="Hospitality & Tourism">Hospitality & Tourism</option>
-                  <option value="Education">Education</option>
-                  <option value="Finance & Banking">Finance & Banking</option>
-                  <option value="Services">Services</option>
-                  <option value="Other">Other</option>
+                  <option value="">Select State / Province</option>
+                  {(() => {
+                    const countryObj = Country.getAllCountries().find(c => c.name === country);
+                    return countryObj 
+                      ? State.getStatesOfCountry(countryObj.isoCode).map((s) => (
+                          <option key={s.isoCode} value={s.name}>{s.name}</option>
+                        ))
+                      : null;
+                  })()}
                 </select>
               </div>
             </div>
@@ -366,23 +366,45 @@ const AddCustomerModal = ({ isOpen, onClose, customerToEdit = null, onSuccess })
                 <label style={labelStyle}>Select Country<span style={{ color: '#EA5455' }}>*</span></label>
                 <select 
                   value={country} 
-                  onChange={(e) => setCountry(e.target.value)} 
+                  onChange={(e) => {
+                    setCountry(e.target.value);
+                    setState(''); // Reset state when country changes
+                    setCity(''); // Reset city when country changes
+                  }} 
                   style={selectStyle}
                 >
-                  <option value="India">India</option>
-                  <option value="United States">United States</option>
-                  <option value="United Kingdom">United Kingdom</option>
+                  {Country.getAllCountries().map(c => (
+                    <option key={c.isoCode} value={c.name}>{c.name}</option>
+                  ))}
                 </select>
               </div>
               <div>
                 <label style={labelStyle}>City/Town</label>
-                <input 
-                  type="text" 
-                  placeholder="City/Town Name" 
-                  value={city} 
-                  onChange={(e) => setCity(e.target.value)} 
-                  style={inputStyle} 
-                />
+                {(() => {
+                  const countryObj = Country.getAllCountries().find(c => c.name === country);
+                  const stateObj = countryObj ? State.getStatesOfCountry(countryObj.isoCode).find(s => s.name === state) : null;
+                  const citiesList = (countryObj && stateObj) ? City.getCitiesOfState(countryObj.isoCode, stateObj.isoCode) : [];
+                  return citiesList.length > 0 ? (
+                    <select
+                      value={city}
+                      onChange={(e) => setCity(e.target.value)}
+                      style={selectStyle}
+                    >
+                      <option value="">Select City/Town</option>
+                      {citiesList.map((c) => (
+                        <option key={c.name} value={c.name}>{c.name}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input 
+                      type="text" 
+                      placeholder="City/Town Name" 
+                      value={city} 
+                      onChange={(e) => setCity(e.target.value)} 
+                      style={inputStyle} 
+                    />
+                  );
+                })()}
               </div>
             </div>
 
@@ -481,29 +503,11 @@ const AddCustomerModal = ({ isOpen, onClose, customerToEdit = null, onSuccess })
                   onChange={(e) => setCountry(e.target.value)} 
                   style={selectStyle}
                 >
-                  <option value="India">India</option>
-                  <option value="United States">United States</option>
-                  <option value="United Kingdom">United Kingdom</option>
+                  {Country.getAllCountries().map(c => (
+                    <option key={c.isoCode} value={c.name}>{c.name}</option>
+                  ))}
                 </select>
               </div>
-              <div>
-                <label style={labelStyle}>State / Province</label>
-                <select 
-                  value={state} 
-                  onChange={(e) => setState(e.target.value)} 
-                  style={selectStyle}
-                >
-                  <option value="">Select State / Province</option>
-                  <option value="Madhya Pradesh">Madhya Pradesh</option>
-                  <option value="Maharashtra">Maharashtra</option>
-                  <option value="Delhi">Delhi</option>
-                  <option value="Gujarat">Gujarat</option>
-                  <option value="Karnataka">Karnataka</option>
-                </select>
-              </div>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
               <div>
                 <label style={labelStyle}>City/Town</label>
                 <input 
@@ -514,6 +518,9 @@ const AddCustomerModal = ({ isOpen, onClose, customerToEdit = null, onSuccess })
                   style={inputStyle} 
                 />
               </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
               <div>
                 <label style={labelStyle}>Postal Code / Zip Code</label>
                 <input 

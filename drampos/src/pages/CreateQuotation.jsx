@@ -10,6 +10,7 @@ import { getAllProducts } from '../services/productService';
 import { createQuotation, getQuotations } from '../services/salesService';
 import { getCustomers } from '../services/customerService';
 import AddCustomerModal from '../components/modals/AddCustomerModal';
+import HsnModal from '../components/modals/HsnModal';
 import { API_BASE_URL } from '../api/endpoints';
 
 function numberToWords(amount) {
@@ -60,6 +61,10 @@ const CreateQuotation = () => {
 
   const [products, setProducts] = useState([]);
   const [cartItems, setCartItems] = useState([{ id: Date.now(), product: null, qty: 1, price: 0, hsn: '', gstRate: 0, description: '', showDesc: false }]);
+  
+  // HSN active modal states
+  const [isHsnModalOpen, setIsHsnModalOpen] = useState(false);
+  const [hsnActiveRowId, setHsnActiveRowId] = useState(null);
 
   const [discount, setDiscount] = useState(0);
   const [shipping, setShipping] = useState(0);
@@ -177,7 +182,7 @@ const CreateQuotation = () => {
         quotationDate, validUntil,
         items: validItems.map(r => ({
           product: r.product._id, quantity: r.qty,
-          unitPrice: r.price, subtotal: r.price * r.qty
+          unitPrice: r.price, taxRate: r.gstRate || 0, subtotal: r.price * r.qty
         })),
         subtotal, grandTotal,
         status: mode === 'draft' ? 'Draft' : 'Sent',
@@ -194,7 +199,12 @@ const CreateQuotation = () => {
           navigate('/quotation');
         } else {
           alert('Quotation created successfully!');
-          navigate('/quotation');
+          const createdQuoId = res.data?._id || res.quotation?._id || res._id;
+          if (createdQuoId) {
+            navigate(`/quotation-details/${createdQuoId}`);
+          } else {
+            navigate('/quotation');
+          }
         }
       }
     } catch (err) {
@@ -256,34 +266,70 @@ const CreateQuotation = () => {
       <Card style={{ padding: '2.5rem', maxWidth: '1200px', margin: '0 auto', border: '1px solid #F3F4F6', boxShadow: '0 4px 20px -2px rgba(0,0,0,0.05)' }}>
         <form onSubmit={(e) => handleSubmit(e, 'save')}>
 
-          {/* Title */}
-          <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
-            <h1 style={{ fontSize: '2.25rem', fontWeight: 700, color: '#111827', margin: 0 }}>Quotation</h1>
+          {/* Header & Logo Flex Row */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2.5rem', position: 'relative', minHeight: '100px' }}>
+            {/* Empty spacer to push title to exact center */}
+            <div style={{ width: '240px' }}></div>
+
+            {/* Header Title Section (Centered) */}
+            <div style={{ textAlign: 'center' }}>
+              <h1 style={{ fontSize: '2.25rem', fontWeight: 700, color: '#111827', margin: 0 }}>Quotation</h1>
+            </div>
+
+            {/* Empty space for design consistency - we can hide logo on Quotation or keep the placeholder */}
+            <div style={{ width: '240px' }}></div>
           </div>
 
-          {/* Meta */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '4rem', marginBottom: '3rem', alignItems: 'start' }}>
-
-            {/* Left: doc fields */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-              {[
-                { label: 'Quotation No*', value: nextQuotationNumber, onChange: e => setNextQuotationNumber(e.target.value), type: 'text' },
-                { label: 'PO Number', value: clientPoNumber, onChange: e => setClientPoNumber(e.target.value), type: 'text', placeholder: 'Enter PO Number' },
-                { label: 'Quotation Date*', value: quotationDate, onChange: e => setQuotationDate(e.target.value), type: 'date' },
-                { label: 'Valid Until', value: validUntil, onChange: e => setValidUntil(e.target.value), type: 'date' },
-              ].map(({ label, value, onChange, type, placeholder }) => (
-                <div key={label} style={{ display: 'flex', alignItems: 'center' }}>
-                  <label style={{ width: '130px', fontSize: '0.875rem', fontWeight: 500, color: '#374151', textDecoration: 'underline', textDecorationColor: '#D1D5DB', flexShrink: 0 }}>{label}</label>
+          {/* Top Metadata Section (Full width / Two Columns) */}
+          <div style={{ marginBottom: '3rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.2fr', gap: '3rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <label style={{ width: '130px', fontSize: '0.875rem', fontWeight: 500, color: '#374151', textDecoration: 'underline', textDecorationColor: '#D1D5DB', flexShrink: 0 }}>Quotation No*</label>
                   <input
-                    type={type}
-                    value={value}
-                    onChange={onChange}
-                    placeholder={placeholder}
-                    style={{ flex: 1, border: 'none', borderBottom: '1px dashed #D1D5DB', padding: '0.35rem 0', outline: 'none', fontSize: '0.925rem', color: '#111827', backgroundColor: 'transparent', fontWeight: label.includes('No') ? 500 : 400 }}
+                    type="text"
+                    value={nextQuotationNumber}
+                    onChange={e => setNextQuotationNumber(e.target.value)}
+                    style={{ flex: 1, border: 'none', borderBottom: '1px dashed #D1D5DB', padding: '0.35rem 0', outline: 'none', fontSize: '0.925rem', color: '#111827', backgroundColor: 'transparent', fontWeight: 500 }}
                   />
                 </div>
-              ))}
 
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <label style={{ width: '130px', fontSize: '0.875rem', fontWeight: 500, color: '#374151', textDecoration: 'underline', textDecorationColor: '#D1D5DB', flexShrink: 0 }}>PO Number</label>
+                  <input
+                    type="text"
+                    value={clientPoNumber}
+                    onChange={e => setClientPoNumber(e.target.value)}
+                    placeholder="Enter PO Number"
+                    style={{ flex: 1, border: 'none', borderBottom: '1px dashed #D1D5DB', padding: '0.35rem 0', outline: 'none', fontSize: '0.925rem', color: '#111827', backgroundColor: 'transparent' }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <label style={{ width: '130px', fontSize: '0.875rem', fontWeight: 500, color: '#374151', textDecoration: 'underline', textDecorationColor: '#D1D5DB', flexShrink: 0 }}>Quotation Date*</label>
+                  <input
+                    type="date"
+                    value={quotationDate}
+                    onChange={e => setQuotationDate(e.target.value)}
+                    style={{ flex: 1, border: 'none', borderBottom: '1px dashed #D1D5DB', padding: '0.35rem 0', outline: 'none', fontSize: '0.925rem', color: '#111827', backgroundColor: 'transparent' }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <label style={{ width: '130px', fontSize: '0.875rem', fontWeight: 500, color: '#374151', textDecoration: 'underline', textDecorationColor: '#D1D5DB', flexShrink: 0 }}>Valid Until</label>
+                  <input
+                    type="date"
+                    value={validUntil}
+                    onChange={e => setValidUntil(e.target.value)}
+                    style={{ flex: 1, border: 'none', borderBottom: '1px dashed #D1D5DB', padding: '0.35rem 0', outline: 'none', fontSize: '0.925rem', color: '#111827', backgroundColor: 'transparent' }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.2fr', gap: '3rem', marginTop: '1.25rem' }}>
               <div style={{ display: 'flex', alignItems: 'center' }}>
                 <label style={{ width: '130px', fontSize: '0.875rem', fontWeight: 500, color: '#374151', textDecoration: 'underline', textDecorationColor: '#D1D5DB', flexShrink: 0 }}>Terms</label>
                 <select
@@ -294,109 +340,6 @@ const CreateQuotation = () => {
                   {['Due on Receipt', 'Net 15', 'Net 30', 'Net 45', 'Net 60'].map(t => <option key={t}>{t}</option>)}
                 </select>
               </div>
-            </div>
-
-            {/* Right: Customer */}
-            <div>
-              <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#6B7280', letterSpacing: '0.05em', marginBottom: '0.5rem', display: 'block' }}>CUSTOMER NAME *</label>
-              <div className="customer-select-container" style={{ position: 'relative' }}>
-                <div style={{ display: 'flex', borderRadius: '6px', border: showCustomerDropdown ? '1.5px solid #FF9F43' : '1.5px solid #D1D5DB', overflow: 'hidden', backgroundColor: 'white' }}>
-                  <div
-                    onClick={() => setShowCustomerDropdown(!showCustomerDropdown)}
-                    style={{ flex: 1, display: 'flex', alignItems: 'center', padding: '0.6rem 0.75rem', fontSize: '0.875rem', color: customerName ? '#374151' : '#9CA3AF', cursor: 'pointer', userSelect: 'none' }}
-                  >
-                    {customerName || 'Select or add a customer'}
-                  </div>
-                  <div onClick={() => setShowCustomerDropdown(!showCustomerDropdown)} style={{ display: 'flex', alignItems: 'center', padding: '0 0.5rem', cursor: 'pointer', color: '#9CA3AF' }}>
-                    {showCustomerDropdown ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setShowCustomerDropdown(!showCustomerDropdown)}
-                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '40px', backgroundColor: showCustomerDropdown ? '#FF9F43' : '#D1D5DB', border: 'none', color: 'white', cursor: 'pointer' }}
-                  >
-                    <Search size={16} />
-                  </button>
-                </div>
-
-                {showCustomerDropdown && (
-                  <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 1000, backgroundColor: 'white', border: '1px solid #E5E7EB', borderRadius: '8px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', marginTop: '4px', padding: '0.75rem' }}>
-                    <div style={{ position: 'relative', marginBottom: '0.75rem' }}>
-                      <Search size={14} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF' }} />
-                      <input
-                        type="search"
-                        placeholder="Search customers"
-                        value={customerSearchTerm}
-                        onChange={e => setCustomerSearchTerm(e.target.value)}
-                        style={{ width: '100%', padding: '0.5rem 0.75rem 0.5rem 2.2rem', borderRadius: '6px', border: '1.5px solid #FF9F43', outline: 'none', fontSize: '0.875rem', boxSizing: 'border-box' }}
-                      />
-                    </div>
-                    <div style={{ maxHeight: '220px', overflowY: 'auto' }}>
-                      {filteredCustomers.length === 0
-                        ? <div style={{ padding: '0.75rem', color: '#9CA3AF', fontSize: '0.875rem', textAlign: 'center' }}>No customers found</div>
-                        : filteredCustomers.map(c => {
-                          const fullName = c.displayName || `${c.firstName || ''} ${c.lastName || ''}`.trim() || 'Unnamed';
-                          const isSelected = customerName === fullName;
-                          return (
-                            <div
-                              key={c._id}
-                              onClick={() => {
-                                setCustomerName(fullName);
-                                setCustomerEmail(c.email || '');
-                                setCustomerPhone(c.phone || '');
-                                setGstNumber(c.gstNumber || '');
-                                setPlaceOfSupply(c.placeOfSupply || '');
-                                setSelectedCustomer(c);
-                                setShowCustomerDropdown(false);
-                                setCustomerSearchTerm('');
-                              }}
-                              style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.6rem 0.75rem', borderRadius: '6px', cursor: 'pointer', backgroundColor: isSelected ? '#FF9F43' : 'transparent', color: isSelected ? 'white' : '#374151', marginBottom: '0.25rem' }}
-                            >
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: isSelected ? 'rgba(255,255,255,0.2)' : '#E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, fontSize: '0.875rem', color: isSelected ? 'white' : '#4B5563' }}>
-                                  {fullName.charAt(0).toUpperCase()}
-                                </div>
-                                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                  <span style={{ fontWeight: 500, fontSize: '0.875rem' }}>{fullName}</span>
-                                  <span style={{ fontSize: '0.75rem', color: isSelected ? 'rgba(255,255,255,0.8)' : '#9CA3AF' }}>{c.email || c.phone || ''}</span>
-                                </div>
-                              </div>
-                              {isSelected && <Check size={16} />}
-                            </div>
-                          );
-                        })}
-                    </div>
-                    <div
-                      onClick={() => { setCustomerToEdit(null); setIsCustomerModalOpen(true); setShowCustomerDropdown(false); }}
-                      style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 0.5rem 0.25rem', color: '#FF9F43', fontWeight: 600, fontSize: '0.875rem', borderTop: '1px solid #E5E7EB', cursor: 'pointer', marginTop: '0.5rem' }}
-                    >
-                      <span style={{ fontSize: '1.25rem', lineHeight: 1 }}>+</span> New Customer
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {selectedCustomer && (
-                <div style={{ marginTop: '1rem', padding: '1rem', border: '1px solid #E5E7EB', borderRadius: '8px', backgroundColor: '#F9FAFB', fontSize: '0.875rem', color: '#4B5563', lineHeight: 1.6 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
-                    <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#6B7280', letterSpacing: '0.08em' }}>BILLING ADDRESS</span>
-                    <span onClick={() => { setCustomerToEdit(selectedCustomer); setIsCustomerModalOpen(true); }} style={{ cursor: 'pointer', color: '#FF9F43', fontWeight: 'bold' }}>✎</span>
-                  </div>
-                  <strong style={{ display: 'block', color: '#1B2850', marginBottom: '0.2rem' }}>
-                    {selectedCustomer.companyName || `${selectedCustomer.firstName || ''} ${selectedCustomer.lastName || ''}`.trim()}
-                  </strong>
-                  {selectedCustomer.address && <div>{selectedCustomer.address}</div>}
-                  {(selectedCustomer.city || selectedCustomer.state) && (
-                    <div>{[selectedCustomer.city, selectedCustomer.state, selectedCustomer.postalCode].filter(Boolean).join(', ')}</div>
-                  )}
-                  {selectedCustomer.gstNumber && (
-                    <div style={{ marginTop: '0.35rem' }}>
-                      <span style={{ color: '#6B7280' }}>GSTIN: </span>
-                      <strong style={{ color: '#1B2850' }}>{selectedCustomer.gstNumber}</strong>
-                    </div>
-                  )}
-                </div>
-              )}
             </div>
           </div>
 
@@ -426,6 +369,62 @@ const CreateQuotation = () => {
               <div style={{ marginBottom: '1rem' }}>
                 <span style={{ fontSize: '0.875rem', fontWeight: 700, color: '#374151' }}>Billed To <span style={{ fontSize: '0.75rem', color: '#6B7280', fontWeight: 400 }}>(Client's Details)</span></span>
               </div>
+
+              {/* Customer Selector inside the Billed To Card */}
+              <div className="customer-select-container" style={{ position: 'relative', marginBottom: '1rem' }}>
+                <div 
+                  onClick={() => setShowCustomerDropdown(!showCustomerDropdown)}
+                  style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.5rem 0.75rem', borderRadius: '6px', border: '1px solid #D1D5DB', backgroundColor: 'white', fontSize: '0.875rem', color: customerName ? '#111827' : '#9CA3AF', cursor: 'pointer' }}
+                >
+                  <span>{customerName || "Select a Client"}</span>
+                  <ChevronDown size={16} style={{ color: '#9CA3AF' }} />
+                </div>
+
+                {showCustomerDropdown && (
+                  <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 1000, backgroundColor: 'white', border: '1px solid #E5E7EB', borderRadius: '8px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', marginTop: '4px', padding: '0.75rem' }}>
+                    <div style={{ position: 'relative', marginBottom: '0.75rem' }}>
+                      <Search size={14} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF' }} />
+                      <input
+                        type="search"
+                        placeholder="Search Client"
+                        value={customerSearchTerm}
+                        onChange={e => setCustomerSearchTerm(e.target.value)}
+                        style={{ width: '100%', padding: '0.5rem 0.75rem 0.5rem 2.2rem', borderRadius: '6px', border: '1px solid #D1D5DB', outline: 'none', fontSize: '0.875rem', height: '36px', boxSizing: 'border-box' }}
+                      />
+                    </div>
+                    <div style={{ maxHeight: '180px', overflowY: 'auto' }}>
+                      {filteredCustomers.map(c => {
+                        const fullName = c.displayName || `${c.firstName || ''} ${c.lastName || ''}`.trim() || 'Unnamed';
+                        return (
+                          <div
+                            key={c._id}
+                            onClick={() => {
+                              setCustomerName(fullName);
+                              setCustomerEmail(c.email || '');
+                              setCustomerPhone(c.phone || '');
+                              setGstNumber(c.gstNumber || '');
+                              const parsedSettings = JSON.parse(localStorage.getItem('pos_settings') || '{}');
+                              const storeStateFallback = parsedSettings.orgState || 'Madhya Pradesh';
+                              setPlaceOfSupply(c.placeOfSupply || c.state || storeStateFallback);
+                              setSelectedCustomer(c);
+                              setShowCustomerDropdown(false);
+                            }}
+                            style={{ padding: '0.5rem 0.75rem', borderRadius: '6px', cursor: 'pointer', fontSize: '0.875rem' }}
+                          >
+                            {fullName}
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div
+                      onClick={() => { setCustomerToEdit(null); setIsCustomerModalOpen(true); setShowCustomerDropdown(false); }}
+                      style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 0.5rem 0.25rem', color: '#FF9F43', fontWeight: 600, fontSize: '0.875rem', borderTop: '1px solid #E5E7EB', cursor: 'pointer', marginTop: '0.5rem' }}
+                    >
+                      <span style={{ fontSize: '1.25rem', lineHeight: 1 }}>+</span> New Customer
+                    </div>
+                  </div>
+                )}
+              </div>
               {selectedCustomer ? (
                 <div style={{ backgroundColor: 'white', borderRadius: '8px', border: '1px solid #E5E7EB', padding: '1.25rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
@@ -454,7 +453,7 @@ const CreateQuotation = () => {
               <thead>
                 <tr style={{ backgroundColor: '#FF9F43', color: 'white', fontSize: '0.78rem', fontWeight: 600 }}>
                   <th style={{ padding: '0.75rem 0.5rem 0.75rem 1rem', width: '32px' }}>#</th>
-                  <th style={{ padding: '0.75rem 0.5rem' }}>Item</th>
+                  <th style={{ padding: '0.75rem 0.5rem', width: '250px' }}>Item</th>
                   <th style={{ padding: '0.75rem 0.5rem', width: '90px' }}>HSN/SAC</th>
                   <th style={{ padding: '0.75rem 0.5rem', width: '80px', textAlign: 'center' }}>GST Rate</th>
                   <th style={{ padding: '0.75rem 0.5rem', width: '72px', textAlign: 'center' }}>Quantity</th>
@@ -497,29 +496,42 @@ const CreateQuotation = () => {
                             </div>
                             <div style={{ flex: 1, minWidth: 0 }}>
                               <select
+                                className="term-list-input"
                                 value={row.product?._id || ''}
                                 onChange={e => setRowProduct(row.id, e.target.value)}
-                                style={{ width: '100%', border: 'none', outline: 'none', fontSize: '0.8rem', color: row.product ? '#111827' : '#9CA3AF', backgroundColor: 'transparent', cursor: 'pointer' }}
+                                style={{ width: '100%', border: 'none', borderBottom: '1.5px dashed #FF9F43', outline: 'none', fontSize: '0.8rem', color: row.product ? '#111827' : '#9CA3AF', backgroundColor: 'transparent', cursor: 'pointer', paddingBottom: '0.2rem' }}
                               >
                                 <option value="">Item Name / SKU Id</option>
                                 {products.map(p => <option key={p._id} value={p._id}>{p.name}</option>)}
                               </select>
-                              {row.product?.sku && <div style={{ fontSize: '0.7rem', color: '#9CA3AF' }}>SKU: {row.product.sku}</div>}
+                              {row.product?.sku && <div style={{ fontSize: '0.7rem', color: '#9CA3AF', marginTop: '0.15rem' }}>SKU: {row.product.sku}</div>}
                             </div>
                           </div>
                         </td>
 
                         {/* HSN/SAC */}
                         <td style={{ padding: '0.6rem 0.5rem' }}>
-                          <input type="text" value={row.hsn} onChange={e => setRowHsn(row.id, e.target.value)}
-                            placeholder="#"
-                            style={{ width: '70px', border: '1px solid #E5E7EB', borderRadius: '4px', padding: '0.3rem 0.5rem', outline: 'none', fontSize: '0.8rem', color: '#374151', backgroundColor: 'white' }} />
+                          <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                            <input type="text" className="term-list-input" value={row.hsn} onChange={e => setRowHsn(row.id, e.target.value)}
+                              placeholder="#"
+                              style={{ width: '70px', border: 'none', borderBottom: '1.5px dashed #FF9F43', padding: '0.3rem 1.8rem 0.2rem 0.5rem', outline: 'none', fontSize: '0.8rem', color: '#374151', backgroundColor: 'transparent' }} />
+                            <span 
+                              onClick={() => {
+                                setHsnActiveRowId(row.id);
+                                setIsHsnModalOpen(true);
+                              }}
+                              style={{ position: 'absolute', right: '6px', cursor: 'pointer', fontSize: '0.75rem', color: '#FF9F43' }}
+                              title="Search HSN/SAC"
+                            >
+                              🔍
+                            </span>
+                          </div>
                         </td>
 
                         {/* GST Rate */}
                         <td style={{ padding: '0.6rem 0.5rem', textAlign: 'center' }}>
-                          <select value={row.gstRate} onChange={e => setRowGst(row.id, e.target.value)}
-                            style={{ border: '1px solid #E5E7EB', borderRadius: '4px', padding: '0.3rem 0.4rem', outline: 'none', fontSize: '0.8rem', color: '#374151', backgroundColor: 'white' }}>
+                          <select className="term-list-input" value={row.gstRate} onChange={e => setRowGst(row.id, e.target.value)}
+                            style={{ border: 'none', borderBottom: '1.5px dashed #FF9F43', padding: '0.3rem 0.4rem 0.2rem', outline: 'none', fontSize: '0.8rem', color: '#374151', backgroundColor: 'transparent' }}>
                             <option value={0}>GST 0%</option>
                             <option value={5}>GST 5%</option>
                             <option value={12}>GST 12%</option>
@@ -530,14 +542,14 @@ const CreateQuotation = () => {
 
                         {/* Qty */}
                         <td style={{ padding: '0.6rem 0.5rem', textAlign: 'center' }}>
-                          <input type="number" min="1" value={row.qty} onChange={e => setRowQty(row.id, e.target.value)}
-                            style={{ width: '52px', border: '1px solid #E5E7EB', borderRadius: '4px', padding: '0.3rem 0.4rem', outline: 'none', fontSize: '0.8rem', textAlign: 'center', backgroundColor: 'white' }} />
+                          <input type="number" className="term-list-input" min="1" value={row.qty} onChange={e => setRowQty(row.id, e.target.value)}
+                            style={{ width: '52px', border: 'none', borderBottom: '1.5px dashed #FF9F43', padding: '0.3rem 0.4rem 0.2rem', outline: 'none', fontSize: '0.8rem', textAlign: 'center', backgroundColor: 'transparent' }} />
                         </td>
 
                         {/* Rate */}
                         <td style={{ padding: '0.6rem 0.5rem', textAlign: 'right' }}>
-                          <input type="number" min="0" step="0.01" value={row.price} onChange={e => setRowPrice(row.id, e.target.value)}
-                            style={{ width: '68px', border: '1px solid #E5E7EB', borderRadius: '4px', padding: '0.3rem 0.4rem', outline: 'none', fontSize: '0.8rem', textAlign: 'right', backgroundColor: 'white' }} />
+                          <input type="number" className="term-list-input" min="0" step="0.01" value={row.price} onChange={e => setRowPrice(row.id, e.target.value)}
+                            style={{ width: '68px', border: 'none', borderBottom: '1.5px dashed #FF9F43', padding: '0.3rem 0.4rem 0.2rem', outline: 'none', fontSize: '0.8rem', textAlign: 'right', backgroundColor: 'transparent' }} />
                         </td>
 
                         {/* Amount */}
@@ -611,12 +623,14 @@ const CreateQuotation = () => {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem 1.25rem', borderBottom: '1px solid #F3F4F6' }}>
                   <span style={{ color: '#4B5563', fontSize: '0.875rem' }}>Discount (₹)</span>
                   <input type="number" min="0" step="0.01" value={discount} onChange={e => setDiscount(e.target.value)}
-                    style={{ width: '90px', textAlign: 'right', border: 'none', borderBottom: '1px dashed #D1D5DB', outline: 'none', fontSize: '0.875rem', color: '#EA5455', backgroundColor: 'transparent' }} />
+                    className="term-list-input"
+                    style={{ width: '90px', textAlign: 'right', border: 'none', borderBottom: '1.5px dashed #FF9F43', outline: 'none', fontSize: '0.875rem', color: '#EA5455', backgroundColor: 'transparent' }} />
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem 1.25rem', borderBottom: '1px solid #F3F4F6' }}>
                   <span style={{ color: '#4B5563', fontSize: '0.875rem' }}>Shipping (₹)</span>
                   <input type="number" min="0" step="0.01" value={shipping} onChange={e => setShipping(e.target.value)}
-                    style={{ width: '90px', textAlign: 'right', border: 'none', borderBottom: '1px dashed #D1D5DB', outline: 'none', fontSize: '0.875rem', color: '#111827', backgroundColor: 'transparent' }} />
+                    className="term-list-input"
+                    style={{ width: '90px', textAlign: 'right', border: 'none', borderBottom: '1.5px dashed #FF9F43', outline: 'none', fontSize: '0.875rem', color: '#111827', backgroundColor: 'transparent' }} />
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.85rem 1.25rem', backgroundColor: '#F3F4F6' }}>
                   <span style={{ color: '#1F2937', fontWeight: 700, fontSize: '0.95rem' }}>Grand Total</span>
@@ -661,11 +675,25 @@ const CreateQuotation = () => {
                 setCustomerEmail(latest.email || '');
                 setCustomerPhone(latest.phone || '');
                 setGstNumber(latest.gstNumber || '');
-                setPlaceOfSupply(latest.placeOfSupply || '');
+                
+                const parsedSettings = JSON.parse(localStorage.getItem('pos_settings') || '{}');
+                const storeStateFallback = parsedSettings.orgState || 'Madhya Pradesh';
+                setPlaceOfSupply(latest.placeOfSupply || latest.state || storeStateFallback);
+                
                 setSelectedCustomer(latest);
               }
             }
           }).catch(console.error);
+        }}
+      />
+
+      <HsnModal 
+        isOpen={isHsnModalOpen}
+        onClose={() => setIsHsnModalOpen(false)}
+        onSelect={(code) => {
+          if (hsnActiveRowId !== null) {
+            setRowHsn(hsnActiveRowId, code);
+          }
         }}
       />
     </DashboardLayout>

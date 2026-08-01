@@ -3,6 +3,7 @@ import DashboardLayout from '../components/layout/DashboardLayout';
 import { Settings, Globe, Smartphone, Monitor, DollarSign, List, ChevronDown, ChevronUp, Edit2, Upload, X, RotateCw } from 'lucide-react';
 import styles from './POSSettings.module.css';
 import { API_BASE_URL } from '../api/endpoints';
+import { State, City } from 'country-state-city';
 
 const removeImageBackground = (base64Str) => {
   return new Promise((resolve) => {
@@ -389,13 +390,30 @@ const POSSettings = () => {
                   />
 
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                    <input 
-                      type="text" 
-                      placeholder="City" 
-                      value={orgCity} 
-                      onChange={(e) => setOrgCity(e.target.value)} 
-                      style={{ backgroundColor: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '6px', padding: '0.55rem 0.75rem', fontSize: '0.875rem', color: '#374151', outline: 'none' }} 
-                    />
+                    {(() => {
+                      const stateObj = State.getStatesOfCountry('IN').find(s => s.name === orgState);
+                      const citiesList = stateObj ? City.getCitiesOfState('IN', stateObj.isoCode) : [];
+                      return citiesList.length > 0 ? (
+                        <select
+                          value={orgCity}
+                          onChange={(e) => setOrgCity(e.target.value)}
+                          style={{ backgroundColor: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '6px', padding: '0.55rem 0.75rem', fontSize: '0.875rem', color: '#374151', outline: 'none' }}
+                        >
+                          <option value="">Select City</option>
+                          {citiesList.map((c) => (
+                            <option key={c.name} value={c.name}>{c.name}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <input 
+                          type="text" 
+                          placeholder="City" 
+                          value={orgCity} 
+                          onChange={(e) => setOrgCity(e.target.value)} 
+                          style={{ backgroundColor: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '6px', padding: '0.55rem 0.75rem', fontSize: '0.875rem', color: '#374151', outline: 'none' }} 
+                        />
+                      );
+                    })()}
                     <input 
                       type="text" 
                       placeholder="Pincode" 
@@ -408,14 +426,16 @@ const POSSettings = () => {
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                     <select 
                       value={orgState} 
-                      onChange={(e) => setOrgState(e.target.value)} 
+                      onChange={(e) => {
+                        setOrgState(e.target.value);
+                        setOrgCity(''); // Reset city on state change
+                      }} 
                       style={{ backgroundColor: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '6px', padding: '0.55rem 0.75rem', fontSize: '0.875rem', color: '#374151', outline: 'none' }}
                     >
-                      <option value="Madhya Pradesh">Madhya Pradesh</option>
-                      <option value="Maharashtra">Maharashtra</option>
-                      <option value="Delhi">Delhi</option>
-                      <option value="Gujarat">Gujarat</option>
-                      <option value="Karnataka">Karnataka</option>
+                      <option value="">Select State</option>
+                      {State.getStatesOfCountry('IN').map(s => (
+                        <option key={s.isoCode} value={s.name}>{s.name}</option>
+                      ))}
                     </select>
                     
                     <input 

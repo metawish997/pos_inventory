@@ -194,7 +194,12 @@ const QuotationList = () => {
                 filteredQuotations.map((item, i) => (
                   <tr key={item._id || i}>
                     <td><input type="checkbox" /></td>
-                    <td>{item.quotationNumber}</td>
+                    <td 
+                      onClick={() => navigate(`/quotation-details/${item._id}`)} 
+                      style={{ color: '#FF9F43', fontWeight: 600, cursor: 'pointer' }}
+                    >
+                      {item.quotationNumber}
+                    </td>
                     <td>
                       <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
                         <div style={{width: '28px', height: '28px', borderRadius: '50%', backgroundColor: '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, fontSize: '12px'}}>

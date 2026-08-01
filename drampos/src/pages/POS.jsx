@@ -198,6 +198,7 @@ const POS = () => {
             ? ((ci.price * ci.qty) - ((ci.price * ci.qty) / (1 + (ci.product.tax?.taxValue || 0) / 100)))
             : ((ci.price * ci.qty) * ((ci.product.tax?.taxValue || 0) / 100)),
           subtotal: ci.price * ci.qty,
+          hsn: ci.product.hsnCode || ci.product.hsn || '',
           total: ci.price * ci.qty
         })),
         subtotal: subtotal,

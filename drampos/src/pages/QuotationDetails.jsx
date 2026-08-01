@@ -1,12 +1,119 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import Card from '../components/ui/Card';
-import styles from './ProductList.module.css'; // Reusing styles
-import { FileText, Printer, ArrowLeft, Copy } from 'lucide-react';
+import styles from './ProductList.module.css';
+import { Printer, ArrowLeft } from 'lucide-react';
+import { API_BASE_URL } from '../api/endpoints';
 
 const QuotationDetails = () => {
   const navigate = useNavigate();
+  const { id } = useParams();
+  const [quotation, setQuotation] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [companySettings, setCompanySettings] = useState(null);
+
+  const fetchQuotation = async () => {
+    try {
+      setLoading(true);
+      let targetId = id;
+
+      if (!targetId) {
+        const listRes = await fetch(`${API_BASE_URL}/sales/quotations/list`);
+        const listData = await listRes.json();
+        if (listData.success && listData.data && listData.data.length > 0) {
+          targetId = listData.data[0]._id;
+        }
+      }
+
+      if (!targetId) {
+        setError('No quotation records found.');
+        setLoading(false);
+        return;
+      }
+
+      const res = await fetch(`${API_BASE_URL}/sales/quotations/${targetId}`);
+      const data = await res.json();
+      if (data.success) {
+        setQuotation(data.data);
+      } else {
+        setError(data.message || 'Failed to load quotation');
+      }
+    } catch (err) {
+      console.error(err);
+      setError(err.message || 'Error fetching quotation');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchQuotation();
+    fetch(`${API_BASE_URL}/company-settings`)
+      .then(res => res.json())
+      .then(data => { if (data) setCompanySettings(data); })
+      .catch(e => console.error("Error loading settings", e));
+  }, [id]);
+
+  const handlePrint = () => window.print();
+
+  const handleDownloadPdf = () => {
+    const element = document.getElementById('printable-quotation-card');
+    if (!element) return;
+    if (window.html2pdf) {
+      const opt = {
+        margin: 0.5,
+        filename: `Quotation_${quotation?.quotationNumber || 'Detail'}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+      };
+      window.html2pdf().from(element).set(opt).save();
+    } else {
+      alert("PDF generator is still loading. Please try again.");
+    }
+  };
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div style={{ padding: '2rem', color: '#6B7280' }}>Loading Quotation...</div>
+      </DashboardLayout>
+    );
+  }
+
+  if (error || !quotation) {
+    return (
+      <DashboardLayout>
+        <div style={{ padding: '2rem', color: '#EA5455' }}>
+          {error || 'Quotation not found.'}
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  const items = quotation.items || [];
+
+  // Org data from company-settings DB
+  const storeName = companySettings?.orgName || 'Dreams POS';
+  const storeEmail = companySettings?.orgEmail || '';
+  const storePhone = companySettings?.orgPhone || '';
+  const addrParts = [
+    companySettings?.orgAddress1, companySettings?.orgAddress2,
+    companySettings?.orgCity, companySettings?.orgState, companySettings?.orgPincode
+  ].filter(Boolean);
+  const storeAddress = addrParts.length > 0 ? addrParts.join(', ') : '';
+
+  // Status badge colors
+  const statusColors = {
+    Sent: { bg: '#E8F9EE', color: '#28C76F' },
+    Accepted: { bg: '#E8F9EE', color: '#28C76F' },
+    Draft: { bg: '#F3F4F6', color: '#6B7280' },
+    Declined: { bg: '#FCEAEA', color: '#EA5455' },
+    Converted: { bg: '#EDE9FE', color: '#7367F0' },
+  };
+  const badge = statusColors[quotation.status] || statusColors.Sent;
 
   return (
     <DashboardLayout>
@@ -15,85 +122,99 @@ const QuotationDetails = () => {
           <h1 className={styles.title}>Quotation Details</h1>
         </div>
         <div className={styles.headerActions}>
-          <button className={styles.iconBtn}><FileText size={18} color="#EA5455" /></button>
-          <button className={styles.iconBtn}><Printer size={18} color="#4B5563" /></button>
+          <button className={styles.iconBtn} onClick={handlePrint} title="Print Quotation"><Printer size={18} color="#4B5563" /></button>
+          <button className={styles.btnPrimary} style={{backgroundColor: '#7367F0'}} onClick={handleDownloadPdf}>
+            Download PDF
+          </button>
           <button className={styles.btnPrimary} style={{backgroundColor: '#FF9F43'}} onClick={() => navigate('/quotation')}>
             <ArrowLeft size={18} /> Back to Quotation
           </button>
         </div>
       </div>
 
-      <Card style={{padding: '3rem', marginBottom: '1.5rem'}}>
+      <Card id="printable-quotation-card" style={{padding: '3rem', marginBottom: '1.5rem'}}>
         <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '2rem'}}>
           <div>
             <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem'}}>
               <span style={{fontWeight: 'bold', fontSize: '1.5rem', color: '#1B2850'}}>
-                <span style={{color: '#FF9F43'}}>D</span>reams <span style={{fontSize: '1rem'}}>POS</span>
+                <span style={{color: '#FF9F43'}}>{storeName}</span>
               </span>
             </div>
-            <p style={{color: '#4B5563', fontSize: '0.875rem'}}>3099 Kennedy Court Framingham, MA 01702</p>
+            {storeAddress && <p style={{color: '#4B5563', fontSize: '0.875rem'}}>{storeAddress}</p>}
           </div>
           <div style={{textAlign: 'right', fontSize: '0.875rem', color: '#4B5563'}}>
-            <p>Quotation No <span style={{color: '#FF9F43', fontWeight: 600}}>#QUO0001</span></p>
-            <p>Created Date : <span style={{fontWeight: 600, color: '#1B2850'}}>Sep 24, 2024</span></p>
-            <p>Valid Until : <span style={{fontWeight: 600, color: '#1B2850'}}>Oct 24, 2024</span></p>
+            <p>Quotation No <span style={{color: '#FF9F43', fontWeight: 600}}>{quotation.quotationNumber}</span></p>
+            <p>Created Date : <span style={{fontWeight: 600, color: '#1B2850'}}>{new Date(quotation.quotationDate).toLocaleDateString()}</span></p>
+            <p>Valid Until : <span style={{fontWeight: 600, color: '#1B2850'}}>{new Date(quotation.validUntil).toLocaleDateString()}</span></p>
           </div>
         </div>
 
         <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '2rem'}}>
           <div>
             <p style={{fontSize: '0.875rem', color: '#1B2850', fontWeight: 600, marginBottom: '0.5rem'}}>From</p>
-            <p style={{fontSize: '1.125rem', color: '#1B2850', fontWeight: 600, marginBottom: '0.5rem'}}>Thomas Lawler</p>
+            <p style={{fontSize: '1.125rem', color: '#1B2850', fontWeight: 600, marginBottom: '0.5rem'}}>{storeName}</p>
             <div style={{color: '#4B5563', fontSize: '0.875rem', lineHeight: '1.5'}}>
-              <p>2077 Chicago Avenue Orosi, CA 93647</p>
-              <p>Email : Tarala2445@example.com</p>
-              <p>Phone : +1 987 654 3210</p>
+              {storeAddress && <p>{storeAddress}</p>}
+              {storeEmail && <p>Email : {storeEmail}</p>}
+              {storePhone && <p>Phone : {storePhone}</p>}
             </div>
           </div>
           <div>
-            <p style={{fontSize: '0.875rem', color: '#1B2850', fontWeight: 600, marginBottom: '0.5rem'}}>To</p>
-            <p style={{fontSize: '1.125rem', color: '#1B2850', fontWeight: 600, marginBottom: '0.5rem'}}>Carl Evans</p>
+            <p style={{fontSize: '0.875rem', color: '#1B2850', fontWeight: 600, marginBottom: '0.5rem'}}>Bill To</p>
+            <p style={{fontSize: '1.125rem', color: '#1B2850', fontWeight: 600, marginBottom: '0.5rem'}}>{quotation.customerName}</p>
             <div style={{color: '#4B5563', fontSize: '0.875rem', lineHeight: '1.5'}}>
-              <p>3103 Trainer Avenue Peoria, IL 61602</p>
-              <p>Email : Sara_inc34@example.com</p>
-              <p>Phone : +1 987 471 6589</p>
+              {quotation.customerEmail && <p>Email : {quotation.customerEmail}</p>}
+              {quotation.customerPhone && <p>Phone : {quotation.customerPhone}</p>}
+              {quotation.gstNumber && <p>GST No : {quotation.gstNumber}</p>}
+              {quotation.placeOfSupply && <p>Place of Supply : {quotation.placeOfSupply}</p>}
             </div>
           </div>
           <div>
             <p style={{fontSize: '0.875rem', color: '#1B2850', fontWeight: 600, marginBottom: '0.5rem'}}>Status</p>
-            <span style={{backgroundColor: '#E8F9EE', color: '#28C76F', padding: '4px 8px', borderRadius: '4px', fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px', marginBottom: '1rem'}}>
-              Sent
+            <span style={{
+              backgroundColor: badge.bg, color: badge.color,
+              padding: '4px 8px', borderRadius: '4px', fontSize: '12px',
+              display: 'inline-flex', alignItems: 'center', gap: '6px',
+              marginBottom: '1rem', fontWeight: 600
+            }}>
+              <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: badge.color }}></span>
+              {quotation.status}
             </span>
+            <div style={{width: '80px', height: '80px', backgroundColor: '#F3F4F6', marginTop: '0.5rem'}}>
+              <img src={`https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${quotation.quotationNumber}`} alt="QR Code" style={{width: '100%', height: '100%'}} />
+            </div>
           </div>
         </div>
-
-        <p style={{fontSize: '0.875rem', color: '#4B5563', marginBottom: '1.5rem'}}>
-          Quotation For : <span style={{color: '#1B2850', fontWeight: 500}}>Hardware Supply</span>
-        </p>
 
         <div style={{border: '1px solid #E5E7EB', borderRadius: '8px', overflow: 'hidden', marginBottom: '2rem'}}>
           <table style={{width: '100%', borderCollapse: 'collapse', textAlign: 'left'}}>
             <thead>
               <tr style={{backgroundColor: '#F3F4F6', color: '#4B5563', fontSize: '0.875rem'}}>
-                <th style={{padding: '1rem', fontWeight: 600}}>Product Description</th>
+                <th style={{padding: '1rem', fontWeight: 600}}>Product / Variant</th>
                 <th style={{padding: '1rem', fontWeight: 600}}>Qty</th>
-                <th style={{padding: '1rem', fontWeight: 600}}>Cost</th>
+                <th style={{padding: '1rem', fontWeight: 600}}>Unit Cost</th>
                 <th style={{padding: '1rem', fontWeight: 600}}>Discount</th>
                 <th style={{padding: '1rem', fontWeight: 600}}>Total</th>
               </tr>
             </thead>
             <tbody>
-              {[
-                { name: 'Lenovo 3rd Generation', qty: '1', cost: '$550', discount: '$0', total: '$550' }
-              ].map((item, i) => (
-                <tr key={i} style={{borderTop: '1px solid #E5E7EB'}}>
-                  <td style={{padding: '1rem', fontSize: '0.875rem', color: '#1B2850', fontWeight: 500}}>{item.name}</td>
-                  <td style={{padding: '1rem', fontSize: '0.875rem', color: '#4B5563'}}>{item.qty}</td>
-                  <td style={{padding: '1rem', fontSize: '0.875rem', color: '#4B5563'}}>{item.cost}</td>
-                  <td style={{padding: '1rem', fontSize: '0.875rem', color: '#4B5563'}}>{item.discount}</td>
-                  <td style={{padding: '1rem', fontSize: '0.875rem', color: '#1B2850', fontWeight: 500}}>{item.total}</td>
+              {items.length === 0 ? (
+                <tr>
+                  <td colSpan="5" style={{padding: '1rem', textAlign: 'center', color: '#6B7280'}}>No items in this quotation.</td>
                 </tr>
-              ))}
+              ) : (
+                items.map((item, i) => (
+                  <tr key={i} style={{borderTop: '1px solid #E5E7EB'}}>
+                    <td style={{padding: '1rem', fontSize: '0.875rem', color: '#1B2850', fontWeight: 500}}>
+                      {item.product?.name || 'Product'}
+                    </td>
+                    <td style={{padding: '1rem', fontSize: '0.875rem', color: '#4B5563'}}>{item.quantity}</td>
+                    <td style={{padding: '1rem', fontSize: '0.875rem', color: '#4B5563'}}>₹{item.unitPrice}</td>
+                    <td style={{padding: '1rem', fontSize: '0.875rem', color: '#4B5563'}}>₹{item.discount || 0}</td>
+                    <td style={{padding: '1rem', fontSize: '0.875rem', color: '#1B2850', fontWeight: 500}}>₹{item.subtotal}</td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -102,42 +223,42 @@ const QuotationDetails = () => {
           <div style={{width: '350px'}}>
             <div style={{display: 'flex', justifyContent: 'space-between', padding: '0.75rem 0'}}>
               <span style={{color: '#4B5563', fontSize: '0.875rem'}}>Sub Total</span>
-              <span style={{color: '#1B2850', fontSize: '0.875rem', fontWeight: 600}}>$550</span>
+              <span style={{color: '#1B2850', fontSize: '0.875rem', fontWeight: 600}}>₹{quotation.subtotal}</span>
             </div>
             <div style={{display: 'flex', justifyContent: 'space-between', padding: '0.75rem 0'}}>
-              <span style={{color: '#4B5563', fontSize: '0.875rem'}}>Discount (0%)</span>
-              <span style={{color: '#1B2850', fontSize: '0.875rem', fontWeight: 600}}>$0</span>
+              <span style={{color: '#4B5563', fontSize: '0.875rem'}}>Discount</span>
+              <span style={{color: '#1B2850', fontSize: '0.875rem', fontWeight: 600}}>₹{quotation.totalDiscount || 0}</span>
             </div>
             <div style={{display: 'flex', justifyContent: 'space-between', padding: '0.75rem 0'}}>
-              <span style={{color: '#4B5563', fontSize: '0.875rem'}}>VAT (0%)</span>
-              <span style={{color: '#1B2850', fontSize: '0.875rem', fontWeight: 600}}>$0</span>
+              <span style={{color: '#4B5563', fontSize: '0.875rem'}}>Tax</span>
+              <span style={{color: '#1B2850', fontSize: '0.875rem', fontWeight: 600}}>₹{quotation.totalTax || 0}</span>
             </div>
             <div style={{display: 'flex', justifyContent: 'space-between', padding: '1rem 0', borderTop: '1px solid #E5E7EB', borderBottom: '1px solid #E5E7EB', marginTop: '0.5rem', marginBottom: '0.5rem'}}>
               <span style={{color: '#1B2850', fontSize: '1rem', fontWeight: 700}}>Total Amount</span>
-              <span style={{color: '#1B2850', fontSize: '1.25rem', fontWeight: 700}}>$550</span>
-            </div>
-            <div style={{fontSize: '0.75rem', color: '#6B7280', textAlign: 'right'}}>
-              Amount in Words : Dollar Five hundred and Fifty
+              <span style={{color: '#1B2850', fontSize: '1.25rem', fontWeight: 700}}>₹{quotation.grandTotal}</span>
             </div>
           </div>
         </div>
 
-        <div style={{marginBottom: '3rem'}}>
-          <p style={{fontSize: '0.875rem', color: '#1B2850', fontWeight: 600, marginBottom: '0.5rem'}}>Terms and Conditions</p>
-          <p style={{fontSize: '0.875rem', color: '#4B5563'}}>This quotation is valid for 30 days from the date of issue.</p>
+        {quotation.notes && (
+          <div style={{marginBottom: '2rem', padding: '1.25rem', backgroundColor: '#F9FAFB', borderRadius: '6px', border: '1px solid #E5E7EB'}}>
+            <p style={{fontSize: '0.875rem', color: '#1B2850', fontWeight: 600, marginBottom: '0.5rem'}}>Terms & Conditions</p>
+            <div style={{fontSize: '0.75rem', color: '#4B5563', whiteSpace: 'pre-line', lineHeight: '1.6'}}>
+              {quotation.notes}
+            </div>
+          </div>
+        )}
+
+        <div style={{textAlign: 'center', borderTop: '1px solid #E5E7EB', paddingTop: '2rem', paddingBottom: '2rem'}}>
+          <div style={{display: 'inline-block', marginBottom: '1rem'}}>
+            <span style={{fontWeight: 'bold', fontSize: '1.5rem', color: '#1B2850'}}>
+              <span style={{color: '#FF9F43'}}>{storeName}</span>
+            </span>
+          </div>
+          <p style={{fontSize: '0.875rem', color: '#1B2850', fontWeight: 500, marginBottom: '0.5rem'}}>Developed and maintained by Metawish</p>
+          <a href="https://www.metawish.ai" target="_blank" rel="noreferrer" style={{color: '#FF9F43', textDecoration: 'none', fontSize: '0.875rem'}}>www.metawish.ai</a>
         </div>
-
       </Card>
-      
-      <div style={{display: 'flex', justifyContent: 'center', gap: '1rem', paddingBottom: '2rem'}}>
-        <button className={styles.btnPrimary} style={{backgroundColor: '#FF9F43', padding: '0.75rem 1.5rem'}}>
-          <Printer size={18} /> Print Quotation
-        </button>
-        <button className={styles.btnPrimary} style={{backgroundColor: '#1B2850', padding: '0.75rem 1.5rem'}}>
-          <Copy size={18} /> Clone Quotation
-        </button>
-      </div>
-
     </DashboardLayout>
   );
 };

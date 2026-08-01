@@ -4,6 +4,7 @@ const saleItemSchema = new mongoose.Schema({
     product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
     variant: { type: mongoose.Schema.Types.ObjectId, ref: 'ProductItem', default: null },
     sku: { type: String, default: '' },
+    hsn: { type: String, default: '' },
     barcode: { type: String, default: '' },
     quantity: { type: Number, required: true, min: 1 },
     unitPrice: { type: Number, required: true, min: 0 },
@@ -48,6 +49,12 @@ const saleSchema = new mongoose.Schema({
     },
     paymentMethod: { type: String, enum: ['Cash', 'Card', 'UPI', 'Bank Transfer', 'Other'], default: 'Cash' },
     notes: { type: String, default: '' },
+    terms: [{ type: String }],
+    customFields: [{
+        label: { type: String, required: true },
+        value: { type: String, required: true }
+    }],
+    attachments: [{ type: String }],
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null }
 }, { timestamps: true });
 

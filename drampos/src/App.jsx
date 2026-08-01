@@ -150,6 +150,7 @@ function App() {
           <Route path="/sales-return" element={<SalesReturnList />} />
           <Route path="/quotation" element={<QuotationList />} />
           <Route path="/quotation-details" element={<QuotationDetails />} />
+          <Route path="/quotation-details/:id" element={<QuotationDetails />} />
           <Route path="/pos" element={<POS />} />
           <Route path="/pos-settings" element={<POSSettings />} />
           <Route path="/purchases" element={<PurchaseOrders />} />

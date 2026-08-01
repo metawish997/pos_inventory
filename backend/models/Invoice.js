@@ -29,6 +29,12 @@ const invoiceSchema = new mongoose.Schema({
         default: 'Unpaid'
     },
     notes: { type: String, default: '' },
+    terms: [{ type: String }],
+    customFields: [{
+        label: { type: String, required: true },
+        value: { type: String, required: true }
+    }],
+    attachments: [{ type: String }],
     payments: [invoicePaymentSchema],
     invoiceType: { type: String, enum: ['Tax Invoice', 'Proforma Invoice'], default: 'Tax Invoice' }
 }, { timestamps: true });

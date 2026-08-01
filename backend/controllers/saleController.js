@@ -68,7 +68,7 @@ exports.getSales = async (req, res) => {
         if (type) query.saleType = type;
 
         const sales = await Sale.find(query)
-            .populate('items.product', 'name code price sellingPrice image')
+            .populate('items.product', 'name code price sellingPrice image hsnCode')
             .populate('warehouse', 'name')
             .populate('store', 'name')
             .sort({ createdAt: -1 });
@@ -111,6 +111,7 @@ exports.createSale = async (req, res) => {
             placeOfSupply: sale.placeOfSupply || '',
             clientPoNumber: sale.clientPoNumber || '',
             invoiceType: req.body.invoiceType || 'Tax Invoice',
+            invoiceNumber: req.body.invoiceNumber,
             invoiceDate: req.body.invoiceDate || Date.now(),
             dueDate: req.body.dueDate || new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
             subtotal: sale.subtotal,
@@ -120,7 +121,15 @@ exports.createSale = async (req, res) => {
             paidAmount: sale.paidAmount,
             dueAmount: sale.dueAmount,
             status: sale.paymentStatus === 'Paid' ? 'Paid' : (sale.paidAmount > 0 ? 'Partially Paid' : 'Unpaid'),
-            notes: req.body.notes || ''
+            notes: req.body.notes || '',
+            terms: sale.terms,
+            customFields: sale.customFields,
+            attachments: sale.attachments,
+            payments: sale.paidAmount > 0 ? [{
+                amount: sale.paidAmount,
+                paymentDate: sale.saleDate || Date.now(),
+                referenceNumber: 'Initial POS Payment'
+            }] : []
         });
         await invoice.save();
 
@@ -206,12 +215,42 @@ exports.getInvoiceById = async (req, res) => {
     }
 };
 
+exports.updateInvoice = async (req, res) => {
+    try {
+        const invoice = await Invoice.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+        if (!invoice) return res.status(404).json({ success: false, message: 'Invoice not found' });
+        res.json({ success: true, data: invoice });
+    } catch (error) {
+        res.status(400).json({ success: false, message: error.message });
+    }
+};
+
+exports.deleteInvoice = async (req, res) => {
+    try {
+        const invoice = await Invoice.findByIdAndDelete(req.params.id);
+        if (!invoice) return res.status(404).json({ success: false, message: 'Invoice not found' });
+        res.json({ success: true, message: 'Invoice deleted successfully' });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
 // --- QUOTATIONS CONTROLLERS ---
 
 exports.getQuotations = async (req, res) => {
     try {
         const quotations = await Quotation.find().populate('items.product').sort({ createdAt: -1 });
         res.json({ success: true, data: quotations });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+exports.getQuotationById = async (req, res) => {
+    try {
+        const quotation = await Quotation.findById(req.params.id).populate('items.product');
+        if (!quotation) return res.status(404).json({ success: false, message: 'Quotation not found' });
+        res.json({ success: true, data: quotation });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }

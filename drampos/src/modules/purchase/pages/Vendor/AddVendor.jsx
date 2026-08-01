@@ -4,6 +4,7 @@ import DashboardLayout from '../../../../components/layout/DashboardLayout';
 import Card from '../../../../components/ui/Card';
 import styles from '../../purchase.module.css';
 import { createVendor, updateVendor, getVendorById } from '../../services/purchaseService';
+import { State, City } from 'country-state-city';
 
 const Field = ({ label, children }) => (
     <div className={styles.formCol}>
@@ -111,9 +112,61 @@ const AddVendor = () => {
                             <Field label="Shop Address"><input className={styles.input} value={form.shopAddress} onChange={(e) => set('shopAddress', e.target.value)} /></Field>
                         </div>
                         <div className={styles.formRow}>
-                            <Field label="City"><input className={styles.input} value={form.city} onChange={(e) => set('city', e.target.value)} /></Field>
-                            <Field label="State"><input className={styles.input} value={form.state} onChange={(e) => set('state', e.target.value)} /></Field>
-                            <Field label="Country"><input className={styles.input} value={form.country} onChange={(e) => set('country', e.target.value)} /></Field>
+                             <Field label="State">
+                                 <select 
+                                     className={styles.select} 
+                                     value={form.state} 
+                                     onChange={(e) => {
+                                         const val = e.target.value;
+                                         setForm(prev => ({ ...prev, state: val, city: '' }));
+                                     }}
+                                 >
+                                     <option value="">Select State</option>
+                                     {(() => {
+                                         const countryObj = Country.getAllCountries().find(c => c.name === (form.country || 'India'));
+                                         return countryObj 
+                                           ? State.getStatesOfCountry(countryObj.isoCode).map(s => (
+                                               <option key={s.isoCode} value={s.name}>{s.name}</option>
+                                             ))
+                                           : null;
+                                     })()}
+                                 </select>
+                             </Field>
+                             <Field label="City">
+                                 {(() => {
+                                     const countryObj = Country.getAllCountries().find(c => c.name === (form.country || 'India'));
+                                     const stateObj = countryObj ? State.getStatesOfCountry(countryObj.isoCode).find(s => s.name === form.state) : null;
+                                     const citiesList = (countryObj && stateObj) ? City.getCitiesOfState(countryObj.isoCode, stateObj.isoCode) : [];
+                                     return citiesList.length > 0 ? (
+                                         <select
+                                             className={styles.select}
+                                             value={form.city}
+                                             onChange={(e) => set('city', e.target.value)}
+                                         >
+                                             <option value="">Select City</option>
+                                             {citiesList.map(c => (
+                                                 <option key={c.name} value={c.name}>{c.name}</option>
+                                             ))}
+                                         </select>
+                                     ) : (
+                                         <input className={styles.input} value={form.city} onChange={(e) => set('city', e.target.value)} />
+                                     );
+                                 })()}
+                             </Field>
+                             <Field label="Country">
+                                 <select
+                                     className={styles.select}
+                                     value={form.country || 'India'}
+                                     onChange={(e) => {
+                                         const val = e.target.value;
+                                         setForm(prev => ({ ...prev, country: val, state: '', city: '' }));
+                                     }}
+                                 >
+                                     {Country.getAllCountries().map(c => (
+                                         <option key={c.isoCode} value={c.name}>{c.name}</option>
+                                     ))}
+                                 </select>
+                             </Field>
                             <Field label="Pincode"><input className={styles.input} value={form.pincode} onChange={(e) => set('pincode', e.target.value)} /></Field>
                         </div>
                         <div className={styles.formRow}>
