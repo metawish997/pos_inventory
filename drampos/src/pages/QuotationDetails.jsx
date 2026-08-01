@@ -136,17 +136,21 @@ const QuotationDetails = () => {
         <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem'}}>
           <div>
             {companySettings?.orgLogo && (
-              <img src={companySettings.orgLogo} alt="Logo" style={{maxHeight: '50px', maxWidth: '150px', objectFit: 'contain'}} />
+              <img src={companySettings.orgLogo} alt="Logo" style={{maxHeight: '110px', maxWidth: '300px', objectFit: 'contain'}} />
             )}
           </div>
-          <div style={{textAlign: 'right', maxWidth: '350px'}}>
-            <div style={{fontWeight: 'bold', fontSize: '1.25rem', color: '#1B2850', marginBottom: '0.25rem'}}>{storeName}</div>
-            {storeAddress && <p style={{color: '#4B5563', fontSize: '0.8rem', marginBottom: '0.5rem', lineHeight: '1.4'}}>{storeAddress}</p>}
-            <div style={{fontSize: '0.8rem', color: '#4B5563', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2px 1rem', textAlign: 'left'}}>
-              {storePhone && <div><strong>Phone:</strong> {storePhone}</div>}
-              {storeEmail && <div><strong>Email:</strong> {storeEmail}</div>}
-              {companySettings?.orgGst && <div><strong>GSTIN:</strong> {companySettings.orgGst}</div>}
-              {companySettings?.orgState && <div><strong>State:</strong> {companySettings.orgState}</div>}
+          <div style={{textAlign: 'right', maxWidth: '500px'}}>
+            <div style={{fontWeight: 'bold', fontSize: '1.9rem', color: '#1B2850', marginBottom: '0.25rem'}}>
+              {storeName.includes('TEQNOKRAFT') || storeName.includes('Teqnokraft') ? (
+                <>{storeName.replace(/TEQNOKRAFT|Teqnokraft/i, '').length > 0 ? <><span style={{color: '#ffad02'}}>TEQNO</span><span style={{color: '#0399c1'}}>KRAFT</span>{storeName.replace(/TEQNOKRAFT|Teqnokraft/i, '')}</> : <><span style={{color: '#ffad02'}}>TEQNO</span><span style={{color: '#0399c1'}}>KRAFT</span></>}</>
+              ) : storeName}
+            </div>
+            <p style={{color: '#4B5563', fontSize: '0.7rem', marginBottom: '0.5rem', lineHeight: '1.4', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical'}}>{[storeAddress, storePhone ? `Phone: ${storePhone}` : ''].filter(Boolean).join(', ')}</p>
+            <div style={{fontSize: '0.7rem', color: '#4B5563', display: 'flex', gap: '1rem', flexWrap: 'nowrap', justifyContent: 'flex-end'}}>
+
+              {storeEmail && <div style={{whiteSpace: 'nowrap'}}><strong>Email:</strong> {storeEmail}</div>}
+              {companySettings?.orgGst && <div style={{whiteSpace: 'nowrap'}}><strong>GSTIN:</strong> {companySettings.orgGst}</div>}
+              {companySettings?.orgState && <div style={{whiteSpace: 'nowrap'}}><strong>State:</strong> {companySettings.orgState}</div>}
             </div>
           </div>
         </div>
