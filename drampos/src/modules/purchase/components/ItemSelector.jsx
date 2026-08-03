@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import styles from '../purchase.module.css';
 import { getProducts, getProductVariants } from '../services/purchaseService';
+import { API_BASE_URL } from '../../../api/endpoints';
 
 /**
  * ItemSelector: search products (and their variants) to add purchase line items.
@@ -127,7 +128,7 @@ const ItemSelector = ({ onAddItem }) => {
                                 onClick={() => handleSelectProduct(item)}
                             >
                                 {item.images && item.images[0] && (
-                                    <img src={item.images[0].startsWith('http') ? item.images[0] : `http://localhost:5005${item.images[0]}`} alt="" />
+                                    <img src={item.images[0].startsWith('http') ? item.images[0] : `${API_BASE_URL.replace('/api', '')}${item.images[0]}`} alt="" />
                                 )}
                                 <div>
                                     <div style={{ fontWeight: 500 }}>{item.name}</div>
