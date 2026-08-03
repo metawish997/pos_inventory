@@ -1,6 +1,6 @@
 const Sale = require('../models/Sale');
 const Purchase = require('../models/Purchase');
-const CompanySettings = require('../models/CompanySettings');
+const CompanySetting = require('../models/CompanySetting');
 const mongoose = require('mongoose');
 
 // Helper to determine if transaction is Intra-state (CGST+SGST) or Inter-state (IGST)
@@ -48,7 +48,7 @@ module.exports = {
       }
 
       const sales = await Sale.find(match).populate('items.product').sort({ saleDate: -1 });
-      const settings = await CompanySettings.findOne();
+      const settings = await CompanySetting.findOne();
       const storeState = settings?.orgState || '';
 
       const b2b = [];
@@ -153,7 +153,7 @@ module.exports = {
       }
 
       const purchases = await Purchase.find(match).populate('vendor').populate('items.product').sort({ purchaseDate: -1 });
-      const settings = await CompanySettings.findOne();
+      const settings = await CompanySetting.findOne();
       const storeState = settings?.orgState || '';
 
       const itcRecords = purchases.map((purchase) => {
@@ -204,7 +204,7 @@ module.exports = {
 
       const sales = await Sale.find(salesMatch);
       const purchases = await Purchase.find(purchaseMatch).populate('vendor');
-      const settings = await CompanySettings.findOne();
+      const settings = await CompanySetting.findOne();
       const storeState = settings?.orgState || '';
 
       // Compute sales tax (Outward Liability)
