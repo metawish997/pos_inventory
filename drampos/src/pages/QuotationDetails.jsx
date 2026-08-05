@@ -52,7 +52,12 @@ const QuotationDetails = () => {
     fetchQuotation();
     fetch(`${API_BASE_URL}/company-settings`)
       .then(res => res.json())
-      .then(data => { if (data) setCompanySettings(data); })
+      .then(data => {
+        if (data) {
+          const defaultOrg = Array.isArray(data) ? data[0] : data;
+          setCompanySettings(defaultOrg);
+        }
+      })
       .catch(e => console.error("Error loading settings", e));
   }, [id]);
 
@@ -95,13 +100,14 @@ const QuotationDetails = () => {
 
   const items = quotation.items || [];
 
-  // Org data from company-settings DB
-  const storeName = companySettings?.orgName || 'Dreams POS';
-  const storeEmail = companySettings?.orgEmail || '';
-  const storePhone = companySettings?.orgPhone || '';
+  // Org data from company-settings DB or quotation organization
+  const activeOrg = quotation?.organization || companySettings;
+  const storeName = activeOrg?.orgName || 'Dreams POS';
+  const storeEmail = activeOrg?.orgEmail || '';
+  const storePhone = activeOrg?.orgPhone || '';
   const addrParts = [
-    companySettings?.orgAddress1, companySettings?.orgAddress2,
-    companySettings?.orgCity, companySettings?.orgState, companySettings?.orgPincode
+    activeOrg?.orgAddress1, activeOrg?.orgAddress2,
+    activeOrg?.orgCity, activeOrg?.orgState, activeOrg?.orgPincode
   ].filter(Boolean);
   const storeAddress = addrParts.length > 0 ? addrParts.join(', ') : '';
 
@@ -135,8 +141,8 @@ const QuotationDetails = () => {
       <Card id="printable-quotation-card" style={{padding: '3rem', marginBottom: '1.5rem'}}>
         <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem'}}>
           <div>
-            {companySettings?.orgLogo && (
-              <img src={companySettings.orgLogo} alt="Logo" style={{maxHeight: '110px', maxWidth: '300px', objectFit: 'contain'}} />
+            {activeOrg?.orgLogo && (
+              <img src={activeOrg.orgLogo} alt="Logo" style={{maxHeight: '110px', maxWidth: '300px', objectFit: 'contain'}} />
             )}
           </div>
           <div style={{textAlign: 'right', maxWidth: '500px'}}>
@@ -149,8 +155,8 @@ const QuotationDetails = () => {
             <div style={{fontSize: '0.7rem', color: '#4B5563', display: 'flex', gap: '1rem', flexWrap: 'nowrap', justifyContent: 'flex-end'}}>
 
               {storeEmail && <div style={{whiteSpace: 'nowrap'}}><strong>Email:</strong> {storeEmail}</div>}
-              {companySettings?.orgGst && <div style={{whiteSpace: 'nowrap'}}><strong>GSTIN:</strong> {companySettings.orgGst}</div>}
-              {companySettings?.orgState && <div style={{whiteSpace: 'nowrap'}}><strong>State:</strong> {companySettings.orgState}</div>}
+              {activeOrg?.orgGst && <div style={{whiteSpace: 'nowrap'}}><strong>GSTIN:</strong> {activeOrg.orgGst}</div>}
+              {activeOrg?.orgState && <div style={{whiteSpace: 'nowrap'}}><strong>State:</strong> {activeOrg.orgState}</div>}
             </div>
           </div>
         </div>

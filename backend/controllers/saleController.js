@@ -126,6 +126,7 @@ exports.createSale = async (req, res) => {
             terms: sale.terms,
             customFields: sale.customFields,
             attachments: sale.attachments,
+            organization: sale.organization || null,
             payments: sale.paidAmount > 0 ? [{
                 amount: sale.paidAmount,
                 paymentDate: sale.saleDate || Date.now(),
@@ -193,7 +194,7 @@ exports.getInvoices = async (req, res) => {
                 query.invoiceType = type;
             }
         }
-        const invoices = await Invoice.find(query).populate('sale').sort({ createdAt: -1 });
+        const invoices = await Invoice.find(query).populate('sale').populate('organization').sort({ createdAt: -1 });
         res.json({ success: true, data: invoices });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
@@ -203,6 +204,7 @@ exports.getInvoices = async (req, res) => {
 exports.getInvoiceById = async (req, res) => {
     try {
         const invoice = await Invoice.findById(req.params.id)
+            .populate('organization')
             .populate({
                 path: 'sale',
                 populate: {
@@ -240,7 +242,7 @@ exports.deleteInvoice = async (req, res) => {
 
 exports.getQuotations = async (req, res) => {
     try {
-        const quotations = await Quotation.find().populate('items.product').sort({ createdAt: -1 });
+        const quotations = await Quotation.find().populate('items.product').populate('organization').sort({ createdAt: -1 });
         res.json({ success: true, data: quotations });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
@@ -249,7 +251,7 @@ exports.getQuotations = async (req, res) => {
 
 exports.getQuotationById = async (req, res) => {
     try {
-        const quotation = await Quotation.findById(req.params.id).populate('items.product');
+        const quotation = await Quotation.findById(req.params.id).populate('items.product').populate('organization');
         if (!quotation) return res.status(404).json({ success: false, message: 'Quotation not found' });
         res.json({ success: true, data: quotation });
     } catch (error) {

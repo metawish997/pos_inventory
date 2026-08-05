@@ -36,7 +36,8 @@ const invoiceSchema = new mongoose.Schema({
     }],
     attachments: [{ type: String }],
     payments: [invoicePaymentSchema],
-    invoiceType: { type: String, enum: ['Tax Invoice', 'Proforma Invoice'], default: 'Tax Invoice' }
+    invoiceType: { type: String, enum: ['Tax Invoice', 'Proforma Invoice'], default: 'Tax Invoice' },
+    organization: { type: mongoose.Schema.Types.ObjectId, ref: 'CompanySetting', default: null }
 }, { timestamps: true });
 
 invoiceSchema.pre('save', async function () {

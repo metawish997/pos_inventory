@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import Card from '../components/ui/Card';
 import Modal from '../components/ui/Modal';
 import styles from './ProductList.module.css';
 import modalStyles from '../components/modals/ModalForm.module.css';
-import { Search, RefreshCw, Eye, PlusCircle, Trash2, Printer } from 'lucide-react';
+import { Search, RefreshCw, Eye, PlusCircle, Trash2, Printer, Edit2 } from 'lucide-react';
 import { getAllProducts } from '../services/productService';
 import { API_BASE_URL } from '../api/endpoints';
 
 const DeliveryChallanList = () => {
+  const navigate = useNavigate();
   const [challans, setChallans] = useState([]);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -191,7 +193,7 @@ const DeliveryChallanList = () => {
         </div>
         <div className={styles.headerActions}>
           <button className={styles.iconBtn} onClick={fetchChallans}><RefreshCw size={18} /></button>
-          <button className={styles.btnPrimary} onClick={() => setIsOpen(true)}>
+          <button className={styles.btnPrimary} onClick={() => navigate('/create-delivery-challan')}>
             <PlusCircle size={18} /> Add Challan
           </button>
         </div>
@@ -267,12 +269,18 @@ const DeliveryChallanList = () => {
                     <td>{new Date(item.challanDate).toLocaleDateString()}</td>
                     <td>{item.items?.length || 0} items</td>
                     <td>{getStatusBadge(item.status)}</td>
-                    <td>
+                    <td style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', minHeight: '48px' }}>
                       <button 
                         style={{border: 'none', background: 'none', cursor: 'pointer', color: '#6B7280', display: 'inline-flex', alignItems: 'center'}}
                         onClick={() => setSelectedChallan(item)}
                       >
                         <Eye size={16} />
+                      </button>
+                      <button 
+                        style={{border: 'none', background: 'none', cursor: 'pointer', color: '#FF9F43', display: 'inline-flex', alignItems: 'center'}}
+                        onClick={() => navigate(`/create-delivery-challan?edit=${item._id}`)}
+                      >
+                        <Edit2 size={16} />
                       </button>
                     </td>
                   </tr>

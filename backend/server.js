@@ -41,6 +41,8 @@ app.use('/api/delivery-challans', require('./routes/deliveryChallanRoutes'));
 app.use('/api/company-settings', require('./routes/companySettingsRoutes'));
 app.use('/api/hsn-sac', require('./routes/hsnSacRoutes'));
 app.use('/api/gst', require('./routes/gstReportRoutes'));
+app.use('/api/terms-templates', require('./routes/termsTemplateRoutes'));
+app.use('/api/column-settings', require('./routes/columnSettingsRoutes'));
 
 const eventService = require('./services/eventService');
 app.get('/api/events', (req, res) => {

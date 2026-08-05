@@ -40,10 +40,10 @@ const defaultTermsTemplates = {
   ]
 };
 
-const CreateInvoice = () => {
+const CreateDeliveryChallan = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const invoiceType = searchParams.get('type') === 'Proforma Invoice' ? 'Proforma Invoice' : 'Tax Invoice';
+  const invoiceType = 'Delivery Challan';
   const editId = searchParams.get('edit');
 
   // State Variables matching original form + new fields
@@ -72,27 +72,9 @@ const CreateInvoice = () => {
   // Terms & Notes Visibility States
   const [showTermsInput, setShowTermsInput] = useState(false);
   const [showNotesInput, setShowNotesInput] = useState(false);
-  const [termsList, setTermsList] = useState(() => {
-    const saved = localStorage.getItem('defaultTerms');
-    if (saved) {
-      try { return JSON.parse(saved); } catch(e) {}
-    }
-    return [
-      { text: 'Please pay within 15 days from the date of invoice, overdue interest @ 14% will be charged on delayed payments.' },
-      { text: 'Please quote invoice number when remitting funds.' }
-    ];
-  });
-  const [originalTerms, setOriginalTerms] = useState(() => {
-    const saved = localStorage.getItem('defaultTerms');
-    if (saved) {
-      try { return JSON.parse(saved); } catch(e) {}
-    }
-    return [
-      { text: 'Please pay within 15 days from the date of invoice, overdue interest @ 14% will be charged on delayed payments.' },
-      { text: 'Please quote invoice number when remitting funds.' }
-    ];
-  });
-  const [hasAskedSaveTerms, setHasAskedSaveTerms] = useState(false);
+  const [termsList, setTermsList] = useState([]);
+  const [originalTerms, setOriginalTerms] = useState([]);
+  const [hasAskedSaveTerms, setHasAskedSaveTerms] = useState(true);
   const [showTermsSaveConfirmModal, setShowTermsSaveConfirmModal] = useState(false);
   const [activeTermFocusIndex, setActiveTermFocusIndex] = useState(null);
 
@@ -404,6 +386,7 @@ const CreateInvoice = () => {
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [customerToEdit, setCustomerToEdit] = useState(null);
   const [nextInvoiceNumber, setNextInvoiceNumber] = useState('');
+  const [status, setStatus] = useState('Draft');
   const [showShippingDetails, setShowShippingDetails] = useState(false);
   const [warehouses, setWarehouses] = useState([]);
 
@@ -528,13 +511,14 @@ const CreateInvoice = () => {
       })
       .catch(err => console.error('Failed to load taxes from backend:', err));
 
-    getInvoices(invoiceType).then(data => {
-      if (data.success) {
-        const count = data.data.length;
-        const prefix = invoiceType === 'Proforma Invoice' ? 'PINV' : 'INV';
-        setNextInvoiceNumber(`${prefix}-${String(count + 1).padStart(4, '0')}`);
-      }
-    }).catch(console.error);
+    fetch(`${API_BASE_URL}/delivery-challans`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          const count = data.data.length;
+          setNextInvoiceNumber(`DC-${String(count + 1).padStart(4, '0')}`);
+        }
+      }).catch(console.error);
     getAllProducts().then(res => {
       const prods = res.products || res.data || (Array.isArray(res) ? res : []);
       setProducts(prods);
@@ -557,7 +541,7 @@ const CreateInvoice = () => {
       })
       .catch(err => console.error('Failed to load terms templates:', err));
 
-    getColumnSettings('invoice')
+    getColumnSettings('delivery-challan')
       .then(settings => {
         if (settings && settings.columns) {
           setColumns(settings.columns);
@@ -578,7 +562,7 @@ const CreateInvoice = () => {
   // Edit mode: load existing invoice data
   useEffect(() => {
     if (!editId) return;
-    fetch(`${API_BASE_URL}/sales/invoices/${editId}`)
+    fetch(`${API_BASE_URL}/delivery-challans/${editId}`)
       .then(res => res.json())
       .then(data => {
         if (!data.success || !data.data) return;
@@ -588,22 +572,20 @@ const CreateInvoice = () => {
         setCustomerPhone(inv.customerPhone || '');
         setGstNumber(inv.gstNumber || '');
         setPlaceOfSupply(inv.placeOfSupply || '');
-        setClientPoNumber(inv.clientPoNumber || '');
-        setNextInvoiceNumber(inv.invoiceNumber || '');
-        if (inv.invoiceDate) setInvoiceDate(new Date(inv.invoiceDate).toISOString().split('T')[0]);
-        if (inv.dueDate) setDueDate(new Date(inv.dueDate).toISOString().split('T')[0]);
+        setNextInvoiceNumber(inv.challanNumber || '');
+        if (inv.challanDate) setInvoiceDate(new Date(inv.challanDate).toISOString().split('T')[0]);
         setNotes(inv.notes || '');
         if (inv.terms && inv.terms.length > 0) {
           setTermsList(inv.terms.map(t => ({ text: t })));
         }
-        // Load items from sale
-        const saleItems = inv.sale?.items || [];
+        // Load items from challan
+        const saleItems = inv.items || [];
         if (saleItems.length > 0) {
           setCartItems(saleItems.map((si, idx) => ({
             id: idx + 1,
             product: si.product || null,
             nameOrSku: si.product?.name || '',
-            hsn: si.hsn || '',
+            hsn: si.product?.hsnCode || '',
             gstRate: si.taxRate || 0,
             qty: si.quantity || 0,
             price: si.unitPrice || 0,
@@ -611,7 +593,7 @@ const CreateInvoice = () => {
             discountType: 'Fixed',
             cgst: 0,
             sgst: 0,
-            total: si.total || 0,
+            total: si.subtotal || 0,
             showDescription: false,
             showImage: false,
             description: '',
@@ -621,7 +603,7 @@ const CreateInvoice = () => {
           })));
         }
       })
-      .catch(err => console.error('Failed to load invoice for edit:', err));
+      .catch(err => console.error('Failed to load delivery challan for edit:', err));
   }, [editId]);
 
   useEffect(() => {
@@ -900,106 +882,61 @@ const CreateInvoice = () => {
     try {
       setLoading(true);
       const payload = {
-        saleType: 'Online',
-        invoiceType: invoiceType,
-        invoiceNumber: nextInvoiceNumber,
-        invoiceDate: invoiceDate,
-        dueDate: dueDate,
+        challanNumber: nextInvoiceNumber,
+        challanDate: invoiceDate,
         customerName: customerName,
-        organization: selectedOrgId || null,
         customerEmail: customerEmail,
         customerPhone: customerPhone,
         gstNumber: gstNumber,
         placeOfSupply: placeOfSupply,
-        clientPoNumber: clientPoNumber,
+        organization: selectedOrgId || null,
         items: validItems.map(ci => ({
           product: ci.product._id,
           quantity: ci.qty,
           unitPrice: ci.price,
-          subtotal: ci.price * ci.qty,
-          hsn: ci.hsn || '',
-          total: ci.total
+          discount: ci.discountRate || 0,
+          taxRate: ci.gstRate || 0,
+          subtotal: ci.price * ci.qty
         })),
         subtotal,
-        totalTax: totalGst,
         totalDiscount: Number(discount),
-        shipping: Number(shipping),
+        totalTax: totalGst,
         grandTotal,
-        paidAmount: actualPaid,
-        paymentStatus: mode === 'draft' ? 'Draft' : payStatus,
-        paymentMethod: paymentMethod,
-        orderStatus: mode === 'draft' ? 'Draft' : orderStatus,
-        notes,
-        terms: termsList.map(t => t.text.trim()).filter(Boolean),
-        customFields: [
-          ...customFields.map(f => ({ label: f.label, value: f.value })),
-          ...additionalFieldsList.map(f => ({ label: f.label, value: f.value })),
-          ...(showShippingDetails && !shippedToSame ? [
-            { label: 'Shipped To Name', value: shippedToName },
-            { label: 'Shipped To Address', value: shippedToAddress },
-            { label: 'Shipped To City', value: shippedToCity },
-            { label: 'Shipped To State', value: shippedToState },
-            { label: 'Shipped To Pincode', value: shippedToPostal },
-            { label: 'Shipped To Country', value: shippedToCountry }
-          ] : [])
-        ],
-        attachments: attachmentsList.map(file => file.name)
+        status: status,
+        notes: notes
       };
 
       let res;
       if (editId) {
-        // Update existing invoice
-        const updateRes = await fetch(`${API_BASE_URL}/sales/invoices/${editId}`, {
+        // Update existing Delivery Challan
+        const updateRes = await fetch(`${API_BASE_URL}/delivery-challans/${editId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            customerName: payload.customerName,
-            customerEmail: payload.customerEmail,
-            customerPhone: payload.customerPhone,
-            gstNumber: payload.gstNumber,
-            placeOfSupply: payload.placeOfSupply,
-            clientPoNumber: payload.clientPoNumber,
-            invoiceDate: payload.invoiceDate,
-            dueDate: payload.dueDate,
-            subtotal: payload.subtotal,
-            taxAmount: payload.totalTax,
-            discountAmount: payload.totalDiscount,
-            totalAmount: payload.grandTotal,
-            notes: payload.notes,
-            terms: payload.terms,
-            customFields: payload.customFields,
-            organization: selectedOrgId || null
-          })
+          body: JSON.stringify(payload)
         });
         res = await updateRes.json();
         if (res.success) {
-          alert(`${invoiceType} updated successfully!`);
-          navigate(`/invoice-details/${editId}`);
+          alert(`Delivery Challan updated successfully!`);
+          navigate('/delivery-challans');
         } else {
-          alert(res.message || 'Failed to update invoice');
+          alert(res.message || 'Failed to update Delivery Challan');
         }
       } else {
-        res = await createSale(payload);
+        const createRes = await fetch(`${API_BASE_URL}/delivery-challans`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        res = await createRes.json();
         if (res.success) {
-          if (mode === 'new') {
-            alert(`${invoiceType} saved! Starting new invoice.`);
-            navigate(0);
-          } else if (mode === 'draft') {
-            alert('Draft saved successfully!');
-            navigate('/invoices');
-          } else {
-            alert(`${invoiceType} created successfully!`);
-            const createdInvoiceId = res.invoice?._id || res.data?.invoice?._id || res.data?._id;
-            if (createdInvoiceId) {
-              navigate(`/invoice-details/${createdInvoiceId}`);
-            } else {
-              navigate(invoiceType === 'Proforma Invoice' ? '/proforma-invoices' : '/invoices');
-            }
-          }
+          alert(`Delivery Challan created successfully!`);
+          navigate('/delivery-challans');
+        } else {
+          alert(res.message || 'Failed to create Delivery Challan');
         }
       }
     } catch (err) {
-      alert(`Error creating invoice: ${err.message}`);
+      alert(`Error saving Delivery Challan: ${err.message}`);
     } finally {
       setLoading(false);
     }
@@ -1017,7 +954,7 @@ const CreateInvoice = () => {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
         <button 
           type="button"
-          onClick={() => navigate(invoiceType === 'Proforma Invoice' ? '/proforma-invoices' : '/invoices')}
+          onClick={() => navigate('/delivery-challans')}
           style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', border: '1px solid #D1D5DB', backgroundColor: 'white', padding: '0.5rem 1rem', borderRadius: '6px', cursor: 'pointer', fontWeight: 500 }}
         >
           <ArrowLeft size={16} /> Back
@@ -1106,7 +1043,7 @@ const CreateInvoice = () => {
             <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.2fr', gap: '3rem' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center' }}>
-                  <label style={{ width: '120px', fontSize: '0.875rem', fontWeight: 500, color: '#374151', textDecoration: 'underline', textDecorationColor: '#D1D5DB' }}>Invoice No*</label>
+                  <label style={{ width: '120px', fontSize: '0.875rem', fontWeight: 500, color: '#374151', textDecoration: 'underline', textDecorationColor: '#D1D5DB' }}>Challan No*</label>
                   <input 
                     type="text" 
                     value={nextInvoiceNumber}
@@ -1114,22 +1051,11 @@ const CreateInvoice = () => {
                     style={{ flex: 1, border: 'none', borderBottom: '1px dashed #D1D5DB', padding: '0.35rem 0', outline: 'none', fontSize: '0.925rem', color: '#111827', fontWeight: 500 }}
                   />
                 </div>
-
-                <div style={{ display: 'flex', alignItems: 'center' }}>
-                  <label style={{ width: '120px', fontSize: '0.875rem', fontWeight: 500, color: '#374151', textDecoration: 'underline', textDecorationColor: '#D1D5DB' }}>PO Number</label>
-                  <input 
-                    type="text" 
-                    placeholder="Enter PO Number"
-                    value={clientPoNumber}
-                    onChange={(e) => setClientPoNumber(e.target.value)}
-                    style={{ flex: 1, border: 'none', borderBottom: '1px dashed #D1D5DB', padding: '0.35rem 0', outline: 'none', fontSize: '0.925rem', color: '#111827' }}
-                  />
-                </div>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', position: 'relative' }}>
-                  <label style={{ width: '120px', fontSize: '0.875rem', fontWeight: 500, color: '#374151', textDecoration: 'underline', textDecorationColor: '#D1D5DB' }}>Invoice Date*</label>
+                  <label style={{ width: '120px', fontSize: '0.875rem', fontWeight: 500, color: '#374151', textDecoration: 'underline', textDecorationColor: '#D1D5DB' }}>Challan Date*</label>
                   <input 
                     type="date" 
                     value={invoiceDate}
@@ -1137,42 +1063,6 @@ const CreateInvoice = () => {
                     style={{ flex: 1, border: 'none', borderBottom: '1px dashed #D1D5DB', padding: '0.35rem 0', outline: 'none', fontSize: '0.925rem', color: '#111827', backgroundColor: 'transparent' }}
                   />
                 </div>
-
-                {showDueDate && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <label style={{ width: '120px', fontSize: '0.875rem', fontWeight: 500, color: '#374151', textDecoration: 'underline', textDecorationColor: '#D1D5DB' }}>Due Date</label>
-                    <input 
-                      type="date" 
-                      value={dueDate}
-                      onChange={(e) => setDueDate(e.target.value)}
-                      style={{ flex: 1, border: 'none', borderBottom: '1px dashed #D1D5DB', padding: '0.35rem 0', outline: 'none', fontSize: '0.925rem', color: '#111827', backgroundColor: 'transparent' }}
-                    />
-                    <Settings size={16} style={{ color: '#4B5563', cursor: 'pointer' }} onClick={() => setIsDueDateModalOpen(true)} />
-                    <button 
-                      type="button"
-                      title="Remove Due Date"
-                      onClick={() => {
-                        setDueDate('');
-                        setShowDueDate(false);
-                      }}
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        width: '28px',
-                        height: '28px',
-                        borderRadius: '6px',
-                        backgroundColor: '#F3F4F6',
-                        border: '1px solid #E5E7EB',
-                        color: '#4B5563',
-                        cursor: 'pointer',
-                        padding: 0
-                      }}
-                    >
-                      <X size={14} />
-                    </button>
-                  </div>
-                )}
               </div>
             </div>
 
@@ -1184,16 +1074,6 @@ const CreateInvoice = () => {
               >
                 <Plus size={14} /> Add Custom Fields
               </button>
-
-              {!showDueDate && (
-                <button 
-                  type="button" 
-                  onClick={() => setShowDueDate(true)}
-                  style={{ background: 'none', border: 'none', color: '#FF9F43', fontSize: '0.875rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.25rem', cursor: 'pointer' }}
-                >
-                  <Plus size={14} /> Add Due Date
-                </button>
-              )}
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1.25rem' }}>
@@ -2575,45 +2455,7 @@ const CreateInvoice = () => {
                     <span style={{ color: '#111827', fontSize: '1.125rem' }}>₹{grandTotal.toFixed(2)}</span>
                   </div>
 
-                  <div style={{ borderTop: '1px solid #E5E7EB', margin: '0.75rem 0' }}></div>
-
-                  {/* Payment Method Selector */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85rem', marginBottom: '0.5rem' }}>
-                    <span style={{ color: '#4B5563', fontWeight: 500 }}>Payment Method</span>
-                    <select
-                      value={paymentMethod}
-                      onChange={(e) => setPaymentMethod(e.target.value)}
-                      className="term-list-input"
-                      style={{ border: 'none', borderBottom: '1.5px dashed #FF9F43', outline: 'none', fontSize: '0.85rem', color: '#111827', fontWeight: 600, backgroundColor: 'transparent', textAlign: 'right', cursor: 'pointer', width: '120px' }}
-                    >
-                      <option value="Cash">Cash</option>
-                      <option value="Card">Card</option>
-                      <option value="UPI">UPI</option>
-                      <option value="Bank Transfer">Bank Transfer</option>
-                      <option value="Other">Other</option>
-                    </select>
-                  </div>
-
-                  {/* Paid Amount Input */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85rem', marginBottom: '0.5rem' }}>
-                    <span style={{ color: '#4B5563', fontWeight: 500 }}>Amount Paid (₹)</span>
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      placeholder={grandTotal.toFixed(2)}
-                      value={customPaidAmount}
-                      onChange={(e) => setCustomPaidAmount(e.target.value)}
-                      className="term-list-input"
-                      style={{ width: '140px', border: 'none', borderBottom: '1.5px dashed #FF9F43', outline: 'none', fontSize: '0.85rem', color: '#10B981', fontWeight: 600, backgroundColor: 'transparent', textAlign: 'right' }}
-                    />
-                  </div>
-
-                  {/* Balance / Due Amount Display */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85rem' }}>
-                    <span style={{ color: '#4B5563', fontWeight: 500 }}>Balance Due</span>
-                    <span style={{ color: dueAmt > 0 ? '#EF4444' : '#111827', fontWeight: 700 }}>₹{dueAmt.toFixed(2)}</span>
-                  </div>
+                  {/* Remainder deleted ponytail: removed payment method, amount paid, and balance due since this is a delivery challan */}
                 </div>
               </div>
 
@@ -4557,7 +4399,7 @@ const CreateInvoice = () => {
                 <button
                   type="button"
                   onClick={() => {
-                    saveColumnSettings('invoice', tempColumns)
+                    saveColumnSettings('delivery-challan', tempColumns)
                       .then(settings => {
                         setColumns(settings.columns);
                         setIsColumnsModalOpen(false);
@@ -4590,4 +4432,4 @@ const CreateInvoice = () => {
   );
 };
 
-export default CreateInvoice;
+export default CreateDeliveryChallan;

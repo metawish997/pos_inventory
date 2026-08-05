@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../components/layout/DashboardLayout';
-import { Settings, Globe, Smartphone, Monitor, DollarSign, List, ChevronDown, ChevronUp, Edit2, Upload, X, RotateCw, Edit3 } from 'lucide-react';
+import { Settings, Globe, Smartphone, Monitor, DollarSign, List, ChevronDown, ChevronUp, Edit2, Upload, X, RotateCw, Edit3, Plus, Trash2 } from 'lucide-react';
 import styles from './POSSettings.module.css';
 import { API_BASE_URL } from '../api/endpoints';
 import { State, City } from 'country-state-city';
@@ -67,6 +67,8 @@ const POSSettings = () => {
   const [storePan, setStorePan] = useState('AAQCM8058H');
   const [orgLogo, setOrgLogo] = useState('');
   const [reportBasis, setReportBasis] = useState('Accrual');
+  const [organizations, setOrganizations] = useState([]);
+  const [editingOrgId, setEditingOrgId] = useState(null);
 
   // Website Settings States
   const [systemName, setSystemName] = useState('Eronix Retail');
@@ -181,31 +183,84 @@ const POSSettings = () => {
     }
 
     // 2. Load live Organization details from backend DB
+    fetchOrganizations();
+  }, []);
+
+  const loadOrgIntoForm = (org) => {
+    if (!org) return;
+    setOrgName(org.orgName || '');
+    setOrgLocation(org.orgLocation || '');
+    setOrgAddress1(org.orgAddress1 || '');
+    setOrgAddress2(org.orgAddress2 || '');
+    setOrgCity(org.orgCity || '');
+    setOrgPincode(org.orgPincode || '');
+    setOrgState(org.orgState || '');
+    setOrgPhone(org.orgPhone || '');
+    setOrgWebsite(org.orgWebsite || '');
+    setOrgGst(org.orgGst || '');
+    setStorePan(org.storePan || '');
+    setOrgLogo(org.orgLogo || '');
+    setReportBasis(org.reportBasis || 'Accrual');
+    setFinancialYear(org.financialYear || 'April - March');
+    setEditingOrgId(org._id);
+  };
+
+  const clearOrgForm = () => {
+    setOrgName('');
+    setOrgLocation('');
+    setOrgAddress1('');
+    setOrgAddress2('');
+    setOrgCity('');
+    setOrgPincode('');
+    setOrgState('');
+    setOrgPhone('');
+    setOrgWebsite('');
+    setOrgGst('');
+    setStorePan('');
+    setOrgLogo('');
+    setReportBasis('Accrual');
+    setFinancialYear('April - March');
+    setEditingOrgId(null);
+  };
+
+  const fetchOrganizations = () => {
     fetch(`${API_BASE_URL}/company-settings`)
       .then(res => {
         if (!res.ok) throw new Error('Failed to fetch from DB');
         return res.json();
       })
       .then(parsed => {
-        if (parsed) {
-          if (parsed.orgName) setOrgName(parsed.orgName);
-          if (parsed.orgLocation) setOrgLocation(parsed.orgLocation);
-          if (parsed.orgAddress1) setOrgAddress1(parsed.orgAddress1);
-          if (parsed.orgAddress2) setOrgAddress2(parsed.orgAddress2);
-          if (parsed.orgCity) setOrgCity(parsed.orgCity);
-          if (parsed.orgPincode) setOrgPincode(parsed.orgPincode);
-          if (parsed.orgState) setOrgState(parsed.orgState);
-          if (parsed.orgPhone) setOrgPhone(parsed.orgPhone);
-          if (parsed.orgWebsite) setOrgWebsite(parsed.orgWebsite);
-          if (parsed.orgGst) setOrgGst(parsed.orgGst);
-          if (parsed.storePan) setStorePan(parsed.storePan);
-          if (parsed.orgLogo) setOrgLogo(parsed.orgLogo);
-          if (parsed.reportBasis) setReportBasis(parsed.reportBasis);
-          if (parsed.financialYear) setFinancialYear(parsed.financialYear);
+        if (Array.isArray(parsed)) {
+          setOrganizations(parsed);
+          if (parsed.length > 0 && !editingOrgId) {
+            loadOrgIntoForm(parsed[0]);
+          }
+        } else if (parsed) {
+          setOrganizations([parsed]);
+          loadOrgIntoForm(parsed);
         }
       })
       .catch(err => console.error('Failed to load live settings from database:', err));
-  }, []);
+  };
+
+  const handleDeleteOrg = (orgId) => {
+    if (!window.confirm("Are you sure you want to delete this organization?")) return;
+    fetch(`${API_BASE_URL}/company-settings/${orgId}`, {
+      method: 'DELETE'
+    })
+    .then(res => {
+      if (!res.ok) throw new Error("Delete failed");
+      alert("Organization deleted successfully!");
+      if (editingOrgId === orgId) {
+        clearOrgForm();
+      }
+      fetchOrganizations();
+    })
+    .catch(err => {
+      console.error(err);
+      alert("Failed to delete organization");
+    });
+  };
 
   const handleMethodToggle = (method) => {
     if (paymentMethods.includes(method)) {
@@ -221,9 +276,11 @@ const POSSettings = () => {
     };
 
     if (sectionName === 'General Settings') {
+      const url = editingOrgId ? `${API_BASE_URL}/company-settings/${editingOrgId}` : `${API_BASE_URL}/company-settings`;
+      const method = editingOrgId ? 'PUT' : 'POST';
       // Save Org settings to backend DB first
-      fetch(`${API_BASE_URL}/company-settings`, {
-        method: 'PUT',
+      fetch(url, {
+        method: method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(orgPayload)
       })
@@ -231,7 +288,11 @@ const POSSettings = () => {
         if (!res.ok) throw new Error('API save failed');
         return res.json();
       })
-      .then(() => {
+      .then((savedOrg) => {
+        if (!editingOrgId && savedOrg?._id) {
+          setEditingOrgId(savedOrg._id);
+        }
+        fetchOrganizations();
         // Also save pos_settings to localStorage
         const settings = {
           printer, paymentMethods, enableSound,
@@ -243,7 +304,7 @@ const POSSettings = () => {
           ...orgPayload
         };
         localStorage.setItem('pos_settings', JSON.stringify(settings));
-        alert('General Settings saved successfully to database!');
+        alert('Organization settings saved successfully to database!');
       })
       .catch(err => {
         console.error(err);
@@ -271,294 +332,354 @@ const POSSettings = () => {
         return (
           <div className={styles.card}>
             <div className={styles.cardHeader}>Organization Profile</div>
-            <div className={styles.cardBody} style={{ display: 'flex', gap: '3rem', alignItems: 'flex-start' }}>
+            <div className={styles.cardBody} style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
               
-              {/* Left Side: Form Fields */}
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                
-                {/* Grid for Name, Location, GSTIN, PAN */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem 1.5rem' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                    <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#4B5563' }}>Organization Name</span>
-                    <input 
-                      type="text" 
-                      value={orgName} 
-                      onChange={(e) => setOrgName(e.target.value)} 
-                      style={{ backgroundColor: '#FCFDFD', border: '1px solid #D1D5DB', borderRadius: '6px', padding: '0.6rem 0.85rem', fontSize: '0.875rem', color: '#1F2937', outline: 'none' }} 
-                    />
-                  </div>
-
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                    <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#4B5563' }}>Organization Location</span>
-                    <input 
-                      type="text" 
-                      value={orgLocation} 
-                      onChange={(e) => setOrgLocation(e.target.value)} 
-                      style={{ backgroundColor: '#FCFDFD', border: '1px solid #D1D5DB', borderRadius: '6px', padding: '0.6rem 0.85rem', fontSize: '0.875rem', color: '#1F2937', outline: 'none' }} 
-                    />
-                  </div>
-
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                    <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#4B5563' }}>GSTIN (GST No)</span>
-                    <input 
-                      type="text" 
-                      value={orgGst} 
-                      onChange={(e) => setOrgGst(e.target.value)} 
-                      style={{ backgroundColor: '#FCFDFD', border: '1px solid #D1D5DB', borderRadius: '6px', padding: '0.6rem 0.85rem', fontSize: '0.875rem', color: '#1F2937', outline: 'none' }}
-                    />
-                  </div>
-
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                    <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#4B5563' }}>PAN Number</span>
-                    <input 
-                      type="text" 
-                      value={storePan} 
-                      onChange={(e) => setStorePan(e.target.value)} 
-                      style={{ backgroundColor: '#FCFDFD', border: '1px solid #D1D5DB', borderRadius: '6px', padding: '0.6rem 0.85rem', fontSize: '0.875rem', color: '#1F2937', outline: 'none' }}
-                    />
-                  </div>
-                </div>
-
-                {/* Organization Address Section */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', borderTop: '1px solid #F3F4F6', paddingTop: '1.5rem' }}>
-                  <span style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1B2850', marginBottom: '0.25rem' }}>Organization Address</span>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-                    <div style={{ position: 'relative', width: '100%' }}>
-                      <input 
-                        type="text" 
-                        placeholder="Organization / Biller Name" 
-                        value={orgName} 
-                        onChange={(e) => setOrgName(e.target.value)} 
-                        style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '6px', padding: '0.55rem 2.5rem 0.55rem 0.75rem', fontSize: '0.875rem', color: '#374151', outline: 'none' }} 
-                      />
-                      <Edit2 size={16} style={{ color: '#FF9F43', cursor: 'pointer', position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)' }} />
-                    </div>
-
-                    <input 
-                      type="text" 
-                      placeholder="Address Line 1" 
-                      value={orgAddress1} 
-                      onChange={(e) => setOrgAddress1(e.target.value)} 
-                      style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '6px', padding: '0.55rem 0.75rem', fontSize: '0.875rem', color: '#374151', outline: 'none' }} 
-                    />
-                    <input 
-                      type="text" 
-                      placeholder="Address Line 2" 
-                      value={orgAddress2} 
-                      onChange={(e) => setOrgAddress2(e.target.value)} 
-                      style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '6px', padding: '0.55rem 0.75rem', fontSize: '0.875rem', color: '#374151', outline: 'none' }} 
-                    />
-
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                      {(() => {
-                        const stateObj = State.getStatesOfCountry('IN').find(s => s.name === orgState);
-                        const citiesList = stateObj ? City.getCitiesOfState('IN', stateObj.isoCode) : [];
-                        return citiesList.length > 0 ? (
-                          <select
-                            value={orgCity}
-                            onChange={(e) => setOrgCity(e.target.value)}
-                            style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '6px', padding: '0.55rem 0.75rem', fontSize: '0.875rem', color: '#374151', outline: 'none' }}
-                          >
-                            <option value="">Select City</option>
-                            {citiesList.map((c) => (
-                              <option key={c.name} value={c.name}>{c.name}</option>
-                            ))}
-                          </select>
-                        ) : (
-                          <input 
-                            type="text" 
-                            placeholder="City" 
-                            value={orgCity} 
-                            onChange={(e) => setOrgCity(e.target.value)} 
-                            style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '6px', padding: '0.55rem 0.75rem', fontSize: '0.875rem', color: '#374151', outline: 'none' }} 
-                          />
-                        );
-                      })()}
-                      <input 
-                        type="text" 
-                        placeholder="Pincode" 
-                        value={orgPincode} 
-                        onChange={(e) => setOrgPincode(e.target.value)} 
-                        style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '6px', padding: '0.55rem 0.75rem', fontSize: '0.875rem', color: '#374151', outline: 'none' }} 
-                      />
-                    </div>
-
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                      <select 
-                        value={orgState} 
-                        onChange={(e) => {
-                          setOrgState(e.target.value);
-                          setOrgCity(''); // Reset city on state change
-                        }} 
-                        style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '6px', padding: '0.55rem 0.75rem', fontSize: '0.875rem', color: '#374151', outline: 'none' }}
-                      >
-                        <option value="">Select State</option>
-                        {State.getStatesOfCountry('IN').map(s => (
-                          <option key={s.isoCode} value={s.name}>{s.name}</option>
-                        ))}
-                      </select>
-                      
-                      <input 
-                        type="text" 
-                        placeholder="Phone" 
-                        value={orgPhone} 
-                        onChange={(e) => setOrgPhone(e.target.value)} 
-                        style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '6px', padding: '0.55rem 0.75rem', fontSize: '0.875rem', color: '#374151', outline: 'none' }} 
-                      />
-                    </div>
-
-                    <input 
-                      type="text" 
-                      placeholder="Website URL" 
-                      value={orgWebsite} 
-                      onChange={(e) => setOrgWebsite(e.target.value)} 
-                      style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '6px', padding: '0.55rem 0.75rem', fontSize: '0.875rem', color: '#374151', outline: 'none' }} 
-                    />
-                  </div>
-                </div>
-
-                {/* Action Buttons */}
-                <div style={{ borderTop: '1px solid #F3F4F6', paddingTop: '1.5rem', marginTop: '1rem' }}>
+              {/* Organizations List */}
+              <div style={{ borderBottom: '1px solid #E5E7EB', paddingBottom: '2rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                  <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#1B2850' }}>My Organizations</h3>
                   <button 
-                    onClick={() => handleSave('General Settings')} 
-                    className={styles.saveBtn}
+                    onClick={clearOrgForm}
+                    style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', backgroundColor: '#7367F0', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600 }}
                   >
-                    Save Changes
+                    <Plus size={16} /> Add Organization
                   </button>
                 </div>
-
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
+                  {organizations.map(org => (
+                    <div key={org._id} style={{ border: org._id === editingOrgId ? '2px solid #7367F0' : '1px solid #E5E7EB', borderRadius: '8px', padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#F9FAFB' }}>
+                      <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                        {org.orgLogo ? (
+                          <img src={org.orgLogo} alt="Logo" style={{ width: '40px', height: '40px', objectFit: 'contain', border: '1px solid #E5E7EB', borderRadius: '4px', backgroundColor: 'white' }} />
+                        ) : (
+                          <div style={{ width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#E5E7EB', borderRadius: '4px', color: '#6B7280', fontWeight: 'bold', fontSize: '1rem' }}>
+                            {org.orgName ? org.orgName.charAt(0).toUpperCase() : 'O'}
+                          </div>
+                        )}
+                        <div>
+                          <div style={{ fontWeight: 600, fontSize: '0.9rem', color: '#374151' }}>{org.orgName}</div>
+                          <div style={{ fontSize: '0.75rem', color: '#6B7280' }}>{org.orgCity}, {org.orgState}</div>
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <button 
+                          onClick={() => loadOrgIntoForm(org)}
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#7367F0' }}
+                          title="Edit"
+                        >
+                          <Edit2 size={16} />
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteOrg(org._id)}
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#EA5455' }}
+                          title="Delete"
+                          disabled={organizations.length <= 1}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
 
-              {/* Right Column: Logo Box & Settings info */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', width: '280px', flexShrink: 0 }}>
-                {/* Logo Section */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#4B5563' }}>Organization Logo</span>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem', border: '1px dashed #D1D5DB', borderRadius: '12px', padding: '2rem 1.5rem', backgroundColor: '#F9FAFB', boxSizing: 'border-box', width: '100%' }}>
+              {/* Add/Edit Form */}
+              <div>
+                <h4 style={{ margin: '0 0 1.5rem 0', color: '#1B2850', fontWeight: 600 }}>
+                  {editingOrgId ? `Edit Organization: ${orgName}` : 'Add New Organization'}
+                </h4>
+                
+                <div style={{ display: 'flex', gap: '3rem', alignItems: 'flex-start' }}>
+                  
+                  {/* Left Side: Form Fields */}
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                     
-                    <div style={{ width: '120px', height: '120px', border: '1.5px dashed #D1D5DB', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'white', position: 'relative' }}>
-                      <input 
-                        type="file" 
-                        accept="image/*"
-                        onChange={(e) => {
-                          const file = e.target.files[0];
-                          if (file) {
-                            const reader = new FileReader();
-                            reader.onloadend = () => {
-                              removeImageBackground(reader.result).then(processed => {
-                                setOrgLogo(processed);
-                              });
-                            };
-                            reader.readAsDataURL(file);
-                          }
-                        }}
-                        style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0, cursor: 'pointer' }}
-                      />
-                      {orgLogo ? (
-                        <img src={orgLogo} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '6px' }} />
-                      ) : (
-                        <span style={{ fontSize: '0.75rem', color: '#9CA3AF', fontWeight: 500 }}>Upload Logo</span>
-                      )}
+                    {/* Grid for Name, Location, GSTIN, PAN */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem 1.5rem' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                        <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#4B5563' }}>Organization Name</span>
+                        <input 
+                          type="text" 
+                          value={orgName} 
+                          onChange={(e) => setOrgName(e.target.value)} 
+                          style={{ backgroundColor: '#FCFDFD', border: '1px solid #D1D5DB', borderRadius: '6px', padding: '0.6rem 0.85rem', fontSize: '0.875rem', color: '#1F2937', outline: 'none' }} 
+                        />
+                      </div>
+
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                        <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#4B5563' }}>Organization Location</span>
+                        <input 
+                          type="text" 
+                          value={orgLocation} 
+                          onChange={(e) => setOrgLocation(e.target.value)} 
+                          style={{ backgroundColor: '#FCFDFD', border: '1px solid #D1D5DB', borderRadius: '6px', padding: '0.6rem 0.85rem', fontSize: '0.875rem', color: '#1F2937', outline: 'none' }} 
+                        />
+                      </div>
+
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                        <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#4B5563' }}>GSTIN (GST No)</span>
+                        <input 
+                          type="text" 
+                          value={orgGst} 
+                          onChange={(e) => setOrgGst(e.target.value)} 
+                          style={{ backgroundColor: '#FCFDFD', border: '1px solid #D1D5DB', borderRadius: '6px', padding: '0.6rem 0.85rem', fontSize: '0.875rem', color: '#1F2937', outline: 'none' }}
+                        />
+                      </div>
+
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                        <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#4B5563' }}>PAN Number</span>
+                        <input 
+                          type="text" 
+                          value={storePan} 
+                          onChange={(e) => setStorePan(e.target.value)} 
+                          style={{ backgroundColor: '#FCFDFD', border: '1px solid #D1D5DB', borderRadius: '6px', padding: '0.6rem 0.85rem', fontSize: '0.875rem', color: '#1F2937', outline: 'none' }}
+                        />
+                      </div>
                     </div>
 
-                    {orgLogo && (
+                    {/* Organization Address Section */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', borderTop: '1px solid #F3F4F6', paddingTop: '1.5rem' }}>
+                      <span style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1B2850', marginBottom: '0.25rem' }}>Organization Address</span>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                        <div style={{ position: 'relative', width: '100%' }}>
+                          <input 
+                            type="text" 
+                            placeholder="Organization / Biller Name" 
+                            value={orgName} 
+                            onChange={(e) => setOrgName(e.target.value)} 
+                            style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '6px', padding: '0.55rem 2.5rem 0.55rem 0.75rem', fontSize: '0.875rem', color: '#374151', outline: 'none' }} 
+                          />
+                          <Edit2 size={16} style={{ color: '#FF9F43', cursor: 'pointer', position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)' }} />
+                        </div>
+
+                        <input 
+                          type="text" 
+                          placeholder="Address Line 1" 
+                          value={orgAddress1} 
+                          onChange={(e) => setOrgAddress1(e.target.value)} 
+                          style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '6px', padding: '0.55rem 0.75rem', fontSize: '0.875rem', color: '#374151', outline: 'none' }} 
+                        />
+                        <input 
+                          type="text" 
+                          placeholder="Address Line 2" 
+                          value={orgAddress2} 
+                          onChange={(e) => setOrgAddress2(e.target.value)} 
+                          style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '6px', padding: '0.55rem 0.75rem', fontSize: '0.875rem', color: '#374151', outline: 'none' }} 
+                        />
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                          {(() => {
+                            const stateObj = State.getStatesOfCountry('IN').find(s => s.name === orgState);
+                            const citiesList = stateObj ? City.getCitiesOfState('IN', stateObj.isoCode) : [];
+                            return citiesList.length > 0 ? (
+                              <select
+                                value={orgCity}
+                                onChange={(e) => setOrgCity(e.target.value)}
+                                style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '6px', padding: '0.55rem 0.75rem', fontSize: '0.875rem', color: '#374151', outline: 'none' }}
+                              >
+                                <option value="">Select City</option>
+                                {citiesList.map((c) => (
+                                  <option key={c.name} value={c.name}>{c.name}</option>
+                                ))}
+                              </select>
+                            ) : (
+                              <input 
+                                type="text" 
+                                placeholder="City" 
+                                value={orgCity} 
+                                onChange={(e) => setOrgCity(e.target.value)} 
+                                style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '6px', padding: '0.55rem 0.75rem', fontSize: '0.875rem', color: '#374151', outline: 'none' }} 
+                              />
+                            );
+                          })()}
+                          <input 
+                            type="text" 
+                            placeholder="Pincode" 
+                            value={orgPincode} 
+                            onChange={(e) => setOrgPincode(e.target.value)} 
+                            style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '6px', padding: '0.55rem 0.75rem', fontSize: '0.875rem', color: '#374151', outline: 'none' }} 
+                          />
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                          <select 
+                            value={orgState} 
+                            onChange={(e) => {
+                              setOrgState(e.target.value);
+                              setOrgCity(''); // Reset city on state change
+                            }} 
+                            style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '6px', padding: '0.55rem 0.75rem', fontSize: '0.875rem', color: '#374151', outline: 'none' }}
+                          >
+                            <option value="">Select State</option>
+                            {State.getStatesOfCountry('IN').map(s => (
+                              <option key={s.isoCode} value={s.name}>{s.name}</option>
+                            ))}
+                          </select>
+                          
+                          <input 
+                            type="text" 
+                            placeholder="Phone" 
+                            value={orgPhone} 
+                            onChange={(e) => setOrgPhone(e.target.value)} 
+                            style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '6px', padding: '0.55rem 0.75rem', fontSize: '0.875rem', color: '#374151', outline: 'none' }} 
+                          />
+                        </div>
+
+                        <input 
+                          type="text" 
+                          placeholder="Website URL" 
+                          value={orgWebsite} 
+                          onChange={(e) => setOrgWebsite(e.target.value)} 
+                          style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '6px', padding: '0.55rem 0.75rem', fontSize: '0.875rem', color: '#374151', outline: 'none' }} 
+                        />
+                      </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div style={{ borderTop: '1px solid #F3F4F6', paddingTop: '1.5rem', marginTop: '1rem' }}>
                       <button 
-                        type="button" 
-                        onClick={() => setOrgLogo(null)} 
-                        style={{ border: 'none', background: 'none', color: '#EF4444', fontSize: '0.75rem', cursor: 'pointer', fontWeight: 600, marginTop: '0.5rem' }}
+                        onClick={() => handleSave('General Settings')} 
+                        className={styles.saveBtn}
                       >
-                        Remove Logo
+                        {editingOrgId ? 'Save Changes' : 'Create Organization'}
                       </button>
-                    )}
-                    <span style={{ fontSize: '0.7rem', color: '#9CA3AF', textAlign: 'center', marginTop: '0.5rem', lineHeight: '1.4' }}>
-                      Preferred format: PNG or JPEG. Transparent background recommended.
-                    </span>
-                  </div>
-                </div>
-
-                {/* Fiscal Year & Report Basis */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', borderTop: '1px solid #F3F4F6', paddingTop: '1.5rem' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                    <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#4B5563' }}>Fiscal Year</span>
-                    <select 
-                      value={financialYear} 
-                      onChange={(e) => setFinancialYear(e.target.value)} 
-                      style={{ backgroundColor: 'white', border: '1px solid #D1D5DB', borderRadius: '6px', padding: '0.6rem 0.85rem', fontSize: '0.875rem', color: '#1F2937', outline: 'none', width: '100%' }}
-                    >
-                      <option value="April - March">April - March</option>
-                      <option value="January - December">January - December</option>
-                    </select>
-                  </div>
-
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                    <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#4B5563' }}>Report Basis</span>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', color: '#374151', marginTop: '0.2rem' }}>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.875rem', cursor: 'pointer' }}>
-                        <input 
-                          type="radio" 
-                          name="reportBasis" 
-                          value="Accrual" 
-                          checked={reportBasis === 'Accrual'} 
-                          onChange={() => setReportBasis('Accrual')} 
-                          style={{ display: 'none' }} 
-                        />
-                        <span style={{
-                          width: '18px',
-                          height: '18px',
-                          borderRadius: '50%',
-                          border: reportBasis === 'Accrual' ? '2px solid #FF9F43' : '2px solid #D1D5DB',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          backgroundColor: 'white',
-                          flexShrink: 0
-                        }}>
-                          {reportBasis === 'Accrual' && (
-                            <span style={{
-                              width: '10px',
-                              height: '10px',
-                              borderRadius: '50%',
-                              backgroundColor: '#FF9F43'
-                            }} />
-                          )}
-                        </span>
-                        <span><strong>Accrual</strong> • You owe tax as of invoice date</span>
-                      </label>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.875rem', cursor: 'pointer' }}>
-                        <input 
-                          type="radio" 
-                          name="reportBasis" 
-                          value="Cash" 
-                          checked={reportBasis === 'Cash'} 
-                          onChange={() => setReportBasis('Cash')} 
-                          style={{ display: 'none' }} 
-                        />
-                        <span style={{
-                          width: '18px',
-                          height: '18px',
-                          borderRadius: '50%',
-                          border: reportBasis === 'Cash' ? '2px solid #FF9F43' : '2px solid #D1D5DB',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          backgroundColor: 'white',
-                          flexShrink: 0
-                        }}>
-                          {reportBasis === 'Cash' && (
-                            <span style={{
-                              width: '10px',
-                              height: '10px',
-                              borderRadius: '50%',
-                              backgroundColor: '#FF9F43'
-                            }} />
-                          )}
-                        </span>
-                        <span><strong>Cash</strong> • You owe tax upon payment receipt</span>
-                      </label>
                     </div>
-                  </div>
-                </div>
 
+                  </div>
+
+                  {/* Right Column: Logo Box & Settings info */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', width: '280px', flexShrink: 0 }}>
+                    {/* Logo Section */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'center' }}>
+                      <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#4B5563' }}>Organization Logo</span>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem', border: '1px dashed #D1D5DB', borderRadius: '12px', padding: '2rem 1.5rem', backgroundColor: '#F9FAFB', boxSizing: 'border-box', width: '100%' }}>
+                        
+                        <div style={{ width: '120px', height: '120px', border: '1.5px dashed #D1D5DB', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'white', position: 'relative' }}>
+                          <input 
+                            type="file" 
+                            accept="image/*"
+                            onChange={(e) => {
+                              const file = e.target.files[0];
+                              if (file) {
+                                const reader = new FileReader();
+                                reader.onloadend = () => {
+                                  removeImageBackground(reader.result).then(processed => {
+                                    setOrgLogo(processed);
+                                  });
+                                };
+                                reader.readAsDataURL(file);
+                              }
+                            }}
+                            style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0, cursor: 'pointer' }}
+                          />
+                          {orgLogo ? (
+                            <img src={orgLogo} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '6px' }} />
+                          ) : (
+                            <span style={{ fontSize: '0.75rem', color: '#9CA3AF', fontWeight: 500 }}>Upload Logo</span>
+                          )}
+                        </div>
+
+                        {orgLogo && (
+                          <button 
+                            type="button" 
+                            onClick={() => setOrgLogo(null)} 
+                            style={{ border: 'none', background: 'none', color: '#EF4444', fontSize: '0.75rem', cursor: 'pointer', fontWeight: 600, marginTop: '0.5rem' }}
+                          >
+                            Remove Logo
+                          </button>
+                        )}
+                        <span style={{ fontSize: '0.7rem', color: '#9CA3AF', textAlign: 'center', marginTop: '0.5rem', lineHeight: '1.4' }}>
+                          Preferred format: PNG or JPEG. Transparent background recommended.
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Fiscal Year & Report Basis */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', borderTop: '1px solid #F3F4F6', paddingTop: '1.5rem' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                        <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#4B5563' }}>Fiscal Year</span>
+                        <select 
+                          value={financialYear} 
+                          onChange={(e) => setFinancialYear(e.target.value)} 
+                          style={{ backgroundColor: 'white', border: '1px solid #D1D5DB', borderRadius: '6px', padding: '0.6rem 0.85rem', fontSize: '0.875rem', color: '#1F2937', outline: 'none', width: '100%' }}
+                        >
+                          <option value="April - March">April - March</option>
+                          <option value="January - December">January - December</option>
+                        </select>
+                      </div>
+
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                        <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#4B5563' }}>Report Basis</span>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', color: '#374151', marginTop: '0.2rem' }}>
+                          <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.875rem', cursor: 'pointer' }}>
+                            <input 
+                              type="radio" 
+                              name="reportBasis" 
+                              value="Accrual" 
+                              checked={reportBasis === 'Accrual'} 
+                              onChange={() => setReportBasis('Accrual')} 
+                              style={{ display: 'none' }} 
+                            />
+                            <span style={{
+                              width: '18px',
+                              height: '18px',
+                              borderRadius: '50%',
+                              border: reportBasis === 'Accrual' ? '2px solid #FF9F43' : '2px solid #D1D5DB',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              backgroundColor: 'white',
+                              flexShrink: 0
+                            }}>
+                              {reportBasis === 'Accrual' && (
+                                <span style={{
+                                  width: '10px',
+                                  height: '10px',
+                                  borderRadius: '50%',
+                                  backgroundColor: '#FF9F43'
+                                }} />
+                              )}
+                            </span>
+                            <span><strong>Accrual</strong> • You owe tax as of invoice date</span>
+                          </label>
+                          <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.875rem', cursor: 'pointer' }}>
+                            <input 
+                              type="radio" 
+                              name="reportBasis" 
+                              value="Cash" 
+                              checked={reportBasis === 'Cash'} 
+                              onChange={() => setReportBasis('Cash')} 
+                              style={{ display: 'none' }} 
+                            />
+                            <span style={{
+                              width: '18px',
+                              height: '18px',
+                              borderRadius: '50%',
+                              border: reportBasis === 'Cash' ? '2px solid #FF9F43' : '2px solid #D1D5DB',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              backgroundColor: 'white',
+                              flexShrink: 0
+                            }}>
+                              {reportBasis === 'Cash' && (
+                                <span style={{
+                                  width: '10px',
+                                  height: '10px',
+                                  borderRadius: '50%',
+                                  backgroundColor: '#FF9F43'
+                                }} />
+                              )}
+                            </span>
+                            <span><strong>Cash</strong> • You owe tax upon payment receipt</span>
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
+
+                </div>
               </div>
 
             </div>

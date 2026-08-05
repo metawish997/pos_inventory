@@ -99,7 +99,10 @@ const InvoiceDetails = () => {
     fetch(`${API_BASE_URL}/company-settings`)
       .then(res => res.json())
       .then(data => {
-        if (data) setCompanySettings(data);
+        if (data) {
+          const defaultOrg = Array.isArray(data) ? data[0] : data;
+          setCompanySettings(defaultOrg);
+        }
       })
       .catch(e => console.error("Error loading settings", e));
   }, [id]);
@@ -146,18 +149,19 @@ const InvoiceDetails = () => {
 
   const items = invoice.sale?.items || [];
   
-  // Load org data from the user-configured company-settings database record
-  const storeName = companySettings?.orgName || 'Dreams POS';
-  const storeEmail = companySettings?.orgEmail || 'admin@dreams.com';
-  const storePhone = companySettings?.orgPhone || '8817440858';
+  // Load org data from the user-configured company-settings database record or invoice organization
+  const activeOrg = invoice?.organization || companySettings;
+  const storeName = activeOrg?.orgName || 'Dreams POS';
+  const storeEmail = activeOrg?.orgEmail || 'admin@dreams.com';
+  const storePhone = activeOrg?.orgPhone || '8817440858';
   
   // Format Address lines nicely 
   const addrParts = [
-    companySettings?.orgAddress1,
-    companySettings?.orgAddress2,
-    companySettings?.orgCity,
-    companySettings?.orgState,
-    companySettings?.orgPincode
+    activeOrg?.orgAddress1,
+    activeOrg?.orgAddress2,
+    activeOrg?.orgCity,
+    activeOrg?.orgState,
+    activeOrg?.orgPincode
   ].filter(Boolean);
   
   const storeAddress = addrParts.length > 0 
@@ -192,8 +196,8 @@ const InvoiceDetails = () => {
       <Card id="printable-invoice-card" style={{padding: '3rem', marginBottom: '1.5rem'}}>
         <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem'}}>
           <div>
-            {companySettings?.orgLogo && (
-              <img src={companySettings.orgLogo} alt="Logo" style={{maxHeight: '110px', maxWidth: '300px', objectFit: 'contain'}} />
+            {activeOrg?.orgLogo && (
+              <img src={activeOrg.orgLogo} alt="Logo" style={{maxHeight: '110px', maxWidth: '300px', objectFit: 'contain'}} />
             )}
           </div>
           <div style={{textAlign: 'right', maxWidth: '500px'}}>
@@ -206,8 +210,8 @@ const InvoiceDetails = () => {
             <div style={{fontSize: '0.7rem', color: '#4B5563', display: 'flex', gap: '1rem', flexWrap: 'nowrap', justifyContent: 'flex-end'}}>
 
               {storeEmail && <div style={{whiteSpace: 'nowrap'}}><strong>Email:</strong> {storeEmail}</div>}
-              {companySettings?.orgGst && <div style={{whiteSpace: 'nowrap'}}><strong>GSTIN:</strong> {companySettings.orgGst}</div>}
-              {companySettings?.orgState && <div style={{whiteSpace: 'nowrap'}}><strong>State:</strong> {companySettings.orgState}</div>}
+              {activeOrg?.orgGst && <div style={{whiteSpace: 'nowrap'}}><strong>GSTIN:</strong> {activeOrg.orgGst}</div>}
+              {activeOrg?.orgState && <div style={{whiteSpace: 'nowrap'}}><strong>State:</strong> {activeOrg.orgState}</div>}
             </div>
           </div>
         </div>

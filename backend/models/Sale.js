@@ -55,6 +55,7 @@ const saleSchema = new mongoose.Schema({
         value: { type: String, required: true }
     }],
     attachments: [{ type: String }],
+    organization: { type: mongoose.Schema.Types.ObjectId, ref: 'CompanySetting', default: null },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null }
 }, { timestamps: true });
 

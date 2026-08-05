@@ -33,6 +33,7 @@ import DeliveryChallanList from './pages/DeliveryChallanList';
 import PaymentReceipt from './pages/PaymentReceipt';
 import CreateInvoice from './pages/CreateInvoice';
 import CreateQuotation from './pages/CreateQuotation';
+import CreateDeliveryChallan from './pages/CreateDeliveryChallan';
 import ModuleIndex from './pages/ModuleIndex';
 
 import PurchaseDashboard from './modules/purchase/pages/Dashboard/PurchaseDashboard';
@@ -150,6 +151,7 @@ function App() {
           <Route path="/invoice-details/:id" element={<InvoiceDetails />} />
           <Route path="/proforma-invoices" element={<ProformaInvoiceList />} />
           <Route path="/delivery-challans" element={<DeliveryChallanList />} />
+          <Route path="/create-delivery-challan" element={<CreateDeliveryChallan />} />
           <Route path="/payment-receipt/:invoiceId/:paymentId" element={<PaymentReceipt />} />
           <Route path="/sales-return" element={<SalesReturnList />} />
           <Route path="/quotation" element={<QuotationList />} />

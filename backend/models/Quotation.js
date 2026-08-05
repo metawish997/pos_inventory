@@ -30,7 +30,8 @@ const quotationSchema = new mongoose.Schema({
         enum: ['Sent', 'Accepted', 'Declined', 'Draft', 'Converted'],
         default: 'Sent'
     },
-    notes: { type: String, default: '' }
+    notes: { type: String, default: '' },
+    organization: { type: mongoose.Schema.Types.ObjectId, ref: 'CompanySetting', default: null }
 }, { timestamps: true });
 
 quotationSchema.pre('save', async function () {
