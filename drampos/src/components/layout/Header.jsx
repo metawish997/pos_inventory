@@ -465,13 +465,13 @@ const Header = ({ isCollapsed, toggleCollapse, toggleMobile }) => {
           
           <div className={styles.profile} ref={userDropdownRef}>
             <div className={styles.avatar} onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)} style={{ cursor: 'pointer' }}>
-              <img src={orgLogo ? `${API_BASE_URL.replace('/api', '')}/${orgLogo.replace(/^\//, '')}` : "https://i.pravatar.cc/150?u=a042581f4e29026704d"} alt="User" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+              <img src={orgLogo ? `${API_BASE_URL.replace('/api', '')}/${orgLogo.replace(/^\//, '')}` : "/logo.png"} onError={(e) => { e.target.src = "/logo.png"; }} alt="User" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
             </div>
             {isUserDropdownOpen && (
               <div className={styles.userDropdown}>
                 <div className={styles.userInfo}>
                   <div className={styles.userAvatar}>
-                    <img src={orgLogo ? `${API_BASE_URL.replace('/api', '')}/${orgLogo.replace(/^\//, '')}` : "https://i.pravatar.cc/150?u=a042581f4e29026704d"} alt="User" style={{ objectFit: 'cover' }} />
+                    <img src={orgLogo ? `${API_BASE_URL.replace('/api', '')}/${orgLogo.replace(/^\//, '')}` : "/logo.png"} onError={(e) => { e.target.src = "/logo.png"; }} alt="User" style={{ objectFit: 'cover' }} />
                   </div>
                   <div className={styles.userDetails}>
                     <div className={styles.userName}>
