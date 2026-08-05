@@ -123,6 +123,45 @@ const QuotationDetails = () => {
 
   return (
     <DashboardLayout>
+      <style>{`
+        @media print {
+          /* Remove default browser header and footer */
+          @page {
+            margin: 0;
+          }
+          body {
+            margin: 1.2cm;
+            background: white !important;
+          }
+          /* Hide everything */
+          body * {
+            visibility: hidden;
+          }
+          /* Show only the quotation card and its contents */
+          #printable-quotation-card, #printable-quotation-card * {
+            visibility: visible;
+          }
+          /* Align the quotation card at the top-left of the printed page and size properly */
+          #printable-quotation-card {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100% !important;
+            max-width: 100% !important;
+            padding: 1.5rem !important;
+            margin: 0 !important;
+            box-shadow: none !important;
+            border: none !important;
+            background: white !important;
+            box-sizing: border-box !important;
+          }
+          /* Prevent any overflow issues on printed paper */
+          table, tr, td, th, div, img {
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+          }
+        }
+      `}</style>
       <div className={styles.pageHeader}>
         <div>
           <h1 className={styles.title}>Quotation Details</h1>
@@ -263,14 +302,11 @@ const QuotationDetails = () => {
           </div>
         )}
 
-        <div style={{textAlign: 'center', borderTop: '1px solid #E5E7EB', paddingTop: '2rem', paddingBottom: '2rem'}}>
-          <div style={{display: 'inline-block', marginBottom: '1rem'}}>
-            <span style={{fontWeight: 'bold', fontSize: '1.5rem', color: '#1B2850'}}>
-              <span style={{color: '#FF9F43'}}>{storeName}</span>
-            </span>
+        <div style={{borderTop: '1px solid #E5E7EB', paddingTop: '1rem', marginTop: '2.5rem'}}>
+          <div style={{display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: '0.4rem', fontSize: '0.72rem', color: '#6B7280', letterSpacing: '0.02em'}}>
+            <span>all rights reserved eronixtec powerd by</span>
+            <img src="/aviflogo.avif" alt="Metawish Logo" style={{height: '14px', objectFit: 'contain', verticalAlign: 'middle'}} />
           </div>
-          <p style={{fontSize: '0.875rem', color: '#1B2850', fontWeight: 500, marginBottom: '0.5rem'}}>Developed and maintained by Metawish</p>
-          <a href="https://www.metawish.ai" target="_blank" rel="noreferrer" style={{color: '#FF9F43', textDecoration: 'none', fontSize: '0.875rem'}}>www.metawish.ai</a>
         </div>
       </Card>
     </DashboardLayout>

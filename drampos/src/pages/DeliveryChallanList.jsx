@@ -400,6 +400,45 @@ const DeliveryChallanList = () => {
       {/* Details / View Modal */}
       {selectedChallan && (
         <Modal isOpen={!!selectedChallan} onClose={() => setSelectedChallan(null)} title="Delivery Challan Details" maxWidth="800px">
+          <style>{`
+            @media print {
+              /* Remove default browser header and footer */
+              @page {
+                margin: 0;
+              }
+              body {
+                margin: 1.2cm;
+                background: white !important;
+              }
+              /* Hide everything */
+              body * {
+                visibility: hidden;
+              }
+              /* Show only the print area and its contents */
+              #challan-print-area, #challan-print-area * {
+                visibility: visible;
+              }
+              /* Position the print area at top-left */
+              #challan-print-area {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100% !important;
+                max-width: 100% !important;
+                padding: 1.5rem !important;
+                margin: 0 !important;
+                box-shadow: none !important;
+                border: none !important;
+                background: white !important;
+                box-sizing: border-box !important;
+              }
+              /* Prevent any overflow issues on printed paper */
+              table, tr, td, th, div, img {
+                max-width: 100% !important;
+                box-sizing: border-box !important;
+              }
+            }
+          `}</style>
           <div style={{padding: '1.5rem'}} id="challan-print-area">
             <div style={{display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #F3F4F6', paddingBottom: '1rem', marginBottom: '1.5rem'}}>
               <div>
@@ -460,6 +499,11 @@ const DeliveryChallanList = () => {
                 <div style={{borderBottom: '1px solid #D1D5DB', height: '40px'}}></div>
                 <p style={{fontSize: '0.75rem', color: '#6B7280', marginTop: '0.5rem'}}>Authorized Signatory</p>
               </div>
+            </div>
+
+            <div style={{borderTop: '1px solid #E5E7EB', paddingTop: '1rem', marginTop: '2.5rem', display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: '0.4rem', fontSize: '0.72rem', color: '#6B7280', letterSpacing: '0.02em'}}>
+              <span>all rights reserved eronixtec powerd by</span>
+              <img src="/aviflogo.avif" alt="Metawish Logo" style={{height: '14px', objectFit: 'contain', verticalAlign: 'middle'}} />
             </div>
           </div>
 
