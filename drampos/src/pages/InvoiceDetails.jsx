@@ -172,6 +172,14 @@ const InvoiceDetails = () => {
     <DashboardLayout>
       <style>{`
         @media print {
+          /* Remove default browser header and footer */
+          @page {
+            margin: 0;
+          }
+          body {
+            margin: 1.6cm;
+            background: white !important;
+          }
           /* Hide everything */
           body * {
             visibility: hidden;
@@ -411,14 +419,12 @@ const InvoiceDetails = () => {
           </div>
         </div>
 
-        <div style={{textAlign: 'center', borderTop: '1px solid #E5E7EB', paddingTop: '2rem', paddingBottom: '2rem'}}>
-          <div style={{display: 'inline-block', marginBottom: '1rem'}}>
-             <span style={{fontWeight: 'bold', fontSize: '1.5rem', color: '#1B2850'}}>
-                <span style={{color: '#FF9F43'}}>{storeName}</span>
-              </span>
+        <div style={{textAlign: 'center', borderTop: '1px solid #E5E7EB', paddingTop: '1.5rem', marginTop: '2rem'}}>
+          <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', fontSize: '0.75rem', color: '#4B5563', letterSpacing: '0.05em'}}>
+            <span>POWERED BY</span>
+            <img src="/aviflogo.avif" alt="Metawish" style={{height: '18px', objectFit: 'contain', verticalAlign: 'middle'}} />
+            <a href="https://www.metawish.ai" target="_blank" rel="noreferrer" style={{color: '#1B2850', textDecoration: 'none', fontWeight: 700}}>metawish</a>
           </div>
-          <p style={{fontSize: '0.875rem', color: '#1B2850', fontWeight: 500, marginBottom: '0.5rem'}}>Developed and maintained by Metawish</p>
-          <a href="https://www.metawish.ai" target="_blank" rel="noreferrer" style={{color: '#FF9F43', textDecoration: 'none', fontSize: '0.875rem'}}>www.metawish.ai</a>
         </div>
       </Card>
       
