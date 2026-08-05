@@ -139,12 +139,7 @@ const SignIn = () => {
                 {loading ? 'Processing...' : (isLogin ? 'Sign In' : 'Register')}
               </button>
 
-              <div style={{textAlign: 'center', fontSize: '0.875rem', color: '#6B7280', marginTop: '1rem'}}>
-                 {isLogin ? 'New on our platform? ' : 'Already have an account? '} 
-                 <button type="button" onClick={() => { setIsLogin(!isLogin); setError(''); }} style={{color: '#1B2850', fontWeight: 600, textDecoration: 'none', background: 'none', border: 'none', cursor: 'pointer', padding: 0}}>
-                   {isLogin ? 'Create an account' : 'Sign in instead'}
-                 </button>
-              </div>
+
 
               <div style={{textAlign: 'center', fontSize: '0.75rem', color: '#9CA3AF', marginTop: '2rem'}}>
                  Copyright © 2026 EronixPOS. Developed & Maintained by <a href="https://www.metawish.ai" target="_blank" rel="noopener noreferrer" style={{ color: '#FF9F43', fontWeight: 600, textDecoration: 'none' }}>Metawish</a>

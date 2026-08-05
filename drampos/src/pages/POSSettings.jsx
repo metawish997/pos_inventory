@@ -70,6 +70,14 @@ const POSSettings = () => {
   const [organizations, setOrganizations] = useState([]);
   const [editingOrgId, setEditingOrgId] = useState(null);
 
+  // SMTP Settings States
+  const [smtpHost, setSmtpHost] = useState('');
+  const [smtpPort, setSmtpPort] = useState('587');
+  const [smtpSecure, setSmtpSecure] = useState(false);
+  const [smtpUser, setSmtpUser] = useState('');
+  const [smtpPass, setSmtpPass] = useState('');
+  const [smtpFrom, setSmtpFrom] = useState('');
+
   // Website Settings States
   const [systemName, setSystemName] = useState('Eronix Retail');
   const [websiteTitle, setWebsiteTitle] = useState('Eronix POS - Ultimate Inventory & Point of Sale System');
@@ -202,6 +210,12 @@ const POSSettings = () => {
     setOrgLogo(org.orgLogo || '');
     setReportBasis(org.reportBasis || 'Accrual');
     setFinancialYear(org.financialYear || 'April - March');
+    setSmtpHost(org.smtpHost || '');
+    setSmtpPort(org.smtpPort || '587');
+    setSmtpSecure(org.smtpSecure || false);
+    setSmtpUser(org.smtpUser || '');
+    setSmtpPass(org.smtpPass || '');
+    setSmtpFrom(org.smtpFrom || '');
     setEditingOrgId(org._id);
   };
 
@@ -220,6 +234,12 @@ const POSSettings = () => {
     setOrgLogo('');
     setReportBasis('Accrual');
     setFinancialYear('April - March');
+    setSmtpHost('');
+    setSmtpPort('587');
+    setSmtpSecure(false);
+    setSmtpUser('');
+    setSmtpPass('');
+    setSmtpFrom('');
     setEditingOrgId(null);
   };
 
@@ -272,10 +292,11 @@ const POSSettings = () => {
 
   const handleSave = (sectionName) => {
     const orgPayload = {
-      orgName, orgLocation, orgAddress1, orgAddress2, orgCity, orgPincode, orgState, orgPhone, orgWebsite, orgGst, storePan, orgLogo: orgLogo || '', reportBasis, financialYear
+      orgName, orgLocation, orgAddress1, orgAddress2, orgCity, orgPincode, orgState, orgPhone, orgWebsite, orgGst, storePan, orgLogo: orgLogo || '', reportBasis, financialYear,
+      smtpHost, smtpPort, smtpSecure, smtpUser, smtpPass, smtpFrom
     };
 
-    if (sectionName === 'General Settings') {
+    if (sectionName === 'General Settings' || sectionName === 'Email Settings') {
       const url = editingOrgId ? `${API_BASE_URL}/company-settings/${editingOrgId}` : `${API_BASE_URL}/company-settings`;
       const method = editingOrgId ? 'PUT' : 'POST';
       // Save Org settings to backend DB first
@@ -1064,6 +1085,94 @@ const POSSettings = () => {
             </div>
           </div>
         );
+      case 'Email Settings':
+        return (
+          <div className={styles.card}>
+            <div className={styles.cardHeader}>Email (SMTP) Settings</div>
+            <div className={styles.cardBody} style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+              <div>
+                <p style={{ color: '#6B7280', fontSize: '0.85rem', margin: '0 0 1.5rem 0' }}>
+                  Configure your outgoing mail server (SMTP) credentials to enable sending password reset OTP emails.
+                </p>
+                
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem 1.5rem' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                    <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#4B5563' }}>SMTP Host</span>
+                    <input 
+                      type="text" 
+                      placeholder="e.g. smtp.gmail.com"
+                      value={smtpHost} 
+                      onChange={(e) => setSmtpHost(e.target.value)} 
+                      style={{ backgroundColor: '#FCFDFD', border: '1px solid #D1D5DB', borderRadius: '6px', padding: '0.6rem 0.85rem', fontSize: '0.875rem', color: '#1F2937', outline: 'none' }} 
+                    />
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                    <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#4B5563' }}>SMTP Port</span>
+                    <input 
+                      type="text" 
+                      placeholder="e.g. 587 or 465"
+                      value={smtpPort} 
+                      onChange={(e) => setSmtpPort(e.target.value)} 
+                      style={{ backgroundColor: '#FCFDFD', border: '1px solid #D1D5DB', borderRadius: '6px', padding: '0.6rem 0.85rem', fontSize: '0.875rem', color: '#1F2937', outline: 'none' }} 
+                    />
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                    <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#4B5563' }}>SMTP Username / Email</span>
+                    <input 
+                      type="text" 
+                      placeholder="e.g. user@example.com"
+                      value={smtpUser} 
+                      onChange={(e) => setSmtpUser(e.target.value)} 
+                      style={{ backgroundColor: '#FCFDFD', border: '1px solid #D1D5DB', borderRadius: '6px', padding: '0.6rem 0.85rem', fontSize: '0.875rem', color: '#1F2937', outline: 'none' }} 
+                    />
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                    <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#4B5563' }}>SMTP Password</span>
+                    <input 
+                      type="password" 
+                      placeholder="Enter password"
+                      value={smtpPass} 
+                      onChange={(e) => setSmtpPass(e.target.value)} 
+                      style={{ backgroundColor: '#FCFDFD', border: '1px solid #D1D5DB', borderRadius: '6px', padding: '0.6rem 0.85rem', fontSize: '0.875rem', color: '#1F2937', outline: 'none' }} 
+                    />
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                    <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#4B5563' }}>Sender Email (From)</span>
+                    <input 
+                      type="email" 
+                      placeholder="e.g. no-reply@example.com"
+                      value={smtpFrom} 
+                      onChange={(e) => setSmtpFrom(e.target.value)} 
+                      style={{ backgroundColor: '#FCFDFD', border: '1px solid #D1D5DB', borderRadius: '6px', padding: '0.6rem 0.85rem', fontSize: '0.875rem', color: '#1F2937', outline: 'none' }} 
+                    />
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '1.5rem' }}>
+                    <input 
+                      type="checkbox" 
+                      id="smtpSecure"
+                      checked={smtpSecure}
+                      onChange={(e) => setSmtpSecure(e.target.checked)}
+                      style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                    />
+                    <label htmlFor="smtpSecure" style={{ fontSize: '0.875rem', fontWeight: 600, color: '#4B5563', cursor: 'pointer' }}>
+                      Use SSL/TLS (Secure Connection)
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <div className={styles.actions}>
+                <button className={styles.cancelBtn} onClick={() => window.history.back()}>Cancel</button>
+                <button className={styles.saveBtn} onClick={() => handleSave('Email Settings')}>Save Changes</button>
+              </div>
+            </div>
+          </div>
+        );
     }
   };
 
@@ -1090,6 +1199,11 @@ const POSSettings = () => {
           <div className={`${styles.sidebarItem} ${activeSection === 'Signatures' ? styles.active : ''}`} onClick={() => setActiveSection('Signatures')}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
               <Edit3 size={18} /> Signature Settings
+            </div>
+          </div>
+          <div className={`${styles.sidebarItem} ${activeSection === 'Email Settings' ? styles.active : ''}`} onClick={() => setActiveSection('Email Settings')}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <Globe size={18} /> Email (SMTP) Settings
             </div>
           </div>
         </div>

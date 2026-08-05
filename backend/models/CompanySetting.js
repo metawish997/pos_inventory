@@ -15,6 +15,12 @@ const companySettingSchema = new mongoose.Schema({
   orgLogo: { type: String, default: '' },
   reportBasis: { type: String, default: 'Accrual' },
   financialYear: { type: String, default: 'April - March' },
+  smtpHost: { type: String, default: '' },
+  smtpPort: { type: String, default: '587' },
+  smtpSecure: { type: Boolean, default: false },
+  smtpUser: { type: String, default: '' },
+  smtpPass: { type: String, default: '' },
+  smtpFrom: { type: String, default: '' },
 }, { timestamps: true });
 
 module.exports = mongoose.model('CompanySetting', companySettingSchema);

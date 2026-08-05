@@ -20,6 +20,8 @@ const userSchema = new mongoose.Schema(
             enum: ['active', 'inactive', 'suspended'],
             default: 'active'
         },
+        resetPasswordOTP: { type: String },
+        resetPasswordExpires: { type: Date },
     },
     {
         timestamps: true,
