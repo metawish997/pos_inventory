@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import styles from './Header.module.css';
 import { Search, Globe, Maximize, Minimize, Mail, Bell, Settings, User, Box, Package, ShoppingBag, ShoppingCart, FileSpreadsheet, FileCheck, Copy, Users, Shield, UserCheck, Truck, LogOut, FileText, ChevronsLeft, ChevronsRight, Menu } from 'lucide-react';
 import { getStores } from '../../services/inventoryService';
+import { API_BASE_URL } from '../../api/endpoints';
 
 const Header = ({ isCollapsed, toggleCollapse, toggleMobile }) => {
   const navigate = useNavigate();
@@ -14,6 +15,7 @@ const Header = ({ isCollapsed, toggleCollapse, toggleMobile }) => {
   const [isBellOpen, setIsBellOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [stores, setStores] = useState([]);
+  const [orgLogo, setOrgLogo] = useState('');
   
   // DB Notifications State
   const [lowStockAlerts, setLowStockAlerts] = useState([]);
@@ -69,6 +71,16 @@ const Header = ({ isCollapsed, toggleCollapse, toggleMobile }) => {
     getStores().then(res => {
       if (res.success || Array.isArray(res)) setStores(res.data || res);
     }).catch(console.error);
+
+    fetch('/api/company-settings')
+      .then(res => res.json())
+      .then(parsed => {
+        const orgList = Array.isArray(parsed) ? parsed : (parsed ? [parsed] : []);
+        if (orgList.length > 0 && orgList[0].orgLogo) {
+          setOrgLogo(orgList[0].orgLogo);
+        }
+      })
+      .catch(console.error);
 
     fetchNotifications();
 
@@ -453,13 +465,13 @@ const Header = ({ isCollapsed, toggleCollapse, toggleMobile }) => {
           
           <div className={styles.profile} ref={userDropdownRef}>
             <div className={styles.avatar} onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)} style={{ cursor: 'pointer' }}>
-              <img src="https://i.pravatar.cc/150?u=a042581f4e29026704d" alt="User" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+              <img src={orgLogo ? `${API_BASE_URL.replace('/api', '')}/${orgLogo.replace(/^\//, '')}` : "https://i.pravatar.cc/150?u=a042581f4e29026704d"} alt="User" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
             </div>
             {isUserDropdownOpen && (
               <div className={styles.userDropdown}>
                 <div className={styles.userInfo}>
                   <div className={styles.userAvatar}>
-                    <img src="https://i.pravatar.cc/150?u=a042581f4e29026704d" alt="User" />
+                    <img src={orgLogo ? `${API_BASE_URL.replace('/api', '')}/${orgLogo.replace(/^\//, '')}` : "https://i.pravatar.cc/150?u=a042581f4e29026704d"} alt="User" style={{ objectFit: 'cover' }} />
                   </div>
                   <div className={styles.userDetails}>
                     <div className={styles.userName}>
