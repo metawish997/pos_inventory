@@ -170,6 +170,30 @@ const InvoiceDetails = () => {
 
   return (
     <DashboardLayout>
+      <style>{`
+        @media print {
+          /* Hide everything */
+          body * {
+            visibility: hidden;
+          }
+          /* Show only the invoice card and its contents */
+          #printable-invoice-card, #printable-invoice-card * {
+            visibility: visible;
+          }
+          /* Align the invoice card at the top-left of the printed page */
+          #printable-invoice-card {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            padding: 0 !important;
+            margin: 0 !important;
+            box-shadow: none !important;
+            border: none !important;
+            background: white !important;
+          }
+        }
+      `}</style>
       <div className={styles.pageHeader}>
         <div>
           <h1 className={styles.title}>Invoice Details</h1>
