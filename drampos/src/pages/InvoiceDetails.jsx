@@ -177,7 +177,7 @@ const InvoiceDetails = () => {
             margin: 0;
           }
           body {
-            margin: 1.6cm;
+            margin: 1.2cm;
             background: white !important;
           }
           /* Hide everything */
@@ -188,17 +188,24 @@ const InvoiceDetails = () => {
           #printable-invoice-card, #printable-invoice-card * {
             visibility: visible;
           }
-          /* Align the invoice card at the top-left of the printed page */
+          /* Align the invoice card at the top-left of the printed page and size properly */
           #printable-invoice-card {
             position: absolute;
             left: 0;
             top: 0;
-            width: 100%;
-            padding: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            padding: 1.5rem !important;
             margin: 0 !important;
             box-shadow: none !important;
             border: none !important;
             background: white !important;
+            box-sizing: border-box !important;
+          }
+          /* Prevent any overflow issues on printed paper */
+          table, tr, td, th, div, img {
+            max-width: 100% !important;
+            box-sizing: border-box !important;
           }
         }
       `}</style>
@@ -419,11 +426,10 @@ const InvoiceDetails = () => {
           </div>
         </div>
 
-        <div style={{textAlign: 'center', borderTop: '1px solid #E5E7EB', paddingTop: '1.5rem', marginTop: '2rem'}}>
-          <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', fontSize: '0.75rem', color: '#4B5563', letterSpacing: '0.05em'}}>
-            <span>POWERED BY</span>
-            <img src="/aviflogo.avif" alt="Metawish" style={{height: '18px', objectFit: 'contain', verticalAlign: 'middle'}} />
-            <a href="https://www.metawish.ai" target="_blank" rel="noreferrer" style={{color: '#1B2850', textDecoration: 'none', fontWeight: 700}}>metawish</a>
+        <div style={{borderTop: '1px solid #E5E7EB', paddingTop: '1rem', marginTop: '2.5rem'}}>
+          <div style={{display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: '0.4rem', fontSize: '0.72rem', color: '#6B7280', letterSpacing: '0.02em'}}>
+            <span>all rights reserved eronixtec powerd by</span>
+            <img src="/aviflogo.avif" alt="Metawish" style={{height: '14px', objectFit: 'contain', verticalAlign: 'middle'}} />
           </div>
         </div>
       </Card>
