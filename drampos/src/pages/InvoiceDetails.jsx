@@ -341,10 +341,21 @@ const InvoiceDetails = () => {
 
             {invoice.notes && (
               <div style={{ marginTop: '2rem', padding: '1.25rem', backgroundColor: '#F9FAFB', borderRadius: '6px', border: '1px solid #E5E7EB' }}>
-                <p style={{ fontSize: '0.875rem', color: '#1B2850', fontWeight: 600, marginBottom: '0.5rem' }}>Terms & Conditions</p>
+                <p style={{ fontSize: '0.875rem', color: '#1B2850', fontWeight: 600, marginBottom: '0.5rem' }}>Notes</p>
                 <div style={{ fontSize: '0.75rem', color: '#4B5563', whiteSpace: 'pre-line', lineHeight: '1.6' }}>
                   {invoice.notes}
                 </div>
+              </div>
+            )}
+
+            {invoice.terms && invoice.terms.length > 0 && (
+              <div style={{ marginTop: '2rem', padding: '1.25rem', backgroundColor: '#F9FAFB', borderRadius: '6px', border: '1px solid #E5E7EB' }}>
+                <p style={{ fontSize: '0.875rem', color: '#1B2850', fontWeight: 600, marginBottom: '0.5rem' }}>Terms & Conditions</p>
+                <ul style={{ fontSize: '0.75rem', color: '#4B5563', lineHeight: '1.6', margin: 0, paddingLeft: '1.2rem' }}>
+                  {invoice.terms.map((term, index) => (
+                    <li key={index}>{term}</li>
+                  ))}
+                </ul>
               </div>
             )}
           </div>
